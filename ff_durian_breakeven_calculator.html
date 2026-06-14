@@ -96,6 +96,7 @@ table.sc .r{text-align:right}
   <div>
     <span class="badge" style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);color:#2ECC71">Web App</span>
     <span class="badge" style="background:var(--gd);border:1px solid rgba(200,152,42,0.25);color:var(--g)">Interactive</span>
+    <a href="#guide" style="text-decoration:none"><span class="badge" style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.25);color:#3498DB;cursor:pointer">📖 คู่มือ</span></a>
   </div>
 </div>
 
@@ -225,6 +226,189 @@ table.sc .r{text-align:right}
   <div class="stitle">🔮 Scenario Analysis</div>
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
+</div>
+
+<!-- ===== คู่มือการใช้งาน ===== -->
+<div class="card hi" id="guide">
+  <details id="guideDetails">
+    <summary style="cursor:pointer;font-weight:700;color:var(--gl);font-size:.95rem;list-style:none;display:flex;align-items:center;gap:6px;user-select:none">
+      <span id="guideArrow" style="transition:transform .2s;display:inline-block">▼</span> 📖 คู่มือการใช้งาน FF Durian Break-Even Simulator
+    </summary>
+
+    <div style="margin-top:14px">
+
+      <!-- ภาพรวม -->
+      <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:700;color:var(--w);font-size:.84rem;margin-bottom:6px">🎯 ระบบนี้ใช้ทำอะไร?</div>
+        <div style="font-size:.76rem;line-height:1.7;color:var(--t)">
+          เครื่องมือจำลองต้นทุน-กำไรทุเรียน สำหรับ<strong style="color:var(--gl)">วางแผนจัดซื้อ</strong>และ<strong style="color:var(--gl)">ประเมินผลประกอบการ</strong>ล่วงหน้า<br>
+          ปรับตัวแปรต่างๆ (ปริมาณ ราคาซื้อ สัดส่วนเกรด ราคาขาย) แล้วดูผลกระทบต่อกำไรแบบ <strong style="color:var(--gr)">Real-Time</strong> ทันที
+        </div>
+      </div>
+
+      <!-- Section 1: Equalizer -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--cy);font-size:.84rem;margin-bottom:8px">🎚️ ส่วนที่ 1 — ปรับตัวแปร (Equalizer)</div>
+        <table class="sc" style="font-size:.74rem">
+          <thead><tr><th style="width:130px">ตัวแปร</th><th>วิธีใช้</th><th style="width:100px">ช่วงค่า</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--cy);font-weight:700">📦 ปริมาณซื้อ</td>
+              <td>ตั้งเป้าจำนวนทุเรียนผลสดที่จะซื้อทั้งฤดูกาล<br><span style="color:var(--tm)">ลาก slider หรือกดปุ่ม ±100 / ±500 ตัน</span></td>
+              <td>1,000–7,000 ตัน</td>
+            </tr>
+            <tr>
+              <td style="color:var(--gl);font-weight:700">💰 ราคาซื้อ RM</td>
+              <td>ราคาเฉลี่ยที่คาดว่าจะซื้อทุเรียนผลสดทั้งฤดูกาล<br><span style="color:var(--tm)">ลาก slider หรือกดปุ่ม ±1 / ±5 บาท</span></td>
+              <td>35–75 ฿/kg</td>
+            </tr>
+            <tr>
+              <td style="color:#2ECC71;font-weight:700">🟢 Grade A %</td>
+              <td>สัดส่วนเนื้อทุเรียนเกรด A (คุณภาพสูงสุด ราคาขายสูงสุด)<br><span style="color:var(--tm)">ยิ่ง A สูง → รายได้ยิ่งดี → รับราคาซื้อแพงได้มากขึ้น</span></td>
+              <td>20–80%</td>
+            </tr>
+            <tr>
+              <td style="color:#3498DB;font-weight:700">🔵 Grade B %</td>
+              <td>สัดส่วนเกรด B — ส่วนเกรด C/BK/bk จะปรับตามอัตโนมัติ<br><span style="color:var(--tm)">รวม A+B+C+BK+bk = 100% เสมอ</span></td>
+              <td>5–40%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(46,204,113,0.06);padding:8px 12px;border-radius:6px">
+          💡 <strong>เคล็ดลับ:</strong> กดปุ่ม <strong>Preset</strong> ด้านล่าง slider เพื่อตั้งค่าสถานการณ์สำเร็จรูป (ฐาน/ดี/ดีมาก/เยี่ยม/ระวัง/แย่/วิกฤต) — ปรับทุกตัวแปรพร้อมกันในคลิกเดียว
+        </div>
+      </div>
+
+      <!-- Section 2: Price Table -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--gl);font-size:.84rem;margin-bottom:8px">💲 ส่วนที่ 2 — ตารางราคาขาย</div>
+        <div style="font-size:.74rem;line-height:1.7;color:var(--t)">
+          <strong style="color:var(--w)">แก้ไขราคาขายได้โดยตรง</strong> — คลิกที่ช่องตัวเลขราคาขายของแต่ละเกรด แล้วพิมพ์ราคาใหม่<br>
+          ตารางจะคำนวณ <strong style="color:var(--gl)">BV (Blended Value)</strong> = รายได้เฉลี่ยต่อ kg FG ใหม่ทันที<br>
+          <strong style="color:var(--w)">ต้นทุนผลิต/kg FG</strong> ก็แก้ไขได้ — ช่องด้านล่างตาราง
+        </div>
+        <table class="sc" style="margin-top:8px;font-size:.72rem">
+          <thead><tr><th>เกรด</th><th>ความหมาย</th><th class="r">ค่าเริ่มต้น</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#2ECC71;font-weight:700">A</td><td>เนื้อสวย สีเหลืองทอง คุณภาพส่งออก</td><td class="r" style="color:var(--gl)">310 ฿</td></tr>
+            <tr><td style="color:#3498DB;font-weight:700">B</td><td>เนื้อปกติ ตำหนิเล็กน้อย</td><td class="r" style="color:var(--gl)">225 ฿</td></tr>
+            <tr><td style="color:#F39C12;font-weight:700">C</td><td>เนื้อไม่ผ่านมาตรฐาน ท้ายไลน์</td><td class="r" style="color:var(--gl)">135 ฿</td></tr>
+            <tr><td style="color:#8A8070;font-weight:700">BK</td><td>เนื้อบล็อกใหญ่</td><td class="r" style="color:var(--gl)">100 ฿</td></tr>
+            <tr><td style="color:#6B6560;font-weight:700">bk</td><td>เนื้อบล็อกเล็ก</td><td class="r" style="color:var(--gl)">65 ฿</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 3: Break-Even -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:#2ECC71;font-size:.84rem;margin-bottom:8px">📊 ส่วนที่ 3 — Break-Even & สถานะ</div>
+        <div style="font-size:.74rem;line-height:1.7;color:var(--t)">
+          <strong style="color:var(--w)">Break-Even</strong> = ราคาซื้อทุเรียนผลสดสูงสุดที่ยังไม่ขาดทุน<br><br>
+          <strong style="color:var(--w)">วิธีอ่าน:</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+          <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-size:1.1rem">✅</div>
+            <div style="font-size:.72rem;font-weight:700;color:#2ECC71;margin-top:2px">กำไรดี</div>
+            <div style="font-size:.64rem;color:var(--tm);margin-top:2px">ราคาซื้อต่ำกว่า BE มาก<br>Margin ≥ 8%</div>
+          </div>
+          <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-size:1.1rem">⚠️</div>
+            <div style="font-size:.72rem;font-weight:700;color:#F39C12;margin-top:2px">margin บาง</div>
+            <div style="font-size:.64rem;color:var(--tm);margin-top:2px">ราคาซื้อใกล้ BE<br>Margin < 8%</div>
+          </div>
+          <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:6px;padding:10px;text-align:center">
+            <div style="font-size:1.1rem">❌</div>
+            <div style="font-size:.72rem;font-weight:700;color:#E74C3C;margin-top:2px">ขาดทุน</div>
+            <div style="font-size:.64rem;color:var(--tm);margin-top:2px">ราคาซื้อเกิน BE<br>ต้องลดราคาหรือดัน %A</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(200,152,42,0.06);padding:8px 12px;border-radius:6px">
+          💡 <strong>แถบ Gauge:</strong> เส้นขาว = จุด Break-Even / สามเหลี่ยมทอง ▲ = ราคาซื้อที่ตั้ง — ถ้าสามเหลี่ยมอยู่ซ้ายเส้นขาว = ยังกำไร, อยู่ขวา = ขาดทุน
+        </div>
+      </div>
+
+      <!-- Section 4: P&L -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--gl);font-size:.84rem;margin-bottom:8px">📈 ส่วนที่ 4 — สรุปผลประกอบการ</div>
+        <div style="font-size:.74rem;line-height:1.7;color:var(--t)">
+          <strong style="color:var(--w)">3 กล่องสรุป:</strong> วงเงินลงทุน | รายได้ | กำไร+Margin<br>
+          <strong style="color:var(--w)">ตารางแจกแจง:</strong> RM → Flow → แยกเกรด → รายได้ → หักต้นทุน → กำไรสุทธิ<br>
+          <strong style="color:var(--w)">P&L 2 แถว:</strong><br>
+          &nbsp;&nbsp;• แถว 1 (สีทอง) = ต่อทุเรียนผลสด 100 kg<br>
+          &nbsp;&nbsp;• แถว 2 (สีเขียวมิ้นท์) = ต่อเนื้อทุเรียน FG 1 kg
+        </div>
+      </div>
+
+      <!-- Section 5: Scenario -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--bl);font-size:.84rem;margin-bottom:8px">🔮 ส่วนที่ 5 — Scenario Analysis</div>
+        <div style="font-size:.74rem;line-height:1.7;color:var(--t)">
+          จำลองสถานการณ์ <strong style="color:var(--w)">ส่วนที่ยังไม่ได้ซื้อ</strong> — ถ้าส่วนเหลือซื้อที่ราคาต่างๆ (45–70 ฿) จะมีกำไรเท่าไหร่<br>
+          <strong style="color:var(--w)">ข้อมูลฐาน:</strong> ซื้อไปแล้ว 1,160,619 kg ที่เฉลี่ย 55.49 ฿/kg (64.40M)<br>
+          <strong style="color:var(--tm)">ใช้สำหรับตัดสินใจว่าควรซื้อต่อหรือชะลอ</strong>
+        </div>
+      </div>
+
+      <!-- Flow Formula -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--w);font-size:.84rem;margin-bottom:8px">🔬 สูตรคำนวณ Flow</div>
+        <div style="background:var(--nl);border-radius:8px;padding:14px;font-family:'DM Mono',monospace;font-size:.74rem;line-height:2;color:var(--t)">
+          <span style="color:var(--cy)">ทุเรียนผลสด 100 kg</span><br>
+          &nbsp;&nbsp;→ ขนส่ง −5% = <span style="color:var(--w)">95 kg</span><br>
+          &nbsp;&nbsp;→ บ่มสุก −10% = <span style="color:var(--w)">85.5 kg</span><br>
+          &nbsp;&nbsp;→ ปอกเนื้อ ×35% = <span style="color:var(--gl)">29.925 kg FG</span><br><br>
+          <span style="color:var(--gl)">Overall Yield = 29.925%</span><br><br>
+          <span style="color:var(--gr)">Break-Even RM</span> = (FG × BV − FG × ต้นทุนผลิต) ÷ 100<br>
+          <span style="color:var(--tm)">ตัวอย่าง:</span> (29.925 × 244 − 29.925 × 47) ÷ 100 = <span style="color:var(--gr)">58.95 ฿/kg</span>
+        </div>
+      </div>
+
+      <!-- Key Insights -->
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;color:var(--or);font-size:.84rem;margin-bottom:8px">⚡ สูตรคิดง่าย</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.12);border-radius:6px;padding:10px">
+            <div style="font-size:.74rem;font-weight:700;color:#2ECC71">ทุก +5% Grade A</div>
+            <div style="font-size:.68rem;color:var(--t);margin-top:3px">Break-Even เพิ่ม ~2.2 ฿/kg<br>= รับราคาซื้อแพงขึ้นได้</div>
+          </div>
+          <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.12);border-radius:6px;padding:10px">
+            <div style="font-size:.74rem;font-weight:700;color:#E74C3C">ทุก +5 ฿ ราคาซื้อ</div>
+            <div style="font-size:.68rem;color:var(--t);margin-top:3px">ต้องการ %A เพิ่ม ~11%<br>จึงจะยังไม่ขาดทุน</div>
+          </div>
+          <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.12);border-radius:6px;padding:10px">
+            <div style="font-size:.74rem;font-weight:700;color:var(--gl)">Grade A คือตัวชี้ขาด</div>
+            <div style="font-size:.68rem;color:var(--t);margin-top:3px">%A กระทบกำไรมากกว่า<br>ราคาซื้อที่ขยับเท่ากัน</div>
+          </div>
+          <div style="background:rgba(52,152,219,0.06);border:1px solid rgba(52,152,219,0.12);border-radius:6px;padding:10px">
+            <div style="font-size:.74rem;font-weight:700;color:#3498DB">เบอร์ห้องเย็น = ดัน %A</div>
+            <div style="font-size:.68rem;color:var(--t);margin-top:3px">ยิ่งซื้อเบอร์ห้องเย็นมาก<br>ยิ่งได้ Grade A สูง</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div>
+        <div style="font-weight:700;color:var(--w);font-size:.84rem;margin-bottom:8px">❓ คำถามที่พบบ่อย</div>
+        <div style="font-size:.72rem;line-height:1.8;color:var(--t)">
+          <strong style="color:var(--gl)">Q: ซื้อได้เต็มที่เท่าไหร่?</strong><br>
+          A: ดูตัวเลข Break-Even — นั่นคือราคาสูงสุดที่ไม่ขาดทุน (ที่ %เกรด ปัจจุบัน)<br><br>
+          <strong style="color:var(--gl)">Q: %A ต้องไม่ต่ำกว่าเท่าไหร่?</strong><br>
+          A: ดูช่อง "%A ขั้นต่ำ" — ต่ำกว่านี้จะขาดทุน (ที่ราคาซื้อปัจจุบัน)<br><br>
+          <strong style="color:var(--gl)">Q: ถ้าราคาขายเปลี่ยน?</strong><br>
+          A: แก้ตัวเลขในตารางราคาขายโดยตรง ระบบคำนวณใหม่ทันที<br><br>
+          <strong style="color:var(--gl)">Q: ข้อมูลจะหายไหม?</strong><br>
+          A: การปรับค่าไม่บันทึกถาวร — รีเฟรชหน้าจะกลับค่าเริ่มต้น ใช้ Preset เพื่อตั้งค่าเร็ว<br><br>
+          <strong style="color:var(--gl)">Q: ใช้บนมือถือได้ไหม?</strong><br>
+          A: ได้ — เปิดลิงก์ผ่าน Chrome/Safari บนมือถือได้เลย
+        </div>
+      </div>
+
+      <div style="margin-top:14px;text-align:center;font-size:.64rem;color:var(--tm);opacity:.6">
+        FF Durian Break-Even Simulator v1.0 — ฤดูกาล 2569 — พัฒนาโดย ฝ่ายจัดซื้อวัตถุดิบ
+      </div>
+    </div>
+  </details>
 </div>
 
 <div class="footer">บริษัท ห้องเย็นโชติวัฒน์หาดใหญ่ จำกัด (มหาชน) — FF Durian Break-Even Simulator — ฤดูกาล 2569<br>HTML Standalone — เปิดได้ทุกเบราว์เซอร์ พร้อม Deploy เป็น Web App</div>
@@ -391,6 +575,12 @@ function up(){
 
 [sV,sR,sA,sB].forEach(s=>s.addEventListener("input",up));
 up();
+
+// Guide toggle arrow
+const gd=$("guideDetails"),ga=$("guideArrow");
+if(gd&&ga){gd.addEventListener("toggle",()=>{ga.style.transform=gd.open?"rotate(0)":"rotate(-90deg)";});}
+// Smooth scroll to guide
+document.querySelectorAll('a[href="#guide"]').forEach(a=>{a.addEventListener("click",e=>{e.preventDefault();const el=$("guide");if(el){el.scrollIntoView({behavior:"smooth"});const d=$("guideDetails");if(d&&!d.open)d.open=true;}});});
 </script>
 </body>
 </html>
