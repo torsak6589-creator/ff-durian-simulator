@@ -5,7 +5,7 @@
 
 ## 🌐 เปิดใช้งาน
 
-**👉 [เปิด Simulator](https://YOUR_USERNAME.github.io/ff-durian-simulator/)**
+**👉 [เปิด Simulator](https://torsak6589-creator.github.io/ff-durian-simulator/)**
 
 ## ✨ ฟีเจอร์
 
