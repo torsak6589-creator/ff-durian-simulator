@@ -81,6 +81,7 @@ table.sc .r{text-align:right}
 .presets button:hover{border-color:rgba(200,152,42,0.35)}
 .presets button.act{background:rgba(200,152,42,0.18);border-color:rgba(200,152,42,0.45);color:var(--gl);font-weight:700}
 
+select{background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.7rem;padding:5px 4px;outline:none;margin-top:3px}
 .footer{text-align:center;padding:14px 0;font-size:.58rem;color:var(--tm);opacity:.4}
 @media(max-width:700px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.g5{grid-template-columns:repeat(3,1fr)}.eq-info{display:none}}
 </style>
@@ -226,6 +227,68 @@ table.sc .r{text-align:right}
   <div class="stitle">🔮 Scenario Analysis</div>
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
+</div>
+
+<!-- ===== ACTUAL รายวัน (เชื่อมต่อ SharePoint) ===== -->
+<div class="card hi">
+  <div class="stitle">📅 ค่า Actual จริงรายวัน <span style="font-weight:400;font-size:.68rem;color:var(--tm)">(เชื่อมต่อข้อมูล DATA PRODUCTION ทุเรียน)</span></div>
+
+  <div style="font-size:.72rem;color:var(--tm);line-height:1.6;margin-bottom:10px">
+    วางลิงก์ CSV ที่ <strong style="color:var(--gl)">Publish</strong> จาก SharePoint/Google Sheet แล้วกด “โหลด” เพื่อดึงค่าจริงรายวันแบบ Live —
+    หรือกด “วาง CSV เอง” เพื่อแปะข้อมูลตรงๆ (เลี่ยงปัญหา CORS)
+    <a href="#actGuide" style="color:#3498DB;text-decoration:none">▸ วิธีเอาลิงก์ CSV</a>
+  </div>
+
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <input id="actUrl" type="text" placeholder="https://... ลิงก์ CSV (Publish to web)" spellcheck="false"
+      style="flex:1;min-width:200px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:6px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.72rem;padding:7px 9px;outline:none">
+    <button class="btn" style="width:auto;padding:0 12px" onclick="actLoad()">โหลด</button>
+    <button class="btn" style="width:auto;padding:0 10px;font-size:.72rem" onclick="actTogglePaste()">วาง CSV เอง</button>
+  </div>
+
+  <div id="actPasteWrap" style="display:none;margin-bottom:8px">
+    <textarea id="actPaste" placeholder="วางข้อความ CSV ที่นี่ (คัดลอกจาก Excel/Sheet ได้เลย — รองรับทั้ง , และ Tab)" rows="5"
+      style="width:100%;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:6px;color:var(--t);font-family:'DM Mono',monospace;font-size:.72rem;padding:8px;outline:none;resize:vertical"></textarea>
+    <button class="btn" style="width:auto;padding:0 12px;margin-top:6px" onclick="actParsePasted()">แปลงข้อมูลที่วาง</button>
+  </div>
+
+  <div id="actStatus" style="font-size:.7rem;color:var(--tm);margin-bottom:8px"></div>
+
+  <!-- Column mapper -->
+  <div id="actMap" style="display:none;background:rgba(200,152,42,0.04);border:1px solid rgba(200,152,42,0.1);border-radius:7px;padding:8px 10px;margin-bottom:10px">
+    <div style="font-size:.68rem;color:var(--w);font-weight:600;margin-bottom:6px">🔧 จับคู่คอลัมน์ (เลือกให้ตรงกับข้อมูลของคุณ)</div>
+    <div class="g4" style="grid-template-columns:repeat(4,1fr);gap:6px">
+      <label style="font-size:.62rem;color:var(--tm)">วันที่<br><select id="mapDate" onchange="actRender()" style="width:100%"></select></label>
+      <label style="font-size:.62rem;color:var(--tm)">ปริมาณ (kg)<br><select id="mapKg" onchange="actRender()" style="width:100%"></select></label>
+      <label style="font-size:.62rem;color:var(--tm)">ราคาซื้อ ฿/kg<br><select id="mapPrice" onchange="actRender()" style="width:100%"></select></label>
+      <label style="font-size:.62rem;color:var(--tm)">มูลค่า ฿ (ถ้ามี)<br><select id="mapVal" onchange="actRender()" style="width:100%"></select></label>
+    </div>
+  </div>
+
+  <!-- Summary KPIs + comparison -->
+  <div class="g4" id="actKpi" style="display:none;margin-bottom:10px"></div>
+
+  <!-- Daily table -->
+  <div style="overflow-x:auto"><table class="sc" id="actT"></table></div>
+</div>
+
+<!-- ===== วิธีเอาลิงก์ CSV ===== -->
+<div class="card" id="actGuide">
+  <details>
+    <summary style="cursor:pointer;font-weight:700;color:#3498DB;font-size:.86rem;list-style:none;user-select:none">🔗 วิธีเอาลิงก์ CSV จาก SharePoint / Google Sheet</summary>
+    <div style="margin-top:10px;font-size:.74rem;line-height:1.7;color:var(--t)">
+      <strong style="color:var(--gl)">วิธีที่แนะนำ — Google Sheet (รองรับ CORS แน่นอน):</strong>
+      <ol style="margin:6px 0 12px 18px;color:var(--t)">
+        <li>เปิด/นำเข้าข้อมูลจากไฟล์ <span class="mn">DATA PRODUCTION ทุเรียน.xlsx</span> ลง Google Sheet</li>
+        <li>ไปที่ <strong>File → Share → Publish to web</strong></li>
+        <li>เลือกชีตที่ต้องการ → รูปแบบ <strong>Comma-separated values (.csv)</strong> → กด <strong>Publish</strong></li>
+        <li>คัดลอกลิงก์ที่ได้ มาวางในช่องด้านบนแล้วกด “โหลด”</li>
+      </ol>
+      <strong style="color:var(--gl)">SharePoint โดยตรง:</strong> SharePoint มักไม่ส่ง CORS header สำหรับการดึงไฟล์ข้ามโดเมน
+      ดังนั้นถ้าลิงก์ SharePoint โหลดไม่ขึ้น ให้ใช้ปุ่ม <strong>“วาง CSV เอง”</strong> แล้วคัดลอกข้อมูลจาก Excel มาวางตรงๆ (เลือกช่วง → Ctrl+C → วาง) ได้ทันที
+      <div class="note" style="margin-top:10px">คอลัมน์ที่ระบบจะใช้สรุป: <strong>วันที่</strong>, <strong>ปริมาณ (kg)</strong>, <strong>ราคาซื้อ ฿/kg</strong> และ <strong>มูลค่า ฿</strong> (ถ้ามี) — ถ้าระบบเดาคอลัมน์ไม่ตรง ปรับได้ที่ตัวเลือก “จับคู่คอลัมน์”</div>
+    </div>
+  </details>
 </div>
 
 <!-- ===== คู่มือการใช้งาน ===== -->
@@ -575,6 +638,139 @@ function up(){
 
 [sV,sR,sA,sB].forEach(s=>s.addEventListener("input",up));
 up();
+
+/* ===================== ACTUAL รายวัน (เชื่อมต่อ SharePoint) ===================== */
+const ACT_KEY="ffd_actual_url", ACT_MAP_KEY="ffd_actual_map";
+let actData=null; // {headers:[], rows:[][]}
+
+function actSetStatus(msg,col){$("actStatus").innerHTML=`<span style="color:${col||"var(--tm)"}">${msg}</span>`;}
+function actTogglePaste(){const w=$("actPasteWrap");w.style.display=w.style.display==="none"?"block":"none";}
+
+// CSV/TSV parser — auto-detects delimiter, handles quoted fields
+function parseCSV(text){
+  text=text.replace(/^﻿/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").trim();
+  if(!text)return[];
+  const firstLine=text.split("\n")[0];
+  const delim=(firstLine.split("\t").length>firstLine.split(",").length)?"\t":",";
+  const rows=[];let row=[],cell="",q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}
+      else cell+=ch;
+    }else{
+      if(ch==='"')q=true;
+      else if(ch===delim){row.push(cell);cell="";}
+      else if(ch==="\n"){row.push(cell);rows.push(row);row=[];cell="";}
+      else cell+=ch;
+    }
+  }
+  row.push(cell);rows.push(row);
+  return rows.filter(r=>r.some(c=>c.trim()!==""));
+}
+
+function actNum(x){const n=parseFloat(String(x==null?"":x).replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
+
+// guess which column index matches a set of keywords
+function actGuess(headers,kws,avoid){
+  for(let i=0;i<headers.length;i++){
+    const h=String(headers[i]).toLowerCase();
+    if(avoid&&avoid.some(a=>h.includes(a)))continue;
+    if(kws.some(k=>h.includes(k)))return i;
+  }
+  return -1;
+}
+
+function actIngest(rows,sourceMsg){
+  if(rows.length<2){actSetStatus("ไม่พบข้อมูล (ต้องมีหัวตาราง + อย่างน้อย 1 แถว)","#E74C3C");return;}
+  actData={headers:rows[0],rows:rows.slice(1)};
+  // populate column selectors
+  const opts=actData.headers.map((h,i)=>`<option value="${i}">${(h||"คอลัมน์ "+(i+1)).toString().slice(0,30)}</option>`).join("");
+  const noneOpt=`<option value="-1">— ไม่มี —</option>`;
+  $("mapDate").innerHTML=opts; $("mapKg").innerHTML=opts; $("mapPrice").innerHTML=opts; $("mapVal").innerHTML=noneOpt+opts;
+  // auto-guess (or restore saved mapping)
+  let saved={};try{saved=JSON.parse(localStorage.getItem(ACT_MAP_KEY)||"{}");}catch(e){}
+  const H=actData.headers;
+  $("mapDate").value = saved.date!=null?saved.date : actGuess(H,["วันที่","date","วัน","ว/ด/ป"]);
+  $("mapKg").value   = saved.kg!=null?saved.kg     : actGuess(H,["น้ำหนัก","ปริมาณ","กก","kg","จำนวน","qty","weight","ตัน"]);
+  $("mapPrice").value= saved.price!=null?saved.price: actGuess(H,["ราคา","price","฿/kg","บาท/","rm","ต้นทุน","เฉลี่ย"],["มูลค่า","รวม","total"]);
+  $("mapVal").value  = saved.val!=null?saved.val   : actGuess(H,["มูลค่า","amount","total","รวมเงิน","value","เป็นเงิน"]);
+  if($("mapDate").value==="")$("mapDate").value=0;
+  if($("mapKg").value==="")$("mapKg").value=Math.min(1,H.length-1);
+  if($("mapPrice").value==="")$("mapPrice").value=Math.min(2,H.length-1);
+  $("actMap").style.display="block";
+  actSetStatus(`${sourceMsg} — พบ ${actData.rows.length} แถว, ${H.length} คอลัมน์`,"#2ECC71");
+  actRender();
+}
+
+async function actLoad(){
+  const url=$("actUrl").value.trim();
+  if(!url){actSetStatus("กรุณาวางลิงก์ CSV ก่อน","#F39C12");return;}
+  localStorage.setItem(ACT_KEY,url);
+  actSetStatus("⏳ กำลังโหลด…");
+  try{
+    const res=await fetch(url,{redirect:"follow"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const txt=await res.text();
+    if(/^\s*</.test(txt))throw new Error("ได้ HTML กลับมา ไม่ใช่ CSV (ลิงก์อาจต้องล็อกอิน)");
+    actIngest(parseCSV(txt),"โหลดจากลิงก์สำเร็จ ✓");
+  }catch(err){
+    actSetStatus(`❌ โหลดไม่สำเร็จ: ${err.message} — ลองใช้ปุ่ม “วาง CSV เอง” แทน (ดูวิธีในหัวข้อ 🔗)`,"#E74C3C");
+    $("actPasteWrap").style.display="block";
+  }
+}
+
+function actParsePasted(){
+  const txt=$("actPaste").value;
+  if(!txt.trim()){actSetStatus("กรุณาวางข้อมูล CSV ก่อน","#F39C12");return;}
+  actIngest(parseCSV(txt),"แปลงข้อมูลที่วางสำเร็จ ✓");
+}
+
+function actRender(){
+  if(!actData)return;
+  const di=+$("mapDate").value, ki=+$("mapKg").value, pi=+$("mapPrice").value, vi=+$("mapVal").value;
+  localStorage.setItem(ACT_MAP_KEY,JSON.stringify({date:di,kg:ki,price:pi,val:vi}));
+  let totKg=0,totVal=0,n=0;const disp=[];
+  actData.rows.forEach(r=>{
+    const kg=actNum(r[ki]);
+    if(kg<=0&&actNum(r[pi])<=0&&(vi<0||actNum(r[vi])<=0))return; // skip empty/summary rows
+    const price=actNum(r[pi]);
+    const val=vi>=0?actNum(r[vi]):price*kg;
+    totKg+=kg;totVal+=val;n++;
+    disp.push({date:di>=0?r[di]:"",kg,price:price||(kg>0?val/kg:0),val});
+  });
+  const avgP=totKg>0?totVal/totKg:0;
+  actData.summary={totKg,totVal,avgP,n};
+  // table
+  let t=`<thead><tr><th>วันที่</th><th class="r">ปริมาณ (kg)</th><th class="r">ราคา ฿/kg</th><th class="r">มูลค่า ฿</th></tr></thead><tbody>`;
+  disp.forEach(d=>{t+=`<tr><td>${(d.date||"").toString().slice(0,20)}</td><td class="r">${fmt(d.kg,0)}</td><td class="r">${fmt(d.price)}</td><td class="r">${fmt(d.val/1e6)}M</td></tr>`;});
+  t+=`<tr style="background:rgba(200,152,42,0.06)"><td style="font-weight:800;color:var(--gl)">รวม (${n} วัน)</td><td class="r" style="font-weight:800;color:var(--gl)">${fmt(totKg,0)}</td><td class="r" style="font-weight:800;color:var(--gl)">${fmt(avgP)}</td><td class="r" style="font-weight:800;color:var(--gl)">${fmt(totVal/1e6)}M</td></tr></tbody>`;
+  $("actT").innerHTML=t;
+  actKpis();
+}
+
+// KPI summary + comparison vs simulation — light, safe to call on every slider move
+function actKpis(){
+  if(!actData||!actData.summary){return;}
+  const{totKg,totVal,avgP,n}=actData.summary;
+  const simVol=+sV.value*1000, simRM=+sR.value;
+  const pctPlan=simVol>0?totKg/simVol*100:0;
+  const dP=avgP-simRM;
+  $("actKpi").style.display="grid";
+  $("actKpi").innerHTML=[
+    {l:`ปริมาณจริงสะสม (${n} วัน)`,v:fmt(totKg/1000,1)+" t",s:`${fmt(totKg,0)} kg`,c:"#1ABC9C"},
+    {l:"% ของแผนซื้อ",v:fmt(pctPlan,1)+"%",s:`แผน ${fmt(simVol/1000,1)}t`,c:pctPlan<=100?"#2ECC71":"#F39C12"},
+    {l:"ราคาซื้อจริงเฉลี่ย",v:fmt(avgP)+" ฿",s:`${dP>=0?"▲":"▼"}${fmt(Math.abs(dP))} vs RM${simRM}`,c:dP<=0?"#2ECC71":"#E74C3C"},
+    {l:"มูลค่าซื้อจริงสะสม",v:fmt(totVal/1e6,2)+"M",s:"฿",c:"#E5B84B"},
+  ].map(k=>`<div class="kpi" style="background:rgba(200,152,42,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div><div class="l mn" style="opacity:.8">${k.s}</div></div>`).join("");
+}
+
+// keep comparison KPIs in sync when simulator sliders / inputs change
+[sV,sR,sA,sB].forEach(s=>s.addEventListener("input",actKpis));
+document.querySelectorAll('.ptbl input,#pProd').forEach(el=>el.addEventListener("change",actKpis));
+
+// restore saved URL on load
+(function(){const u=localStorage.getItem(ACT_KEY);if(u)$("actUrl").value=u;})();
 
 // Guide toggle arrow
 const gd=$("guideDetails"),ga=$("guideArrow");
