@@ -29,8 +29,13 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .btn:hover{background:rgba(200,152,42,0.15);border-color:rgba(200,152,42,0.4)}
 .btn:active{transform:scale(0.9)}
 .btn.sm{width:26px;height:26px;font-size:.75rem;border-radius:5px}
-input[type=range]{flex:1;height:5px;-webkit-appearance:none;background:var(--nl);border-radius:3px;outline:none;min-width:60px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid var(--nm)}
+.eq-slider{flex:1;display:flex;flex-direction:column;gap:2px;min-width:60px}
+.eq-mm{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.55rem;color:var(--tm);padding:0 2px;line-height:1}
+input[type=range]{width:100%;height:8px;-webkit-appearance:none;appearance:none;background:var(--nl);border-radius:4px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;cursor:grab;background:#E74C3C;border:3px solid #fff;box-shadow:0 2px 7px rgba(231,76,60,.65)}
+input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.12)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;cursor:grab;background:#E74C3C;border:3px solid #fff;box-shadow:0 2px 7px rgba(231,76,60,.65)}
+input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 
 /* Price table */
 .ptbl{width:100%;border-collapse:collapse;font-size:.76rem}
@@ -110,7 +115,7 @@ table.sc .r{text-align:right}
       <div class="eq-lbl" style="color:var(--cy)">📦 ปริมาณซื้อ</div>
       <button class="btn" onclick="adj('v',-500)">−500</button>
       <button class="btn sm" onclick="adj('v',-100)">−</button>
-      <input type="range" id="slV" min="1000" max="7000" value="6200" step="100" style="accent-color:#1ABC9C">
+      <div class="eq-slider"><input type="range" id="slV" min="1000" max="7000" value="6200" step="100" style="accent-color:#1ABC9C"><div class="eq-mm"><span>1,000</span><span>7,000</span></div></div>
       <div class="eq-val" style="color:var(--cy)" id="vVal">6,200</div>
       <button class="btn sm" onclick="adj('v',100)">+</button>
       <button class="btn" onclick="adj('v',500)">+500</button>
@@ -124,7 +129,7 @@ table.sc .r{text-align:right}
       <div class="eq-lbl" style="color:var(--gl)">💰 ราคาซื้อ RM</div>
       <button class="btn" onclick="adj('r',-5)">−5</button>
       <button class="btn sm" onclick="adj('r',-1)">−</button>
-      <input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#E5B84B">
+      <div class="eq-slider"><input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#E5B84B"><div class="eq-mm"><span>35</span><span>75</span></div></div>
       <div class="eq-val" style="color:var(--gl)" id="rVal">50</div>
       <button class="btn sm" onclick="adj('r',1)">+</button>
       <button class="btn" onclick="adj('r',5)">+5</button>
@@ -138,7 +143,7 @@ table.sc .r{text-align:right}
       <div class="eq-lbl" style="color:#2ECC71">🟢 Grade A</div>
       <button class="btn" onclick="adj('a',-5)">−5</button>
       <button class="btn sm" onclick="adj('a',-1)">−</button>
-      <input type="range" id="slA" min="20" max="80" value="55" style="accent-color:#2ECC71">
+      <div class="eq-slider"><input type="range" id="slA" min="20" max="80" value="55" style="accent-color:#2ECC71"><div class="eq-mm"><span>20%</span><span>80%</span></div></div>
       <div class="eq-val" style="color:#2ECC71" id="aVal">55%</div>
       <button class="btn sm" onclick="adj('a',1)">+</button>
       <button class="btn" onclick="adj('a',5)">+5</button>
@@ -152,7 +157,7 @@ table.sc .r{text-align:right}
       <div class="eq-lbl" style="color:#3498DB">🔵 Grade B</div>
       <button class="btn" onclick="adj('b',-5)">−5</button>
       <button class="btn sm" onclick="adj('b',-1)">−</button>
-      <input type="range" id="slB" min="5" max="40" value="20" style="accent-color:#3498DB">
+      <div class="eq-slider"><input type="range" id="slB" min="5" max="40" value="20" style="accent-color:#3498DB"><div class="eq-mm"><span>5%</span><span>40%</span></div></div>
       <div class="eq-val" style="color:#3498DB" id="bVal">20%</div>
       <button class="btn sm" onclick="adj('b',1)">+</button>
       <button class="btn" onclick="adj('b',5)">+5</button>
