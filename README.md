@@ -37,7 +37,8 @@
 
 > **ตั้งค่าครั้งเดียว:** ใน Azure AD App `FF Durian — Break-Even Simulator` (`02a2d145-…`)
 > 1. **Authentication → Platform: SPA** เพิ่ม Redirect URI: `https://torsak6589-creator.github.io/ff-durian-simulator/`
-> 2. **API permissions** เพิ่ม Microsoft Graph (Delegated): `Files.Read`, `User.Read` แล้ว Grant admin consent
+> 2. **API permissions** เพิ่ม Microsoft Graph (Delegated): `Files.Read.All`, `Sites.Read.All`, `User.Read` แล้ว Grant admin consent
+>    (ไฟล์อยู่บน SharePoint site จึงต้องใช้ `.All` — `Files.Read` เฉย ๆ จะได้ HTTP 403)
 
 ## 🚀 วิธี Deploy
 
