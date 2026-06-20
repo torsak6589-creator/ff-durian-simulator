@@ -35,9 +35,9 @@
 - กด **📥 ใช้ค่า actual** เพื่อนำ %A, %B, yield, ปริมาณดิบจริง เข้าโมเดล
 - ถ้ายังไม่ล็อกอิน/โหลดไม่ได้ → ใช้ค่าสมมติฐานเดิม (ไม่ error)
 
-> **ตั้งค่าครั้งเดียว:** ใน Azure AD App (`2459a57b-…`) → Authentication → Platform **SPA**
-> เพิ่ม Redirect URI: `https://torsak6589-creator.github.io/ff-durian-simulator/`
-> (ใช้ Azure AD app + tenant เดียวกับ kst-rm-dashboard, scope `Files.Read` / `User.Read`)
+> **ตั้งค่าครั้งเดียว:** ใน Azure AD App `FF Durian — Break-Even Simulator` (`02a2d145-…`)
+> 1. **Authentication → Platform: SPA** เพิ่ม Redirect URI: `https://torsak6589-creator.github.io/ff-durian-simulator/`
+> 2. **API permissions** เพิ่ม Microsoft Graph (Delegated): `Files.Read`, `User.Read` แล้ว Grant admin consent
 
 ## 🚀 วิธี Deploy
 
