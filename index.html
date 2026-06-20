@@ -682,7 +682,7 @@ const SP = {
   scopes  :["Files.Read.All","Sites.Read.All","User.Read"],
 };
 const ACTUAL_SHEET = "%A DRUAIN";
-const RM_SHEET = "RM-RECIVE";   // ชีทรับซื้อจริง (มูลค่า + ปริมาณต่อเกรด) สำหรับคำนวณราคา/kg
+const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
@@ -859,7 +859,7 @@ async function doFetch(interactive){
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
     // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
     let rm=null;
-    try{ rm=parseRM(await graphValues(token, RM_SHEET, /recive|receive|rm.?rec/)); }catch(e){ /* ใช้ fallback */ }
+    try{ rm=parseRM(await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน|durian.*price/)); }catch(e){ /* ใช้ fallback */ }
     showOk(p, rm);
   }catch(e){
     const code=e.errorCode||"";
