@@ -717,8 +717,11 @@ function parseActual(values){
   const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
   const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
   const cRaw=incl("ก่อนปอก"), cFG=incl("ฟร");   // นน.ส่งเข้าฟรีซ
+  // คอลัมน์มูลค่า/ราคาวัตถุดิบ (ถ้ามีในชีท) เพื่อคำนวณราคา/kg actual
+  const cVal=incl("มูลค่า","เป็นเงิน","จำนวนเงิน","รวมเงิน","ต้นทุน","amount","value");
+  const cPrice=incl("ราคารับ","ราคาซื้อ","ราคา/","ราคา","price");
   if(cA<0||cRaw<0||cFG<0) return null;
-  let raw=0,fg=0,rows=0, gA=0,gB=0,gC=0,gD=0,gBK=0;
+  let raw=0,fg=0,rows=0, gA=0,gB=0,gC=0,gD=0,gBK=0, cost=0,costRows=0;
   for(let i=hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
     const label=String(r[0]||"").toLowerCase();
@@ -726,6 +729,9 @@ function parseActual(values){
     const rw=aNum(r[cRaw]), f=aNum(r[cFG]);
     if(isNaN(rw)||rw<=0) continue;
     raw+=rw; rows++;
+    let v=cVal>=0?aNum(r[cVal]):NaN;
+    if(isNaN(v)&&cPrice>=0){ const pr=aNum(r[cPrice]); if(!isNaN(pr)&&pr>0) v=rw*pr; }
+    if(!isNaN(v)&&v>0){ cost+=v; costRows++; }
     if(!isNaN(f)&&f>0){
       fg+=f;
       gA +=(aNum(r[cA ])||0)*f;
@@ -742,14 +748,18 @@ function parseActual(values){
   // ถ้าผลรวมเกรด ≈ 1 แปลว่าเป็นเศษส่วน → คูณ 100 ให้เป็นเปอร์เซ็นต์
   const sum=A+B+C+D+BK;
   if(sum>0 && sum<=1.5){ A*=100; B*=100; C*=100; D*=100; BK*=100; }
-  return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK };
+  return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK,
+           cost: costRows>0?cost:NaN };
 }
+const ACT_AVG_PRICE=64399270/1160619;  // ราคาเฉลี่ยเดิม (~55.49฿/kg) ใช้เมื่อไม่พบมูลค่าในชีท
 function applyActual(){
   if(!ACTUAL) return;
   if(!isNaN(ACTUAL.yield)&&ACTUAL.yield>0) FG=ACTUAL.yield;
   sA.value=Math.round(ACTUAL.A);
   sB.value=Math.round(ACTUAL.B);
   AK=Math.round(ACTUAL.rawKg);   // ปริมาณดิบจริงสะสม → ใช้ในส่วน Scenario
+  // มูลค่าต้องเปลี่ยนตามปริมาณ: ใช้มูลค่าจริงจากชีทถ้ามี ไม่งั้นคงราคาเฉลี่ยเดิม
+  AC=Math.round(!isNaN(ACTUAL.cost)&&ACTUAL.cost>0 ? ACTUAL.cost : AK*ACT_AVG_PRICE);
   up();
 }
 window.applyActual=applyActual;
@@ -761,9 +771,12 @@ function showConnect(msg){
 }
 function showOk(p){
   ACTUAL=p;
+  const hasCost=!isNaN(p.cost)&&p.cost>0;
+  const priceKg=hasCost ? p.cost/p.rawKg : ACT_AVG_PRICE;
+  const priceTxt=` · ราคา <strong>${fmt(priceKg)}฿/kg</strong> (มูลค่า ${fmt((hasCost?p.cost:p.rawKg*ACT_AVG_PRICE)/1e6)}M${hasCost?"":" ≈ ราคาเฉลี่ยเดิม"})`;
   setBadge(
     `📊 <strong>ผลผลิตจริง</strong> (${ACTUAL_SHEET}, ${p.rows} ล็อต) — `+
-    `ดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong> · `+
+    `ดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong>${priceTxt} · `+
     `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}% `+
     `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
     "ok");
