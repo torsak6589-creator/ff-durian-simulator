@@ -682,9 +682,11 @@ const SP = {
   scopes  :["Files.Read.All","Sites.Read.All","User.Read"],
 };
 const ACTUAL_SHEET = "%A DRUAIN";
+const RM_SHEET = "RM-RECIVE";   // ชีทรับซื้อจริง (มูลค่า + ปริมาณต่อเกรด) สำหรับคำนวณราคา/kg
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
+let ACTUAL_RM=null;// ข้อมูลรับซื้อจริงจาก RM-RECIVE (kg, value, avg)
 function setBadge(html,kind){
   if(!badge) return;
   const c = kind==="ok"?"46,204,113":kind==="warn"?"243,156,18":kind==="err"?"231,76,60":"200,152,42";
@@ -757,9 +759,15 @@ function applyActual(){
   if(!isNaN(ACTUAL.yield)&&ACTUAL.yield>0) FG=ACTUAL.yield;
   sA.value=Math.round(ACTUAL.A);
   sB.value=Math.round(ACTUAL.B);
-  AK=Math.round(ACTUAL.rawKg);   // ปริมาณดิบจริงสะสม → ใช้ในส่วน Scenario
-  // มูลค่าต้องเปลี่ยนตามปริมาณ: ใช้มูลค่าจริงจากชีทถ้ามี ไม่งั้นคงราคาเฉลี่ยเดิม
-  AC=Math.round(!isNaN(ACTUAL.cost)&&ACTUAL.cost>0 ? ACTUAL.cost : AK*ACT_AVG_PRICE);
+  // ปริมาณ + มูลค่าซื้อจริง: ใช้จาก RM-RECIVE ถ้าได้ (ราคา/kg ถูกต้อง)
+  // ไม่งั้นใช้ปริมาณผลิตดิบ × ราคาเฉลี่ยเดิม
+  if(ACTUAL_RM){
+    AK=Math.round(ACTUAL_RM.kg);
+    AC=Math.round(ACTUAL_RM.value);
+  }else{
+    AK=Math.round(ACTUAL.rawKg);
+    AC=Math.round(AK*ACT_AVG_PRICE);
+  }
   up();
 }
 window.applyActual=applyActual;
@@ -769,15 +777,18 @@ const btnStyle="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;backg
 function showConnect(msg){
   setBadge(`${msg||"🔐 ดึงผลผลิตจริงจากชีท %A DURIAN"} <button onclick="connectActual()" style="${btnStyle}">เชื่อมต่อ Microsoft 365</button>`,"warn");
 }
-function showOk(p){
-  ACTUAL=p;
-  const hasCost=!isNaN(p.cost)&&p.cost>0;
-  const priceKg=hasCost ? p.cost/p.rawKg : ACT_AVG_PRICE;
-  const priceTxt=` · ราคา <strong>${fmt(priceKg)}฿/kg</strong> (มูลค่า ${fmt((hasCost?p.cost:p.rawKg*ACT_AVG_PRICE)/1e6)}M${hasCost?"":" ≈ ราคาเฉลี่ยเดิม"})`;
+function showOk(p, rm){
+  ACTUAL=p; ACTUAL_RM=rm||null;
+  // ราคา/kg actual: ใช้จาก RM-RECIVE ถ้าได้ ไม่งั้นใช้ราคาเฉลี่ยเดิม
+  const priceKg = rm ? rm.avg : ACT_AVG_PRICE;
+  const valM = rm ? rm.value/1e6 : p.rawKg*ACT_AVG_PRICE/1e6;
+  const priceTxt = rm
+    ? ` · <strong>รับซื้อ ${fmt(rm.kg,0)}kg</strong> @ <strong>${fmt(rm.avg)}฿/kg</strong> (มูลค่า ${fmt(valM)}M, ${rm.rows} บิล)`
+    : ` · ราคา ${fmt(priceKg)}฿/kg (ราคาเฉลี่ยเดิม — อ่าน ${RM_SHEET} ไม่ได้)`;
   setBadge(
     `📊 <strong>ผลผลิตจริง</strong> (${ACTUAL_SHEET}, ${p.rows} ล็อต) — `+
-    `ดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong>${priceTxt} · `+
-    `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}% `+
+    `ผลิตดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong> · `+
+    `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}%`+priceTxt+` `+
     `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
     "ok");
 }
@@ -789,32 +800,67 @@ async function getToken(interactive){
   if(interactive){ return (await msalApp.acquireTokenPopup({scopes:SP.scopes,prompt:"select_account"})).accessToken; }
   return null;
 }
-async function graphValues(token){
+async function graphValues(token, sheet, matchRe){
   const base="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/workbook";
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   // เรียกชีทตามชื่อก่อน (ชื่อมี % และเว้นวรรค → encode)
-  let res=await fetch(base+"/worksheets/"+encodeURIComponent(ACTUAL_SHEET)+"/usedRange?$select=values",{headers:hdr});
+  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr});
   if(!res.ok){
     // fallback: list ชีททั้งหมดแล้ว match ชื่อ
     const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr});
     if(!wl.ok) throw new Error("worksheets HTTP "+wl.status);
     const list=(await wl.json()).value||[];
-    const key=ACTUAL_SHEET.replace(/\s/g,"").toLowerCase();
-    const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||list.find(w=>/dru?ain|durian/.test(w.name.toLowerCase()));
-    if(!m) throw new Error("ไม่พบชีท "+ACTUAL_SHEET+" (มี: "+list.map(w=>w.name).join(", ")+")");
+    const key=sheet.replace(/\s/g,"").toLowerCase();
+    const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||(matchRe&&list.find(w=>matchRe.test(w.name.toLowerCase())));
+    if(!m) throw new Error("ไม่พบชีท "+sheet+" (มี: "+list.map(w=>w.name).join(", ")+")");
     res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr});
     if(!res.ok) throw new Error("usedRange HTTP "+res.status);
   }
   return (await res.json()).values;
 }
+/* parse ชีท RM-RECIVE (รับซื้อจริง) → { kg, value, avg, rows }
+   - ปริมาณรวม = ผลรวมทุกคอลัมน์ที่หัวมี "(kg)" (เช่น ABC(KG), ตกไซส์(KG)…)
+   - มูลค่ารวม = คอลัมน์ "มูลค่า" */
+function parseRM(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,15);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").toLowerCase());
+    if(row.some(h=>h.includes("มูลค่า"))&&row.some(h=>/\(kg\)|\(กก\)/.test(h))){hi=i;break;}
+  }
+  if(hi<0) return null;
+  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
+  const kgCols=[]; let valCol=-1;
+  hdr.forEach((h,idx)=>{
+    if(/\(kg\)|\(กก\)/.test(h) && !/รวม|total/.test(h)) kgCols.push(idx);
+    if(valCol<0 && (h.includes("มูลค่า")||h.includes("เป็นเงิน")||h.includes("รวมเงิน"))) valCol=idx;
+  });
+  if(!kgCols.length||valCol<0) return null;
+  let kg=0,value=0,rows=0;
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||"").toLowerCase();
+    if(label.includes("รวม")||label.includes("total")) continue;
+    let rk=0; kgCols.forEach(c=>{const n=aNum(r[c]); if(!isNaN(n)&&n>0) rk+=n;});
+    if(rk<=0) continue;
+    const v=aNum(r[valCol]);
+    kg+=rk; rows++;
+    if(!isNaN(v)&&v>0) value+=v;
+  }
+  if(kg<=0||value<=0) return null;
+  return { kg, value, avg:value/kg, rows };
+}
 async function doFetch(interactive){
   try{
     const token=await getToken(interactive);
     if(!token){ showConnect(); return; }
-    setBadge("🔄 กำลังอ่านชีท %A DURIAN…");
-    const p=parseActual(await graphValues(token));
+    setBadge("🔄 กำลังอ่านชีท %A DRUAIN…");
+    const p=parseActual(await graphValues(token, ACTUAL_SHEET, /dru?ain|durian/));
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
-    showOk(p);
+    // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
+    let rm=null;
+    try{ rm=parseRM(await graphValues(token, RM_SHEET, /recive|receive|rm.?rec/)); }catch(e){ /* ใช้ fallback */ }
+    showOk(p, rm);
   }catch(e){
     const code=e.errorCode||"";
     if(/interaction_required|login_required|consent_required|no_account/.test(code)) showConnect("🔐 ต้องล็อกอินใหม่:");
