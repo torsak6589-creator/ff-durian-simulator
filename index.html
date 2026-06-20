@@ -681,7 +681,7 @@ const SP = {
   itemId  :"015324WXPDOOQEKDGMYNCJEIE64EYHHBDD",
   scopes  :["Files.Read.All","Sites.Read.All","User.Read"],
 };
-const ACTUAL_SHEET = "%A DURIAN";
+const ACTUAL_SHEET = "%A DRUAIN";
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
@@ -786,7 +786,7 @@ async function graphValues(token){
     if(!wl.ok) throw new Error("worksheets HTTP "+wl.status);
     const list=(await wl.json()).value||[];
     const key=ACTUAL_SHEET.replace(/\s/g,"").toLowerCase();
-    const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||list.find(w=>w.name.toLowerCase().includes("durian"));
+    const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||list.find(w=>/dru?ain|durian/.test(w.name.toLowerCase()));
     if(!m) throw new Error("ไม่พบชีท "+ACTUAL_SHEET+" (มี: "+list.map(w=>w.name).join(", ")+")");
     res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr});
     if(!res.ok) throw new Error("usedRange HTTP "+res.status);

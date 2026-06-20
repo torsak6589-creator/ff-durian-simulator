@@ -27,7 +27,7 @@
 - Preset 7 สถานการณ์
 
 ### 📊 ผลผลิตจริง (Live Actual)
-ดึง **เกรดจริง %A/B/C/D/BK · yield จริง · ปริมาณดิบจริง** จากชีท `%A DURIAN`
+ดึง **เกรดจริง %A/B/C/D/BK · yield จริง · ปริมาณดิบจริง** จากชีท `%A DRUAIN`
 ใน `Procurement_Master_File.xlsx` (SharePoint KSTRMUPDATEV2) ผ่าน **Microsoft Graph**
 โดยล็อกอินด้วยบัญชี Microsoft 365 ขององค์กร (MSAL, delegated — ไม่ต้องมี backend/Azure Function)
 
