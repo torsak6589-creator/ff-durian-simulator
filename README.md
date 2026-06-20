@@ -26,6 +26,19 @@
 - Scenario Analysis ส่วนเหลือ
 - Preset 7 สถานการณ์
 
+### 📊 ผลผลิตจริง (Live Actual)
+ดึง **เกรดจริง %A/B/C/D/BK · yield จริง · ปริมาณดิบจริง** จากชีท `%A DURIAN`
+ใน `Procurement_Master_File.xlsx` (SharePoint KSTRMUPDATEV2) ผ่าน **Microsoft Graph**
+โดยล็อกอินด้วยบัญชี Microsoft 365 ขององค์กร (MSAL, delegated — ไม่ต้องมี backend/Azure Function)
+
+- กดปุ่ม **เชื่อมต่อ Microsoft 365** ที่ badge ในส่วน Scenario → ล็อกอินครั้งเดียว (จำไว้ใน localStorage)
+- กด **📥 ใช้ค่า actual** เพื่อนำ %A, %B, yield, ปริมาณดิบจริง เข้าโมเดล
+- ถ้ายังไม่ล็อกอิน/โหลดไม่ได้ → ใช้ค่าสมมติฐานเดิม (ไม่ error)
+
+> **ตั้งค่าครั้งเดียว:** ใน Azure AD App (`2459a57b-…`) → Authentication → Platform **SPA**
+> เพิ่ม Redirect URI: `https://torsak6589-creator.github.io/ff-durian-simulator/`
+> (ใช้ Azure AD app + tenant เดียวกับ kst-rm-dashboard, scope `Files.Read` / `User.Read`)
+
 ## 🚀 วิธี Deploy
 
 ไฟล์เดียว `index.html` — ไม่ต้องลง server, ไม่ต้อง build
