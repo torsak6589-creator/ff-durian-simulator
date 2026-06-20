@@ -737,11 +737,12 @@ function parseActual(values){
   }
   if(raw<=0||rows===0) return null;
   const wt=fg>0?fg:1;
-  return {
-    rawKg:raw, fgKg:fg, rows,
-    yield: fg>0?fg/raw*100:NaN,
-    A:gA/wt, B:gB/wt, C:gC/wt, D:gD/wt, BK:gBK/wt,
-  };
+  let A=gA/wt,B=gB/wt,C=gC/wt,D=gD/wt,BK=gBK/wt;
+  // Excel เก็บค่า % เป็นเศษส่วน (0.50 = 50%) → Graph คืน 0.5 ไม่ใช่ 50
+  // ถ้าผลรวมเกรด ≈ 1 แปลว่าเป็นเศษส่วน → คูณ 100 ให้เป็นเปอร์เซ็นต์
+  const sum=A+B+C+D+BK;
+  if(sum>0 && sum<=1.5){ A*=100; B*=100; C*=100; D*=100; BK*=100; }
+  return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK };
 }
 function applyActual(){
   if(!ACTUAL) return;
