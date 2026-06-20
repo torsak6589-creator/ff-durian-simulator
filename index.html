@@ -237,7 +237,7 @@ table.sc .r{text-align:right}
 <!-- ===== SCENARIO ===== -->
 <div class="card">
   <div class="stitle">🔮 Scenario Analysis</div>
-  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15)">⏳ กำลังโหลดยอดซื้อจริง (actual) จากชีท %A DURIAN…</div>
+  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15)">⏳ กำลังโหลดผลผลิตจริง (actual) จากชีท %A DURIAN…</div>
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
 </div>
@@ -430,7 +430,7 @@ table.sc .r{text-align:right}
 
 <script>
 const CL={A:"#2ECC71",B:"#3498DB",C:"#F39C12",BK:"#8A8070",bk:"#6B6560"};
-const FG=29.925;
+let FG=29.925;
 /* ── ยอดซื้อจริงสะสม (actual) ──
    ค่าเริ่มต้น = fallback (ใช้เมื่อโหลด live ไม่สำเร็จ)
    loadActual() จะ override จากชีท %A DURIAN ใน Procurement_Master_File.xlsx */
@@ -556,7 +556,7 @@ function up(){
 
   let r=`<thead><tr><th>รายการ</th><th class="r">ปริมาณ</th><th class="r">ล้าน฿</th></tr></thead><tbody>`;
   r+=`<tr><td>ทุเรียนผลสด</td><td class="r">${fmt(vol,0)} kg</td><td class="r" style="color:#E74C3C">${fmt(tRM/1e6)}</td></tr>`;
-  r+=`<tr><td>→ FG (yield 29.925%)</td><td class="r" style="font-weight:700">${fmt(tFG,0)} kg</td><td class="r">—</td></tr>`;
+  r+=`<tr><td>→ FG (yield ${fmt(FG,3)}%)</td><td class="r" style="font-weight:700">${fmt(tFG,0)} kg</td><td class="r">—</td></tr>`;
   Object.entries(G).forEach(([g,p])=>{r+=`<tr><td style="padding-left:12px;color:${CL[g]}">— ${g} (${(p*100).toFixed(1)}%)</td><td class="r">${fmt(tFG*p,0)}</td><td class="r" style="color:${CL[g]}">${fmt(tFG*p*P[g]/1e6)}</td></tr>`;});
   r+=`<tr style="background:rgba(46,204,113,0.04)"><td style="font-weight:700;color:#2ECC71">รายได้รวม</td><td class="r" style="font-weight:700">${fmt(tFG,0)}</td><td class="r" style="font-weight:700;color:#2ECC71">${fmt(tRv/1e6)}</td></tr>`;
   r+=`<tr><td>ต้นทุน RM</td><td class="r">${fmt(vol/1e6,2)}M × ${rm}฿</td><td class="r" style="color:#E74C3C">−${fmt(tRM/1e6)}</td></tr>`;
@@ -595,9 +595,10 @@ function up(){
 up();
 
 /* ─────────────────────────────────────────────
-   LIVE ACTUAL — ดึงยอดซื้อจริงจากชีท "%A DURIAN"
+   LIVE ACTUAL — ดึงผลผลิตจริงจากชีท "%A DURIAN"
    ใน Procurement_Master_File.xlsx ผ่าน Azure Function
    (GetRMData?sheet=%A DURIAN&raw=1)
+   → เกรดจริง %A/B/C/D/BK, yield จริง, ปริมาณดิบจริง
    ───────────────────────────────────────────── */
 // ⚙️ ใส่ค่าจริงหลัง deploy Azure Function (ดู AZURE_SETUP.md ใน repo KST-RM-UPDATE-V2)
 const AZURE_FUNC_URL = "https://kst-rm-api.azurewebsites.net/api/GetRMData";
@@ -605,6 +606,7 @@ const FUNC_KEY       = ""; // ใส่ default function key ถ้า authLevel
 const ACTUAL_SHEET   = "%A DURIAN";
 
 const badge = $("actBadge");
+let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
 function setBadge(html,kind){
   if(!badge) return;
   const c = kind==="ok"?"46,204,113":kind==="warn"?"243,156,18":kind==="err"?"231,76,60":"200,152,42";
@@ -613,41 +615,68 @@ function setBadge(html,kind){
 }
 function aNum(x){
   if(x==null||x==="") return NaN;
-  const n=parseFloat(String(x).replace(/[,\s฿บาท]/g,""));
+  const n=parseFloat(String(x).replace(/[,\s฿บาท%]/g,""));
   return isNaN(n)?NaN:n;
 }
-/* parse usedRange 2D array → { kg, cost } (best-effort, ทนต่อ layout) */
+/* parse usedRange ของชีท "%A DURIAN" → ผลผลิตจริง
+   คอลัมน์: %A %B %C %D %BK (เกรดของเนื้อเข้า FREEZE),
+            นน.ก่อนปอก (ดิบเข้า), นน.ส่งเข้าฟรีซ (FG)
+   - ปริมาณดิบจริง = Σ นน.ก่อนปอก
+   - yield จริง   = Σ FG / Σ ดิบ × 100
+   - เกรดจริง     = ถัวเฉลี่ยถ่วงน้ำหนักด้วย FG ของแต่ละแถว */
 function parseActual(values){
   if(!Array.isArray(values)||!values.length) return null;
-  // หา header row แรกที่มีข้อความ (ไม่ใช่ตัวเลข) ตั้งแต่ 2 ช่องขึ้นไป
-  let hi=0;
-  for(let i=0;i<Math.min(values.length,12);i++){
-    const strs=(values[i]||[]).filter(c=>typeof c==="string"&&c.trim()&&isNaN(aNum(c)));
-    if(strs.length>=2){hi=i;break;}
+  // หา header row แรกที่มี "% a"
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,15);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
+    if(row.some(h=>h==="%a")){hi=i;break;}
   }
+  if(hi<0) return null;
   const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
-  const find=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  const ckg   =find("ปริมาณ","น้ำหนัก","กิโล","กก","kg");
-  const ccost =find("มูลค่า","ต้นทุน","รวมเงิน","จำนวนเงิน","เป็นเงิน","amount","value","total","บาท");
-  const cprice=find("ราคา","price","/kg","บาท/");
-  if(ckg<0) return null;
-  let kg=0,cost=0,rows=0;
+  const norm=hdr.map(h=>h.replace(/\s/g,""));
+  const exact=k=>norm.findIndex(h=>h===k);
+  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
+  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
+  const cRaw=incl("ก่อนปอก"), cFG=incl("ฟร");   // นน.ส่งเข้าฟรีซ
+  if(cA<0||cRaw<0||cFG<0) return null;
+  let raw=0,fg=0,rows=0, gA=0,gB=0,gC=0,gD=0,gBK=0;
   for(let i=hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
     const label=String(r[0]||"").toLowerCase();
-    if(label.includes("รวม")||label.includes("total")) continue; // กันนับซ้ำแถวสรุป
-    const k=aNum(r[ckg]); if(isNaN(k)||k<=0) continue;
-    kg+=k; rows++;
-    let c=ccost>=0?aNum(r[ccost]):NaN;
-    if(isNaN(c)&&cprice>=0){const p=aNum(r[cprice]); if(!isNaN(p)) c=k*p;}
-    if(!isNaN(c)) cost+=c;
+    if(label.includes("รวม")||label.includes("total")) continue;
+    const rw=aNum(r[cRaw]), f=aNum(r[cFG]);
+    if(isNaN(rw)||rw<=0) continue;
+    raw+=rw; rows++;
+    if(!isNaN(f)&&f>0){
+      fg+=f;
+      gA +=(aNum(r[cA ])||0)*f;
+      gB +=(cB>=0?(aNum(r[cB ])||0):0)*f;
+      gC +=(cC>=0?(aNum(r[cC ])||0):0)*f;
+      gD +=(cD>=0?(aNum(r[cD ])||0):0)*f;
+      gBK+=(cBK>=0?(aNum(r[cBK])||0):0)*f;
+    }
   }
-  if(kg<=0||rows===0) return null;
-  return {kg,cost:cost>0?cost:NaN,rows};
+  if(raw<=0||rows===0) return null;
+  const wt=fg>0?fg:1;
+  return {
+    rawKg:raw, fgKg:fg, rows,
+    yield: fg>0?fg/raw*100:NaN,
+    A:gA/wt, B:gB/wt, C:gC/wt, D:gD/wt, BK:gBK/wt,
+  };
 }
+function applyActual(){
+  if(!ACTUAL) return;
+  if(!isNaN(ACTUAL.yield)&&ACTUAL.yield>0) FG=ACTUAL.yield;
+  sA.value=Math.round(ACTUAL.A);
+  sB.value=Math.round(ACTUAL.B);
+  AK=Math.round(ACTUAL.rawKg);   // ปริมาณดิบจริงสะสม → ใช้ในส่วน Scenario
+  up();
+}
+window.applyActual=applyActual;
 async function loadActual(){
   if(!AZURE_FUNC_URL || AZURE_FUNC_URL.includes("YOUR-FUNC-APP")){
-    setBadge(`📌 actual (ค่าสำรอง): ซื้อแล้ว ${fmt(AK,0)}kg @ ${fmt(AC/AK)}฿ — ยังไม่ได้ตั้งค่า Azure Function`,"warn");
+    setBadge(`📌 ผลผลิตจริง: ยังไม่ได้ตั้งค่า Azure Function (ใช้ค่าสมมติฐาน)`,"warn");
     return;
   }
   try{
@@ -656,15 +685,17 @@ async function loadActual(){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const j=await res.json();
     const p=parseActual(j.values);
-    if(!p) throw new Error("ไม่พบคอลัมน์ปริมาณในชีท "+ACTUAL_SHEET);
-    AK=Math.round(p.kg);
-    if(!isNaN(p.cost)) AC=Math.round(p.cost);
-    up();
+    if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
+    ACTUAL=p;
     const when=j.updatedAt?new Date(j.updatedAt).toLocaleString("th-TH"):"";
-    const costNote=isNaN(p.cost)?" (ไม่พบคอลัมน์มูลค่า — ใช้ต้นทุนสำรอง)":"";
-    setBadge(`✅ actual (live): ซื้อแล้ว <strong>${fmt(AK,0)}kg</strong> @ <strong>${fmt(AC/AK)}฿</strong> — ${p.rows} แถว · ที่มา ${ACTUAL_SHEET}${when?` · อัปเดต ${when}`:""}${costNote}`,"ok");
+    setBadge(
+      `📊 <strong>ผลผลิตจริง</strong> (${ACTUAL_SHEET}, ${p.rows} ล็อต${when?` · อัปเดต ${when}`:""}) — `+
+      `ดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong> · `+
+      `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}% `+
+      `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
+      "ok");
   }catch(e){
-    setBadge(`⚠️ actual (ค่าสำรอง): ซื้อแล้ว ${fmt(AK,0)}kg @ ${fmt(AC/AK)}฿ — โหลด live ไม่สำเร็จ (${e.message})`,"err");
+    setBadge(`⚠️ ผลผลิตจริง: โหลด live ไม่สำเร็จ (${e.message}) — ใช้ค่าสมมติฐาน`,"err");
   }
 }
 loadActual();
