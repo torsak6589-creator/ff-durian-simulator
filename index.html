@@ -309,7 +309,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <!-- ===== SCENARIO ===== -->
 <div class="card">
   <div class="stitle">🔮 Scenario Analysis</div>
-  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15)">⏳ กำลังโหลดผลผลิตจริง (actual) จากชีท %A DURIAN…</div>
+  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15)">⏳ กำลังโหลดผลผลิตจริง (actual) จากชีท %A DURAIN…</div>
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
 </div>
@@ -681,7 +681,7 @@ const SP = {
   itemId  :"015324WXPDOOQEKDGMYNCJEIE64EYHHBDD",
   scopes  :["Files.Read.All","Sites.Read.All","User.Read"],
 };
-const ACTUAL_SHEET = "%A DRUAIN";
+const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
 
 const badge = $("actBadge");
@@ -775,7 +775,7 @@ window.applyActual=applyActual;
 let msalApp=null;
 const btnStyle="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#3498DB;color:#fff;font-weight:700;font-size:.6rem;cursor:pointer";
 function showConnect(msg){
-  setBadge(`${msg||"🔐 ดึงผลผลิตจริงจากชีท %A DURIAN"} <button onclick="connectActual()" style="${btnStyle}">เชื่อมต่อ Microsoft 365</button>`,"warn");
+  setBadge(`${msg||"🔐 ดึงผลผลิตจริงจากชีท %A DURAIN"} <button onclick="connectActual()" style="${btnStyle}">เชื่อมต่อ Microsoft 365</button>`,"warn");
 }
 function showOk(p, rm){
   ACTUAL=p; ACTUAL_RM=rm||null;
@@ -854,8 +854,8 @@ async function doFetch(interactive){
   try{
     const token=await getToken(interactive);
     if(!token){ showConnect(); return; }
-    setBadge("🔄 กำลังอ่านชีท %A DRUAIN…");
-    const p=parseActual(await graphValues(token, ACTUAL_SHEET, /dru?ain|durian/));
+    setBadge("🔄 กำลังอ่านชีท "+ACTUAL_SHEET+"…");
+    const p=parseActual(await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/));
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
     // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
     let rm=null;
