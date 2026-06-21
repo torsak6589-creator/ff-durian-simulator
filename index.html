@@ -792,12 +792,34 @@ function showOk(p, rm){
     `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
     "ok");
 }
+// มือถือ/แท็บเล็ตมักบล็อก popup (MSAL จะ throw block_nested_popups) → ใช้ redirect แทน
+const IS_MOBILE=/Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile|Silk/i.test(navigator.userAgent);
+const REDIRECT_ERR=/popup_window_error|empty_window_error|block_nested_popups|user_cancelled|popup_window_timeout/;
 async function getToken(interactive){
   const accts=msalApp.getAllAccounts();
   if(accts.length){
     try{ return (await msalApp.acquireTokenSilent({scopes:SP.scopes,account:accts[0]})).accessToken; }catch(e){}
   }
-  if(interactive){ return (await msalApp.acquireTokenPopup({scopes:SP.scopes,prompt:"select_account"})).accessToken; }
+  if(interactive){
+    const req={scopes:SP.scopes,prompt:"select_account"};
+    // บนมือถือ → ใช้ redirect ตรง ๆ (popup ใช้ไม่ได้)
+    if(IS_MOBILE){
+      setBadge("🔄 กำลังพาไปหน้าล็อกอิน Microsoft 365…");
+      await msalApp.acquireTokenRedirect(req); // เพจจะ navigate ออกไป — promise นี้จะไม่ resolve
+      return null;
+    }
+    // เดสก์ท็อป → ลอง popup ก่อน ถ้าโดนบล็อกค่อย fallback ไป redirect
+    try{
+      return (await msalApp.acquireTokenPopup(req)).accessToken;
+    }catch(e){
+      if(REDIRECT_ERR.test(e.errorCode||"")){
+        setBadge("🔄 popup ถูกบล็อก — กำลังพาไปหน้าล็อกอิน Microsoft 365…");
+        await msalApp.acquireTokenRedirect(req);
+        return null;
+      }
+      throw e;
+    }
+  }
   return null;
 }
 async function graphValues(token, sheet, matchRe){
