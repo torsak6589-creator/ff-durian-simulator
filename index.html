@@ -1084,58 +1084,81 @@ function addDays(d, n){
 /* ── Parse ราคาทุเรียน → Map<dateKey, {kg,value,avg}> ── */
 function parseRMDaily(values){
   if(!Array.isArray(values)||!values.length) return null;
-  // Find header row: must have date col + kg col + value col
+  // Find header row: look for date + kg + price/value columns
   let hi=-1;
   for(let i=0;i<Math.min(values.length,15);i++){
     const r=(values[i]||[]).map(c=>String(c||'').toLowerCase());
-    const hasKg  = r.some(h=>/\(kg\)|\(กก\)|kg/.test(h));
-    const hasVal = r.some(h=>h.includes('มูลค่า')||h.includes('เป็นเงิน')||h.includes('รวมเงิน')||h.includes('value'));
-    const hasDate= r.some(h=>h.includes('วัน')||h.includes('date')||h.includes('ว/ด/ป')||h===''||/^\d+/.test(h));
-    if(hasKg && hasVal){ hi=i; break; }
+    const hasKg    = r.some(h=>/\(kg\)|\(กก\)|kg/.test(h));
+    const hasPrice = r.some(h=>h.includes('ราคา')||h.includes('price')||h.includes('มูลค่า')||h.includes('เป็นเงิน'));
+    if(hasKg && hasPrice){ hi=i; break; }
   }
-  if(hi<0){
-    // Fallback: assume first row is header
-    hi=0;
-  }
+  if(hi<0) hi=0;
+
   const hdr=(values[hi]||[]).map(h=>String(h||'').trim().toLowerCase());
-  // Find columns
-  const dateCol = hdr.findIndex(h=>h.includes('วัน')||h.includes('date')||h===''&&hi===0) >= 0
-    ? hdr.findIndex(h=>h.includes('วัน')||h.includes('date'))
-    : 0;
+
+  // Date column: first col with วัน/date/ว/ด/ป, else col 0
+  const dateCol = (() => {
+    const i = hdr.findIndex(h=>h.includes('วัน')||h.includes('date')||h.includes('ว/ด/ป'));
+    return i>=0 ? i : 0;
+  })();
+
+  // kg columns: headers with (kg)/(กก) excluding รวม/total
   const kgCols = [];
-  let valCol=-1;
+  hdr.forEach((h,idx)=>{ if(/\(kg\)|\(กก\)|kg/.test(h) && !/รวม|total/.test(h)) kgCols.push(idx); });
+
+  // Price column priority:
+  //   1. ราคา/kg, ราคาซื้อ/kg, price/kg  — direct per-kg price
+  //   2. ราคาเฉลี่ย, avg price            — daily average price (already per-kg)
+  //   3. ราคา, ราคาซื้อ                  — price column
+  // Value column (for fallback avg computation):
+  //   มูลค่า, เป็นเงิน, รวมเงิน, value
+  let priceCol=-1, valCol=-1;
+  // Pass 1: exact per-kg price column
   hdr.forEach((h,idx)=>{
-    if(/\(kg\)|\(กก\)|kg/.test(h) && !/รวม|total/.test(h)) kgCols.push(idx);
-    if(valCol<0 && (h.includes('มูลค่า')||h.includes('เป็นเงิน')||h.includes('รวมเงิน')||h.includes('value'))) valCol=idx;
+    if(priceCol<0 && (/ราคา.*\/.*kg|ราคาซื้อ.*\/.*kg|price.*\/.*kg/i.test(h) || /ราคาเฉลี่ย|avg.?price|ราคา.?เฉลี่ย/.test(h))) priceCol=idx;
   });
-  // Also try price column if no value
-  let priceCol=-1;
-  if(valCol<0){
-    priceCol = hdr.findIndex(h=>h.includes('ราคา')||h.includes('price'));
-  }
+  // Pass 2: any ราคา/price column
+  if(priceCol<0) hdr.forEach((h,idx)=>{ if(priceCol<0 && (h.includes('ราคา')||h.includes('price')) && !/รวม|total/.test(h)) priceCol=idx; });
+  // Pass 3: value column as fallback
+  hdr.forEach((h,idx)=>{ if(valCol<0 && (h.includes('มูลค่า')||h.includes('เป็นเงิน')||h.includes('รวมเงิน')||h.includes('value'))) valCol=idx; });
+
   const map = new Map();
   for(let i=hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
-    const rawDate = r[dateCol>=0?dateCol:0];
+    const rawDate = r[dateCol];
     if(rawDate===null||rawDate===undefined||rawDate==='') continue;
     const label=String(r[0]||'').toLowerCase();
     if(label.includes('รวม')||label.includes('total')) continue;
     const d = excelToDate(rawDate);
     const k = dateKey(d);
     if(!k) continue;
+
+    // Total kg bought this row
     let kg=0; kgCols.forEach(c=>{const n=aNum(r[c]); if(!isNaN(n)&&n>0) kg+=n;});
-    // If no kg cols found, try col 1
     if(kg<=0 && kgCols.length===0){ const n=aNum(r[1]); if(!isNaN(n)&&n>0) kg=n; }
     if(kg<=0) continue;
-    let value=0;
-    if(valCol>=0){ value=aNum(r[valCol])||0; }
-    else if(priceCol>=0){ value=kg*(aNum(r[priceCol])||0); }
-    const prev=map.get(k)||{kg:0,value:0};
-    map.set(k,{kg:prev.kg+kg, value:prev.value+value, avg:0});
+
+    // Actual purchase price (฿/kg) — read directly from price column
+    let price=0;
+    if(priceCol>=0){
+      const p=aNum(r[priceCol]);
+      if(!isNaN(p)&&p>0) price=p;
+    }
+    // Fallback: compute from value÷kg only when no price column found
+    if(price<=0 && valCol>=0){
+      const v=aNum(r[valCol]);
+      if(!isNaN(v)&&v>0) price=v/kg;
+    }
+
+    // Accumulate: weighted by kg so multi-lot days get correct weighted price
+    const prev=map.get(k)||{kg:0,wPrice:0};
+    map.set(k,{kg:prev.kg+kg, wPrice:prev.wPrice+price*kg});
   }
-  // Compute avg per day
-  map.forEach((v,k)=>{ v.avg = v.value>0 ? v.value/v.kg : 0; });
-  return map.size>0 ? map : null;
+
+  // Finalise: price = total(price×kg) / total_kg  (= actual price when one row/day; weighted avg for multi-lot days)
+  const result=new Map();
+  map.forEach((v,k)=>{ if(v.kg>0) result.set(k,{kg:v.kg, price:v.wPrice/v.kg}); });
+  return result.size>0 ? result : null;
 }
 
 /* ── Parse %A DURAIN → Map<dateKey, {fg,A,B,C,D,BK,lots}> ── */
@@ -1210,8 +1233,8 @@ function renderDailyPL(fromDate, toDate){
     const lagDate=addDays(d,-PL_CFG.lag);
     const lagKey =dateKey(lagDate);
     const rmRec  = PL_RM_MAP ? PL_RM_MAP.get(lagKey) : null;
-    const price  = (rmRec && rmRec.avg>0) ? rmRec.avg : FB;
-    const isFb   = !rmRec || rmRec.avg<=0;
+    const price  = (rmRec && rmRec.price>0) ? rmRec.price : FB;
+    const isFb   = !rmRec || rmRec.price<=0;
     const {fg,A,B,C,D,BK,lots}=act;
     const rev = fg*(A/100*SELL.A + B/100*SELL.B + C/100*SELL.C + D/100*SELL.D + BK/100*SELL.BK);
     const rmCost = fg*price/(1-LOSS);
@@ -1269,7 +1292,7 @@ function renderDailyPL(fromDate, toDate){
   ttr.className='pl-total';
   ttr.innerHTML=`
     <td>รวม ${rows.length} วัน</td>
-    <td class="td-mt">avg ${fmtN(T.rmCost*(1-LOSS)/T.fg,2)}</td>
+    <td class="td-mt">฿/kg avg</td>
     <td>${fmtN(T.fg,0)}</td>
     <td>—</td>
     <td class="td-gr">${fmtN(T.rev)}</td>
