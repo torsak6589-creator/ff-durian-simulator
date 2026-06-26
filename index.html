@@ -1623,20 +1623,36 @@ function parseProcurement(values){
   if(!Array.isArray(values)||!values.length) return null;
   // Find header row
   let hi=-1;
-  for(let i=0;i<Math.min(values.length,15);i++){
-    const r=(values[i]||[]).map(c=>String(c||'').toLowerCase());
-    if(r.some(h=>h.includes('วัน')||h.includes('date'))&&r.some(h=>/kg|กก|ปริมาณ|น้ำหนัก/.test(h))){hi=i;break;}
+  for(let i=0;i<Math.min(values.length,20);i++){
+    const r=(values[i]||[]).map(c=>String(c||'').trim());
+    const rl=r.map(c=>c.toLowerCase());
+    const hasDate=rl.some(h=>h.includes('วัน')||h.includes('date'));
+    const hasKg=rl.some(h=>/kg|กก|ปริมาณ|น้ำหนัก/.test(h));
+    const numericGrades=r.filter(h=>/^\d{1,2}(\.\d+)?$/.test(h)).length>=2;
+    if(hasDate&&(hasKg||numericGrades)){hi=i;break;}
   }
   if(hi<0) hi=0;
   const hdr=(values[hi]||[]).map(h=>String(h||'').trim());
   const hdrL=hdr.map(h=>h.toLowerCase());
 
-  const dateCol=hdrL.findIndex(h=>h.includes('วัน')||h.includes('date'))||0;
+  let dateCol=hdrL.findIndex(h=>h.includes('วัน')||h.includes('date'));
+  if(dateCol<0) dateCol=0;
   // Find all kg columns, value columns, price columns
   const cols=hdr.map((h,i)=>({i,h,hl:hdrL[i]}));
-  const kgCols=cols.filter(c=>/\(kg\)|\(กก\)|kg/i.test(c.h)&&!/รวม|total/.test(c.hl));
-  const valCol=cols.find(c=>c.hl.includes('มูลค่า')||c.hl.includes('เป็นเงิน')||c.hl.includes('รวมเงิน'));
+  const valCol=cols.find(c=>c.hl.includes('มูลค่า')||c.hl.includes('เป็นเงิน')||c.hl.includes('รวมเงิน')||c.hl.includes('ยอดซื้อ'));
   const priceCol=cols.find(c=>c.hl.includes('ราคาเฉลี่ย')||c.hl.includes('ราคา/kg')||(c.hl.includes('ราคา')&&!/รวม/.test(c.hl)));
+  // Grade columns: explicit (kg) headers OR numeric grade numbers (เบอร์ 1,2,3,...).
+  // Exclude date/total/price/value columns.
+  const isGradeHdr=(c)=>{
+    if(c.i===dateCol) return false;
+    if(valCol&&c.i===valCol.i) return false;
+    if(priceCol&&c.i===priceCol.i) return false;
+    if(/รวม|total|ราคา|มูลค่า|เงิน|วันที่|date/.test(c.hl)) return false;
+    if(/\(kg\)|\(กก\)|kg|กก\./i.test(c.h)) return true;
+    if(/^\s*(เบอร์\s*)?\d{1,2}(\.\d+)?\s*$/.test(c.h)) return true; // numeric grade
+    return false;
+  };
+  let kgCols=cols.filter(isGradeHdr);
 
   const rows=[];
   for(let i=hi+1;i<values.length;i++){
@@ -1651,7 +1667,10 @@ function parseProcurement(values){
     const val=valCol?aNum(r[valCol.i]):NaN;
     const price=priceCol?aNum(r[priceCol.i]):NaN;
     const gradeKg=kgCols.map(c=>{const n=aNum(r[c.i]);return(!isNaN(n)&&n>0)?n:0;});
-    const gradeLabels=kgCols.map(c=>c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim());
+    const gradeLabels=kgCols.map(c=>{
+      const lbl=c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim();
+      return /^\d{1,2}(\.\d+)?$/.test(lbl)?('เบอร์ '+lbl):lbl;
+    });
     rows.push({
       k, date:d, totalKg,
       value:(!isNaN(val)&&val>0)?val:0,
@@ -1767,7 +1786,7 @@ async function initPurchase(){
     let list=(await wl.json()).value||[];
     // Skip obvious non-data sheets; prioritise likely purchase sheets
     const skipRe=/log|dashboard|readme|instruction|setting|config|pivot|chart/i;
-    const preferRe=/purchase|procure|ซื้อ|รายการ|daily|รายวัน|master|data/i;
+    const preferRe=/สรุปรวมประจำวัน|ประจำวัน|รายวัน|purchase|procure|ซื้อ|รายการ|daily|master|data/i;
     list=list.filter(w=>!skipRe.test(w.name))
              .sort((a,b)=>(preferRe.test(b.name)?1:0)-(preferRe.test(a.name)?1:0));
     PC_DATA=null; let bestN=0, sheetTried=[];
