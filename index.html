@@ -1530,6 +1530,58 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         <div style="color:var(--tm);font-size:.67rem">Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}% &nbsp;|&nbsp; ${tp?'+':''}${fmtN(T.fg>0?T.pl/T.fg:0,1)} ฿/kg FG</div>
       </div>
     </div>
+  </div>
+
+  <!-- ตารางรายการซื้อรายวัน -->
+  <div style="margin-top:14px">
+    <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:8px">🛒 รายการซื้อวัตถุดิบรายวัน</div>
+    <div style="overflow-x:auto">
+      <table class="pl-tbl" style="min-width:750px;font-size:.71rem">
+        <thead><tr>
+          <th style="text-align:left;min-width:70px">วันที่ซื้อ</th>
+          <th>รวม (kg)</th>
+          <th class="th-gold">ราคา<br>฿/kg</th>
+          ${RM_LABELS.map(lb=>`<th style="font-size:.64rem">${lb}</th>`).join('')}
+        </tr></thead>
+        <tbody id="rptRmTbody">
+        ${(()=>{
+          if(!PL_RM_MAP) return '<tr><td colspan="10" style="color:var(--tm);text-align:center">ไม่มีข้อมูล</td></tr>';
+          // collect purchase keys in range (minD-lag to maxD-lag)
+          const buyMin=dateKey(addDays(minD,-PL_CFG.lag));
+          const buyMax=dateKey(addDays(maxD,-PL_CFG.lag));
+          const buyKeys=[...PL_RM_MAP.keys()].filter(k=>k>=buyMin&&k<=buyMax).sort();
+          let totalKg=0,totalVal=0;
+          const gradeTotal=new Array(7).fill(0);
+          const trs=buyKeys.map(k=>{
+            const rec=PL_RM_MAP.get(k);
+            if(!rec||rec.kg<=0) return '';
+            totalKg+=rec.kg; totalVal+=rec.kg*rec.price;
+            const gCells=RM_LABELS.map((_,i)=>{
+              const gk=rec.gradeKg&&rec.gradeKg[i]>0?rec.gradeKg[i]:0;
+              const gp=rec.gradePct&&rec.gradePct[i]>0?rec.gradePct[i]:0;
+              gradeTotal[i]+=gk;
+              return `<td style="text-align:right;color:var(--tm)">${gp>0?gp+'%':'—'}</td>`;
+            }).join('');
+            return `<tr>
+              <td>${dateFmtS(new Date(k))}</td>
+              <td class="td-bl">${fmtN(rec.kg,0)}</td>
+              <td class="${rec.price>0?'td-gold':'td-fb'}">${rec.price>0?fmtN(rec.price,2):'—'}</td>
+              ${gCells}
+            </tr>`;
+          }).join('');
+          const avgP=totalKg>0?totalVal/totalKg:0;
+          const gTotalSum=gradeTotal.reduce((s,v)=>s+v,0)||1;
+          const tfoot=`<tr class="pl-total">
+            <td>รวม ${buyKeys.length} วัน</td>
+            <td class="td-bl">${fmtN(totalKg,0)}</td>
+            <td class="td-mt">${avgP>0?fmtN(avgP,2):'—'}</td>
+            ${gradeTotal.map(g=>`<td style="text-align:right;color:var(--tm);font-size:.65rem">${g>0?Math.round(g/gTotalSum*100)+'%':'—'}</td>`).join('')}
+          </tr>`;
+          return trs+tfoot;
+        })()}
+        </tbody>
+      </table>
+    </div>
   </div>`;
 
   el.style.display='';
