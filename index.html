@@ -9,6 +9,53 @@
 :root{--nv:#0D1B2E;--nm:#132840;--nl:#1A3352;--g:#C8982A;--gl:#E5B84B;--gd:rgba(200,152,42,0.15);--w:#F5F0E8;--t:#D4CBB8;--tm:#8A8070;--gr:#2ECC71;--rd:#E74C3C;--or:#F39C12;--bl:#3498DB;--cy:#1ABC9C}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t);min-height:100vh;padding:16px 12px 60px}
+/* ── Tab nav ── */
+.tab-nav{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(200,152,42,.18);padding-bottom:0}
+.tab-btn{padding:7px 18px;font-size:.74rem;font-weight:600;color:var(--tm);border:none;background:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-family:'Noto Sans Thai',sans-serif;transition:color .15s}
+.tab-btn.active{color:var(--gl);border-bottom-color:var(--gl)}
+.tab-btn:hover{color:var(--t)}
+/* ── Daily P&L styles ── */
+.pl-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:rgba(200,152,42,.05);border:1px solid rgba(200,152,42,.12);border-radius:8px}
+.pl-filter label{font-size:.66rem;color:var(--tm);font-weight:600}
+.pl-date{background:var(--nv);border:1px solid rgba(200,152,42,.22);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:.7rem;padding:4px 8px;outline:none}
+.pl-date:focus{border-color:var(--gl)}
+.pl-qbtn{background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
+.pl-apply{background:var(--g);color:#0D1B2E;border:none;border-radius:6px;font-weight:700;font-size:.7rem;padding:4px 13px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
+.pl-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:700px){.pl-kpi-row{grid-template-columns:1fr 1fr}}
+.pl-kpi{background:var(--nl);border:1px solid rgba(200,152,42,.1);border-radius:9px;padding:11px 13px}
+.pl-kpi.pos{border-color:rgba(46,204,113,.22);background:rgba(46,204,113,.04)}
+.pl-kpi.neg{border-color:rgba(231,76,60,.2);background:rgba(231,76,60,.04)}
+.pl-kpi-label{font-size:.57rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.pl-kpi-val{font-family:'DM Mono',monospace;font-size:1.22rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--w);line-height:1}
+.pl-kpi-sub{font-family:'DM Mono',monospace;font-size:.57rem;color:var(--tm);margin-top:3px}
+.pl-lag-note{background:rgba(26,188,156,.06);border:1px solid rgba(26,188,156,.18);border-radius:7px;padding:8px 12px;font-size:.62rem;color:#80E8D5;line-height:1.7;margin-bottom:12px}
+.pl-legend{display:flex;align-items:center;gap:6px;font-size:.59rem;color:var(--tm);margin-bottom:7px}
+.pl-legend-box{width:10px;height:10px;border-radius:2px;background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.32);flex-shrink:0}
+.pl-tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(200,152,42,.12)}
+.pl-tbl{width:100%;border-collapse:collapse;font-size:.69rem;min-width:920px}
+.pl-tbl thead{background:var(--nl)}
+.pl-tbl th{padding:8px 9px;text-align:right;font-weight:700;font-size:.58rem;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid rgba(200,152,42,.14)}
+.pl-tbl th:first-child{text-align:left}
+.pl-tbl th.th-gold{color:var(--gl)}.pl-tbl th.th-gr{color:#2ECC71}.pl-tbl th.th-or{color:var(--or)}.pl-tbl th.th-bl{color:#3498DB}
+.pl-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+.pl-tbl tbody tr:hover{background:rgba(255,255,255,.025)}
+.pl-tbl td{padding:7px 9px;text-align:right;font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums;font-size:.69rem;color:var(--t);white-space:nowrap}
+.pl-tbl td:first-child{text-align:left;font-family:'Noto Sans Thai',sans-serif;font-size:.69rem;color:var(--w)}
+.pl-tbl td.td-gold{color:var(--gl)}.pl-tbl td.td-gr{color:#2ECC71;font-weight:500}.pl-tbl td.td-rd{color:#E74C3C;font-weight:500}.pl-tbl td.td-or{color:var(--or)}.pl-tbl td.td-mt{color:var(--tm)}
+.pl-tbl td.td-fb{color:var(--or);background:rgba(243,156,18,.07);border-left:2px solid rgba(243,156,18,.28)}
+.pl-tbl tr.pl-total{background:rgba(200,152,42,.07)!important;border-top:1px solid rgba(200,152,42,.18)!important}
+.pl-tbl tr.pl-total td{font-weight:700;color:var(--w)}
+.pl-bar-wrap{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.pl-bar-bg{height:4px;border-radius:3px;background:rgba(255,255,255,.07);width:48px;flex-shrink:0;overflow:hidden}
+.pl-bar-fill{height:100%;border-radius:3px}
+.pl-bar-fill.pos{background:#2ECC71}.pl-bar-fill.neg{background:#E74C3C}
+.pl-gc{display:inline-block;font-family:'DM Mono',monospace;font-size:.51rem;font-weight:700;padding:1px 3px;border-radius:3px;margin:0 1px}
+.pl-gc-a{background:rgba(46,204,113,.14);color:#2ECC71;border:1px solid rgba(46,204,113,.22)}
+.pl-gc-b{background:rgba(52,152,219,.14);color:#3498DB;border:1px solid rgba(52,152,219,.22)}
+.pl-gc-c{background:rgba(243,156,18,.14);color:var(--or);border:1px solid rgba(243,156,18,.22)}
+.pl-gc-d{background:rgba(231,76,60,.12);color:#E74C3C;border:1px solid rgba(231,76,60,.2)}
+.pl-gc-bk{background:rgba(138,128,112,.15);color:var(--tm);border:1px solid rgba(138,128,112,.2)}
 .pg{max-width:1060px;margin:0 auto}
 .mn{font-family:'DM Mono',monospace}
 .card{background:var(--nm);border:1px solid rgba(200,152,42,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
@@ -185,6 +232,13 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </div>
 </div>
 
+<!-- ===== TAB NAV ===== -->
+<div class="tab-nav">
+  <button class="tab-btn active" id="tab-sim" onclick="showTab('sim')">🎚️ Simulator</button>
+  <button class="tab-btn" id="tab-pl" onclick="showTab('pl')">📅 P&amp;L รายวัน</button>
+</div>
+
+<div id="panel-sim">
 <!-- ===== EQUALIZER PANEL ===== -->
 <div class="card hi">
   <div class="stitle">🎚️ ตั้งค่าตัวแปร</div>
@@ -313,6 +367,94 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
 </div>
+
+</div><!-- /panel-sim -->
+
+<!-- ===== DAILY P&L PANEL ===== -->
+<div id="panel-pl" style="display:none">
+<div class="card hi">
+  <div class="stitle">📅 สรุปผลประกอบการรายวัน <span style="font-size:.65rem;font-weight:400;color:var(--tm)">(สมมติฐาน Lag 8 วัน)</span></div>
+
+  <!-- filter -->
+  <div class="pl-filter">
+    <label>📅 วันผลิต</label>
+    <input class="pl-date" type="date" id="plDateFrom">
+    <span style="color:var(--tm);font-size:.8rem">→</span>
+    <input class="pl-date" type="date" id="plDateTo">
+    <button class="pl-apply" onclick="runDailyPL()">ดูผล</button>
+    <div style="display:flex;gap:5px">
+      <button class="pl-qbtn" onclick="setPlRange(7)">7 วัน</button>
+      <button class="pl-qbtn" onclick="setPlRange(14)">14 วัน</button>
+      <button class="pl-qbtn" onclick="setPlRange(30)">30 วัน</button>
+      <button class="pl-qbtn" onclick="setPlRange(0)">ทั้งหมด</button>
+    </div>
+    <div id="plSrcBadge" style="margin-left:auto;font-size:.58rem;color:var(--tm);background:rgba(200,152,42,.06);border:1px solid rgba(200,152,42,.15);border-radius:5px;padding:3px 8px">⏳ รอดึงข้อมูล…</div>
+  </div>
+
+  <!-- lag note -->
+  <div class="pl-lag-note">
+    <strong style="color:#1ABC9C">⏳ Lag 8 วัน:</strong>
+    FG ที่ผลิตวันที่ <strong>P</strong> → ใช้ราคาซื้อจากชีท <code style="font-family:'DM Mono',monospace;background:rgba(26,188,156,.1);border-radius:3px;padding:1px 5px;color:#1ABC9C">ราคาทุเรียน</code> วันที่ <strong>P − 8</strong> เป็นต้นทุน RM ·
+    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = FG_kg × price(P−8) ÷ (1 − Loss%)</code> ·
+    <span style="color:var(--or)">★ ช่องสีเหลือง</span> = ไม่พบราคาวัน (P−8) → ใช้ราคาเฉลี่ยทั้งฤดู <strong>58.38 ฿/kg</strong>
+  </div>
+
+  <!-- KPI -->
+  <div class="pl-kpi-row" id="plKpiRow" style="display:none">
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">ต้นทุน RM รวม</div>
+      <div class="pl-kpi-val td-gold" id="kplRM">—</div>
+      <div class="pl-kpi-sub" id="kplRMsub"></div>
+    </div>
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">ต้นทุนผลิต (52฿/kg FG)</div>
+      <div class="pl-kpi-val" id="kplMfg">—</div>
+      <div class="pl-kpi-sub" id="kplMfgSub"></div>
+    </div>
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">รายได้ FG รวม</div>
+      <div class="pl-kpi-val" id="kplRev">—</div>
+      <div class="pl-kpi-sub" id="kplRevSub"></div>
+    </div>
+    <div class="pl-kpi" id="kplCard">
+      <div class="pl-kpi-label">กำไร / ขาดทุน สุทธิ</div>
+      <div class="pl-kpi-val" id="kplPL">—</div>
+      <div class="pl-kpi-sub" id="kplPLsub"></div>
+    </div>
+  </div>
+
+  <!-- table -->
+  <div id="plTableWrap" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:.78rem;font-weight:700;color:var(--w)" id="plRangeLabel"></span>
+      <span style="font-family:'DM Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:10px;background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.2);color:var(--gl)" id="plDaysPill"></span>
+      <span id="plFbPill" style="font-family:'DM Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:10px;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.22);color:var(--or);display:none"></span>
+    </div>
+    <div class="pl-legend"><div class="pl-legend-box"></div>ช่องสีเหลือง (★) = ไม่พบราคาซื้อวันที่ (P−8) → ใช้ fallback 58.38 ฿/kg</div>
+    <div class="pl-tbl-wrap">
+      <table class="pl-tbl">
+        <thead>
+          <tr>
+            <th style="min-width:90px;text-align:left">วันผลิต</th>
+            <th class="th-bl" style="min-width:78px">ราคาซื้อ P−8<br><span style="font-weight:400;color:var(--tm)">฿/kg ดิบ</span></th>
+            <th>FG รวม<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
+            <th style="min-width:95px">สัดส่วนเกรด</th>
+            <th class="th-gr">รายได้<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+            <th class="th-gold">RM cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+            <th class="th-or">Mfg cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+            <th class="th-gr">P&amp;L<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+            <th class="th-gr" style="min-width:105px">P&amp;L / 100 kg FG</th>
+          </tr>
+        </thead>
+        <tbody id="plTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="plStatus" style="font-size:.7rem;color:var(--tm);padding:12px 0"></div>
+
+</div><!-- /card -->
+</div><!-- /panel-pl -->
 
 <!-- ===== คู่มือการใช้งาน ===== -->
 <div class="card hi" id="guide">
@@ -880,7 +1022,403 @@ function startActual(){
 }
 startActual();
 
-// Guide toggle arrow
+// ══════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════
+function showTab(name){
+  const isSim = name==='sim';
+  document.getElementById('panel-sim').style.display = isSim?'':'none';
+  document.getElementById('panel-pl').style.display  = isSim?'none':'';
+  document.getElementById('tab-sim').className = 'tab-btn'+(isSim?' active':'');
+  document.getElementById('tab-pl').className  = 'tab-btn'+(!isSim?' active':'');
+  if(!isSim && !PL_LOADED) initDailyPL();
+}
+window.showTab = showTab;
+
+// ══════════════════════════════════════════════
+// DAILY P&L — DATA & RENDER
+// ══════════════════════════════════════════════
+const PL_CFG = {
+  lag: 8,
+  sell: {A:320, B:225, C:135, BK:90, D:60},
+  mfg: 52,
+  loss: 0.15,
+  fallback: 58.38
+};
+
+let PL_LOADED = false;
+let PL_RM_MAP = null;    // Map<"YYYY-MM-DD", {kg,value,avg}>
+let PL_ACT_MAP = null;   // Map<"YYYY-MM-DD", {fg,A,B,C,D,BK,lots}>
+
+/* ── Excel serial date → JS Date ── */
+function excelToDate(serial){
+  if(typeof serial === 'number'){
+    const d = new Date(Date.UTC(1900,0,serial-2));
+    return d;
+  }
+  // Try parsing string date (Thai BE or CE)
+  const s = String(serial).trim();
+  // Match DD/MM/YYYY or DD/MM/YY
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m){
+    let y = parseInt(m[3]);
+    if(y > 2400) y -= 543; // BE → CE
+    else if(y < 100) y += (y > 50 ? 1900 : 2000);
+    return new Date(Date.UTC(y, parseInt(m[2])-1, parseInt(m[1])));
+  }
+  const d = new Date(s);
+  return isNaN(d)?null:d;
+}
+
+function dateKey(d){ // "YYYY-MM-DD"
+  if(!d||isNaN(d)) return null;
+  return d.toISOString().slice(0,10);
+}
+
+function addDays(d, n){
+  const r = new Date(d);
+  r.setUTCDate(r.getUTCDate()+n);
+  return r;
+}
+
+/* ── Parse ราคาทุเรียน → Map<dateKey, {kg,value,avg}> ── */
+function parseRMDaily(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  // Find header row: look for date + kg + price/value columns
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,15);i++){
+    const r=(values[i]||[]).map(c=>String(c||'').toLowerCase());
+    const hasKg    = r.some(h=>/\(kg\)|\(กก\)|kg/.test(h));
+    const hasPrice = r.some(h=>h.includes('ราคา')||h.includes('price')||h.includes('มูลค่า')||h.includes('เป็นเงิน'));
+    if(hasKg && hasPrice){ hi=i; break; }
+  }
+  if(hi<0) hi=0;
+
+  const hdr=(values[hi]||[]).map(h=>String(h||'').trim().toLowerCase());
+
+  // Date column: first col with วัน/date/ว/ด/ป, else col 0
+  const dateCol = (() => {
+    const i = hdr.findIndex(h=>h.includes('วัน')||h.includes('date')||h.includes('ว/ด/ป'));
+    return i>=0 ? i : 0;
+  })();
+
+  // kg columns: headers with (kg)/(กก) excluding รวม/total
+  const kgCols = [];
+  hdr.forEach((h,idx)=>{ if(/\(kg\)|\(กก\)|kg/.test(h) && !/รวม|total/.test(h)) kgCols.push(idx); });
+
+  // Price column priority:
+  //   1. ราคา/kg, ราคาซื้อ/kg, price/kg  — direct per-kg price
+  //   2. ราคาเฉลี่ย, avg price            — daily average price (already per-kg)
+  //   3. ราคา, ราคาซื้อ                  — price column
+  // Value column (for fallback avg computation):
+  //   มูลค่า, เป็นเงิน, รวมเงิน, value
+  let priceCol=-1, valCol=-1;
+  // Pass 1: exact per-kg price column
+  hdr.forEach((h,idx)=>{
+    if(priceCol<0 && (/ราคา.*\/.*kg|ราคาซื้อ.*\/.*kg|price.*\/.*kg/i.test(h) || /ราคาเฉลี่ย|avg.?price|ราคา.?เฉลี่ย/.test(h))) priceCol=idx;
+  });
+  // Pass 2: any ราคา/price column
+  if(priceCol<0) hdr.forEach((h,idx)=>{ if(priceCol<0 && (h.includes('ราคา')||h.includes('price')) && !/รวม|total/.test(h)) priceCol=idx; });
+  // Pass 3: value column as fallback
+  hdr.forEach((h,idx)=>{ if(valCol<0 && (h.includes('มูลค่า')||h.includes('เป็นเงิน')||h.includes('รวมเงิน')||h.includes('value'))) valCol=idx; });
+
+  const map = new Map();
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const rawDate = r[dateCol];
+    if(rawDate===null||rawDate===undefined||rawDate==='') continue;
+    const label=String(r[0]||'').toLowerCase();
+    if(label.includes('รวม')||label.includes('total')) continue;
+    const d = excelToDate(rawDate);
+    const k = dateKey(d);
+    if(!k) continue;
+
+    // Total kg bought this row
+    let kg=0; kgCols.forEach(c=>{const n=aNum(r[c]); if(!isNaN(n)&&n>0) kg+=n;});
+    if(kg<=0 && kgCols.length===0){ const n=aNum(r[1]); if(!isNaN(n)&&n>0) kg=n; }
+    if(kg<=0) continue;
+
+    // Actual purchase price (฿/kg) — read directly from price column
+    let price=0;
+    if(priceCol>=0){
+      const p=aNum(r[priceCol]);
+      if(!isNaN(p)&&p>0) price=p;
+    }
+    // Fallback: compute from value÷kg only when no price column found
+    if(price<=0 && valCol>=0){
+      const v=aNum(r[valCol]);
+      if(!isNaN(v)&&v>0) price=v/kg;
+    }
+
+    // Accumulate: weighted by kg so multi-lot days get correct weighted price
+    const prev=map.get(k)||{kg:0,wPrice:0};
+    map.set(k,{kg:prev.kg+kg, wPrice:prev.wPrice+price*kg});
+  }
+
+  // Finalise: price = total(price×kg) / total_kg  (= actual price when one row/day; weighted avg for multi-lot days)
+  const result=new Map();
+  map.forEach((v,k)=>{ if(v.kg>0) result.set(k,{kg:v.kg, price:v.wPrice/v.kg}); });
+  return result.size>0 ? result : null;
+}
+
+/* ── Parse %A DURAIN → Map<dateKey, {fg,A,B,C,D,BK,lots}> ── */
+function parseDailyActual(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,15);i++){
+    const row=(values[i]||[]).map(c=>String(c||'').replace(/\s/g,'').toLowerCase());
+    if(row.some(h=>h==='%a')){ hi=i; break; }
+  }
+  if(hi<0) return null;
+  const hdr=(values[hi]||[]).map(h=>String(h||'').trim().toLowerCase());
+  const norm=hdr.map(h=>h.replace(/\s/g,''));
+  const exact=k=>norm.findIndex(h=>h===k);
+  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
+  const cA=exact('%a'),cB=exact('%b'),cC=exact('%c'),cD=exact('%d'),cBK=exact('%bk');
+  const cFG=incl('ฟรีซ','fg','ส่งเข้าฟร','freeze');
+  // Date column
+  const cDate=incl('วัน','date','ว/ด/ป','ผลิต');
+  if(cA<0||cFG<0) return null;
+  const map=new Map();
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||'').toLowerCase();
+    if(label.includes('รวม')||label.includes('total')) continue;
+    const rawDate = cDate>=0 ? r[cDate] : r[0];
+    const d = excelToDate(rawDate);
+    const k = dateKey(d);
+    if(!k) continue;
+    const fg=aNum(r[cFG]); if(isNaN(fg)||fg<=0) continue;
+    const pA=aNum(r[cA])||0, pB=cB>=0?aNum(r[cB])||0:0;
+    const pC=cC>=0?aNum(r[cC])||0:0, pD=cD>=0?aNum(r[cD])||0:0;
+    const pBK=cBK>=0?aNum(r[cBK])||0:0;
+    const prev=map.get(k)||{fg:0,wA:0,wB:0,wC:0,wD:0,wBK:0,lots:0};
+    // Weighted accumulate
+    map.set(k,{
+      fg:prev.fg+fg,
+      wA:prev.wA+pA*fg, wB:prev.wB+pB*fg,
+      wC:prev.wC+pC*fg, wD:prev.wD+pD*fg, wBK:prev.wBK+pBK*fg,
+      lots:prev.lots+1
+    });
+  }
+  const result=new Map();
+  map.forEach((v,k)=>{
+    let A=v.wA/v.fg, B=v.wB/v.fg, C=v.wC/v.fg, D=v.wD/v.fg, BK=v.wBK/v.fg;
+    // Excel fraction (0-1) vs percent (0-100)
+    const sum=A+B+C+D+BK;
+    if(sum>0&&sum<=1.5){A*=100;B*=100;C*=100;D*=100;BK*=100;}
+    result.set(k,{fg:v.fg, A, B, C, D, BK, lots:v.lots});
+  });
+  return result.size>0 ? result : null;
+}
+
+/* ── Render P&L table ── */
+function renderDailyPL(fromDate, toDate){
+  const tbody=document.getElementById('plTbody');
+  tbody.innerHTML='';
+  if(!PL_ACT_MAP){
+    document.getElementById('plStatus').textContent='⚠️ ยังไม่มีข้อมูลผลผลิต กรุณาเชื่อมต่อ Microsoft 365 ก่อน';
+    return;
+  }
+  const SELL=PL_CFG.sell, MFG=PL_CFG.mfg, LOSS=PL_CFG.loss, FB=PL_CFG.fallback;
+  const from=fromDate?new Date(fromDate):null;
+  const to  =toDate  ?new Date(toDate  ):null;
+  // Collect + filter rows
+  let rows=[];
+  PL_ACT_MAP.forEach((act,k)=>{
+    const d=new Date(k);
+    if(from && d<from) return;
+    if(to   && d>to  ) return;
+    // Lag date
+    const lagDate=addDays(d,-PL_CFG.lag);
+    const lagKey =dateKey(lagDate);
+    const rmRec  = PL_RM_MAP ? PL_RM_MAP.get(lagKey) : null;
+    const price  = (rmRec && rmRec.price>0) ? rmRec.price : FB;
+    const isFb   = !rmRec || rmRec.price<=0;
+    const {fg,A,B,C,D,BK,lots}=act;
+    const rev = fg*(A/100*SELL.A + B/100*SELL.B + C/100*SELL.C + D/100*SELL.D + BK/100*SELL.BK);
+    const rmCost = fg*price/(1-LOSS);
+    const mfg    = fg*MFG;
+    const pl     = rev-rmCost-mfg;
+    const pl100  = fg>0?pl/fg*100:0;
+    rows.push({k,d,price,isFb,fg,A,B,C,D,BK,lots,rev,rmCost,mfg,pl,pl100});
+  });
+  rows.sort((a,b)=>a.k.localeCompare(b.k));
+  if(!rows.length){
+    document.getElementById('plStatus').textContent='ไม่พบข้อมูลในช่วงวันที่เลือก';
+    document.getElementById('plTableWrap').style.display='none';
+    document.getElementById('plKpiRow').style.display='none';
+    return;
+  }
+  const maxAbs=Math.max(...rows.map(r=>Math.abs(r.pl)));
+  const T=rows.reduce((a,r)=>({fg:a.fg+r.fg,rev:a.rev+r.rev,rmCost:a.rmCost+r.rmCost,mfg:a.mfg+r.mfg,pl:a.pl+r.pl}),{fg:0,rev:0,rmCost:0,mfg:0,pl:0});
+  const fmtN=(n,d=0)=>n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':(n/1e3).toFixed(0)+'K');
+  const dateFmt=d=>{
+    try{ return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',timeZone:'UTC'}); }catch(e){return d.toISOString().slice(0,10);}
+  };
+
+  rows.forEach(r=>{
+    const pos=r.pl>=0;
+    const bw=maxAbs>0?Math.round(Math.abs(r.pl)/maxAbs*48):0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${dateFmt(r.d)}</td>
+      <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
+      <td>${fmtN(r.fg,0)}</td>
+      <td>
+        <span class="pl-gc pl-gc-a">A${fmtN(r.A,1)}%</span>
+        <span class="pl-gc pl-gc-b">B${fmtN(r.B,1)}%</span>
+        <span class="pl-gc pl-gc-c">C${fmtN(r.C,1)}%</span>
+        <span class="pl-gc pl-gc-d">D${fmtN(r.D,1)}%</span>
+        <span class="pl-gc pl-gc-bk">BK${fmtN(r.BK,1)}%</span>
+      </td>
+      <td class="td-gr">${fmtN(r.rev)}</td>
+      <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.rmCost)}</td>
+      <td class="td-or">${fmtN(r.mfg)}</td>
+      <td class="${pos?'td-gr':'td-rd'}">${pos?'+':''}${fmtN(r.pl)}</td>
+      <td>
+        <div class="pl-bar-wrap">
+          <span class="${pos?'td-gr':'td-rd'}">${pos?'+':''}${fmtN(r.pl100,0)}</span>
+          <div class="pl-bar-bg"><div class="pl-bar-fill ${pos?'pos':'neg'}" style="width:${bw}px"></div></div>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Total row
+  const tp=T.pl>=0;
+  const ttr=document.createElement('tr');
+  ttr.className='pl-total';
+  ttr.innerHTML=`
+    <td>รวม ${rows.length} วัน</td>
+    <td class="td-mt">฿/kg avg</td>
+    <td>${fmtN(T.fg,0)}</td>
+    <td>—</td>
+    <td class="td-gr">${fmtN(T.rev)}</td>
+    <td class="td-gold">${fmtN(T.rmCost)}</td>
+    <td class="td-or">${fmtN(T.mfg)}</td>
+    <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(T.pl)}</td>
+    <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(T.pl/T.fg*100,0)}</td>`;
+  tbody.appendChild(ttr);
+
+  // KPI
+  const fbCount=rows.filter(r=>r.isFb).length;
+  document.getElementById('kplRM').textContent=fmtM(T.rmCost);
+  document.getElementById('kplRM').style.color=tp?'var(--gl)':'var(--rd)';
+  document.getElementById('kplRMsub').textContent=`gross-up ÷${(1-LOSS)} | avg ${fmtN(T.rmCost/T.fg,1)} ฿/kg FG`;
+  document.getElementById('kplMfg').textContent=fmtM(T.mfg);
+  document.getElementById('kplMfgSub').textContent=`FG รวม ${fmtN(T.fg,0)} kg`;
+  document.getElementById('kplRev').textContent=fmtM(T.rev);
+  document.getElementById('kplRevSub').textContent=`เฉลี่ย ${fmtN(T.rev/T.fg,1)} ฿/kg FG`;
+  document.getElementById('kplPL').textContent=(tp?'+':'')+fmtM(T.pl);
+  document.getElementById('kplPL').style.color=tp?'#2ECC71':'#E74C3C';
+  document.getElementById('kplCard').className='pl-kpi '+(tp?'pos':'neg');
+  document.getElementById('kplPLsub').textContent=`Margin ${fmtN(T.pl/T.rev*100,1)}% | ${fmtN(T.pl/T.fg*100,0)} ฿/100kg FG`;
+  document.getElementById('plKpiRow').style.display='';
+
+  // Pills & range
+  const allDates=rows.map(r=>r.d);
+  const minD=allDates[0], maxD=allDates[allDates.length-1];
+  const dateFmtShort=d=>d.toLocaleDateString('th-TH',{day:'numeric',month:'short',timeZone:'UTC'});
+  document.getElementById('plRangeLabel').textContent=dateFmtShort(minD)+' – '+dateFmtShort(maxD);
+  document.getElementById('plDaysPill').textContent=rows.length+' วัน';
+  const fbPill=document.getElementById('plFbPill');
+  if(fbCount>0){fbPill.textContent='⚠️ '+fbCount+' วัน fallback';fbPill.style.display='';}
+  else fbPill.style.display='none';
+
+  document.getElementById('plTableWrap').style.display='';
+  document.getElementById('plStatus').textContent='';
+}
+
+function runDailyPL(){
+  const from=document.getElementById('plDateFrom').value;
+  const to  =document.getElementById('plDateTo').value;
+  renderDailyPL(from||null, to||null);
+}
+window.runDailyPL=runDailyPL;
+
+function setPlRange(days){
+  const today=new Date();
+  const toStr=today.toISOString().slice(0,10);
+  let fromStr='';
+  if(days>0){
+    const from=new Date(today);
+    from.setDate(from.getDate()-days+1);
+    fromStr=from.toISOString().slice(0,10);
+  }
+  document.getElementById('plDateFrom').value=fromStr;
+  document.getElementById('plDateTo').value=toStr;
+  runDailyPL();
+}
+window.setPlRange=setPlRange;
+
+function plShowConnect(msg){
+  const b=document.getElementById('plSrcBadge');
+  b.innerHTML=(msg||'🔐 ต้องล็อกอิน Microsoft 365')+
+    ' <button onclick="plConnect()" style="'+btnStyle+'">เชื่อมต่อ Microsoft 365</button>';
+  PL_LOADED=false; // allow retry on next tab switch or button click
+}
+window.plConnect=()=>initDailyPL();
+
+async function initDailyPL(){
+  PL_LOADED=true;
+  const b=document.getElementById('plSrcBadge');
+  if(typeof msalApp==='undefined'||!msalApp){
+    plShowConnect('⚠️ ยังไม่ได้เชื่อมต่อ Microsoft 365:');
+    return;
+  }
+  b.textContent='🔄 กำลังดึงข้อมูล…';
+  try{
+    let token=await getToken(false);
+    if(!token){
+      plShowConnect('🔐 ต้องล็อกอินใหม่:');
+      return;
+    }
+    b.textContent='🔄 ดึง ราคาทุเรียน…';
+    try{
+      const rmVals=await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน/);
+      PL_RM_MAP=parseRMDaily(rmVals);
+    }catch(e){ PL_RM_MAP=null; /* ใช้ fallback */ }
+    b.textContent='🔄 ดึง %A DURAIN…';
+    try{
+      const actVals=await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/);
+      PL_ACT_MAP=parseDailyActual(actVals);
+    }catch(e){
+      PL_ACT_MAP=null;
+      b.innerHTML='⚠️ ดึง %A DURAIN ไม่ได้: '+e.message+
+        ' <button onclick="plConnect()" style="'+btnStyle+'">ลองใหม่</button>';
+      PL_LOADED=false;
+      return;
+    }
+    const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
+    const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
+    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
+      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
+    if(actCount>0){
+      // Set default range: last 30 days
+      const today=new Date();
+      const toStr=today.toISOString().slice(0,10);
+      const fromDate=new Date(today); fromDate.setDate(fromDate.getDate()-29);
+      const fromStr=fromDate.toISOString().slice(0,10);
+      const fd=document.getElementById('plDateFrom'), td=document.getElementById('plDateTo');
+      if(fd&&!fd.value) fd.value=fromStr;
+      if(td&&!td.value) td.value=toStr;
+      renderDailyPL(document.getElementById('plDateFrom').value||null, document.getElementById('plDateTo').value||null);
+    }
+  }catch(e){
+    const code=e.errorCode||'';
+    if(/interaction_required|login_required|consent_required|no_account/.test(code))
+      plShowConnect('🔐 ต้องล็อกอินใหม่:');
+    else{
+      b.innerHTML='⚠️ เกิดข้อผิดพลาด: '+e.message+
+        ' <button onclick="plConnect()" style="'+btnStyle+'">ลองใหม่</button>';
+      PL_LOADED=false;
+    }
+  }
+}
+
+// ── Guide toggle arrow
 const gd=$("guideDetails"),ga=$("guideArrow");
 if(gd&&ga){gd.addEventListener("toggle",()=>{ga.style.transform=gd.open?"rotate(0)":"rotate(-90deg)";});}
 // Smooth scroll to guide
