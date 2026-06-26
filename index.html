@@ -1454,9 +1454,21 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const avgPrice=T.raw>0?T.rmCost*(1-LOSS)/T.raw:0;
   const fbCount=rows.filter(r=>r.isFb).length;
 
+  // RM purchased kg from RM purchase records (matches Scenario Analysis "รับซื้อ")
+  const rmPurchasedKg=rows.reduce((s,r)=>{
+    const lagKey=dateKey(addDays(r.d,-PL_CFG.lag));
+    const rmRec=PL_RM_MAP?PL_RM_MAP.get(lagKey):null;
+    return s+(rmRec&&rmRec.kg>0?rmRec.kg:0);
+  },0);
+  const rmAvgBuyPrice=rmPurchasedKg>0?rows.reduce((s,r)=>{
+    const lagKey=dateKey(addDays(r.d,-PL_CFG.lag));
+    const rmRec=PL_RM_MAP?PL_RM_MAP.get(lagKey):null;
+    return s+(rmRec&&rmRec.kg>0&&rmRec.price>0?rmRec.kg*rmRec.price:0);
+  },0)/rmPurchasedKg:0;
+
   el.innerHTML=`
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    ${[['น้ำหนักดิบรวม',fmtM(T.raw||T.fg)+' kg',rows.length+' วันผลิต','#3498DB','rgba(52,152,219,.07)'],
+    ${[['RM ซื้อรวม',fmtN(rmPurchasedKg,0)+' kg',rmAvgBuyPrice>0?'@ '+fmtN(rmAvgBuyPrice,2)+' ฿/kg':rows.length+' วัน','#3498DB','rgba(52,152,219,.07)'],
        ['FG รวม (ส่งฟรีซ)',fmtM(T.fg)+' kg','Yield '+(T.raw>0?fmtN(T.fg/T.raw*100,1):'—')+'%','#2ECC71','rgba(46,204,113,.07)'],
        ['รายได้รวม',fmtM(T.rev)+' ฿',fmtN(T.fg>0?T.rev/T.fg:0,1)+' ฿/kg FG','var(--gl)','rgba(200,152,42,.07)'],
        ['กำไร/ขาดทุน',(tp?'+':'')+fmtM(T.pl)+' ฿','Margin '+(T.rev>0?fmtN(T.pl/T.rev*100,1):'—')+'%',tp?'#2ECC71':'#E74C3C',tp?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)'],
@@ -1472,8 +1484,9 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     <div style="background:var(--nv);border-radius:8px;padding:14px 16px">
       <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:10px">🪵 วัตถุดิบ (RM)</div>
       <table style="font-size:.74rem;width:100%;border-collapse:collapse">
-        <tr><td style="color:var(--tm);padding:3px 0;width:55%">น้ำหนักดิบ (ก่อนปอก)</td><td style="font-weight:600;color:var(--bl)">${fmtN(T.raw||T.fg,0)} kg</td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">ราคาซื้อเฉลี่ย</td><td style="font-weight:600;color:var(--or)">${fmtN(avgPrice,2)} ฿/kg${fbCount>0?' <small style="color:#E74C3C;font-weight:400">('+fbCount+' วัน fallback)</small>':''}</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0;width:55%">RM ซื้อรวม</td><td style="font-weight:600;color:var(--bl)">${fmtN(rmPurchasedKg,0)} kg</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">ดิบเข้าผลิต (ก่อนปอก)</td><td style="font-weight:600;color:var(--bl)">${fmtN(T.raw||T.fg,0)} kg <small style="color:var(--tm);font-weight:400">(ฐานคำนวณ)</small></td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">ราคาซื้อเฉลี่ย</td><td style="font-weight:600;color:var(--or)">${fmtN(rmAvgBuyPrice>0?rmAvgBuyPrice:avgPrice,2)} ฿/kg${fbCount>0?' <small style="color:#E74C3C;font-weight:400">('+fbCount+' วัน fallback)</small>':''}</td></tr>
         <tr><td style="color:var(--tm);padding:3px 0">ต้นทุน RM รวม</td><td style="font-weight:600;color:var(--or)">${fmtM(T.rmCost)} ฿</td></tr>
       </table>
       <div style="margin-top:10px;font-size:.67rem;color:var(--tm);margin-bottom:4px">สัดส่วนเกรด RM ที่ซื้อ</div>
