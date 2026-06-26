@@ -1577,7 +1577,7 @@ let PC_LOADED=false, PC_DATA=null; // PC_DATA: [{date, rows:[{grade,kg,price,val
 const PROC_FILE='Procurement_Master_File';
 // Direct sharing URL of Procurement_Master_File.xlsx (resolved via Graph /shares API)
 const PROC_SHARE_URL='https://ksthatyai365.sharepoint.com/:x:/r/sites/KSTRMUPDATEV2/_layouts/15/doc2.aspx?sourcedoc=%7B45A073E3-CC0C-44C3-9220-9EE130738463%7D&file=Procurement_Master_File.xlsx';
-let PC_DRIVE_ID=null, PC_ITEM_ID=null;
+let PC_DRIVE_ID=null, PC_ITEM_ID=null, PC_SHEET='';
 
 function encShareUrl(u){
   const b64=btoa(unescape(encodeURIComponent(u)));
@@ -1763,32 +1763,34 @@ async function initPurchase(){
     let token=await getToken(false);
     if(!token){badge.innerHTML='🔐 ต้องล็อกอินใหม่ <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">เชื่อมต่อ</button>';PC_LOADED=false;return;}
     badge.textContent='🔄 กำลังค้นหาไฟล์ '+PROC_FILE+'…';
-    // Try to list all sheets first, then use first sheet
-    let values=null;
-    // Try common sheet names
-    for(const sheetName of ['Sheet1','ราคาซื้อรายวัน','Procurement','Purchase','รายการซื้อ']){
-      try{values=await graphValuesProc(token,sheetName,/sheet1|รายการ|purchase|ซื้อ/i);if(values&&values.length)break;}catch(e){values=null;}
-    }
-    // Fallback: read the workbook's first available worksheet
-    if(!values||!values.length){
+    // List ALL worksheets and parse each — pick the sheet that yields the most
+    // valid purchase rows. (The workbook also contains log/dashboard sheets that
+    // must be skipped, so reading the first sheet is not reliable.)
+    await resolveProcItem(token);
+    const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+    const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
+    if(!wl.ok) throw new Error('อ่านรายชื่อชีทไม่ได้ (HTTP '+wl.status+')');
+    let list=(await wl.json()).value||[];
+    // Skip obvious non-data sheets; prioritise likely purchase sheets
+    const skipRe=/log|dashboard|readme|instruction|setting|config|pivot|chart/i;
+    const preferRe=/purchase|procure|ซื้อ|รายการ|daily|รายวัน|master|data/i;
+    list=list.filter(w=>!skipRe.test(w.name))
+             .sort((a,b)=>(preferRe.test(b.name)?1:0)-(preferRe.test(a.name)?1:0));
+    PC_DATA=null; let bestN=0, sheetTried=[];
+    for(const w of list){
+      sheetTried.push(w.name);
+      let v=null;
       try{
-        await resolveProcItem(token);
-        const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
-        const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
-        const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
-        if(wl.ok){
-          const list=(await wl.json()).value||[];
-          for(const w of list){
-            const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr});
-            if(res.ok){const v=(await res.json()).values; if(v&&v.length){values=v;break;}}
-          }
-        }
+        const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr});
+        if(res.ok) v=(await res.json()).values;
       }catch(e){}
+      if(!v||!v.length) continue;
+      let parsed=null; try{parsed=parseProcurement(v);}catch(e){}
+      if(parsed&&parsed.rows&&parsed.rows.length>bestN){PC_DATA=parsed;bestN=parsed.rows.length;PC_SHEET=w.name;}
     }
-    if(!values||!values.length) throw new Error('ไม่สามารถอ่านชีทจาก '+PROC_FILE);
-    PC_DATA=parseProcurement(values);
-    if(!PC_DATA) throw new Error('ไม่พบข้อมูลในชีท');
-    badge.innerHTML='<span style="color:#2ECC71">●</span> '+PROC_FILE+' — '+PC_DATA.rows.length+' รายการ'+
+    if(!PC_DATA||!bestN) throw new Error('ไม่พบข้อมูลซื้อในชีทใดเลย (ลอง: '+sheetTried.join(', ')+')');
+    badge.innerHTML='<span style="color:#2ECC71">●</span> '+PROC_FILE+(PC_SHEET?' › '+PC_SHEET:'')+' — '+PC_DATA.rows.length+' รายการ'+
       ' <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     // Default 30 days
     const today=new Date();
