@@ -1129,7 +1129,9 @@ let PL_ACT_MAP = null;   // Map<"YYYY-MM-DD", {fg,A,B,C,D,BK,lots}>
 /* ── Excel serial date → JS Date ── */
 function excelToDate(serial){
   if(typeof serial === 'number'){
-    const d = new Date(Date.UTC(1900,0,serial-2));
+    // Excel epoch: serial 1 = Jan 1, 1900. Excel has fake Feb 29 1900 (serial 60),
+    // so for all modern dates (serial>=61) subtract 1 to compensate.
+    const d = new Date(Date.UTC(1900,0,serial-1));
     return d;
   }
   // Try parsing string date (Thai BE or CE)
