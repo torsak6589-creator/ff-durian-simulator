@@ -236,6 +236,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-sim" onclick="showTab('sim')">🎚️ Simulator</button>
   <button class="tab-btn" id="tab-pl" onclick="showTab('pl')">📅 P&amp;L รายวัน</button>
+  <button class="tab-btn" id="tab-report" onclick="showTab('report')">📊 รายงานประจำวัน</button>
 </div>
 
 <div id="panel-sim">
@@ -456,6 +457,75 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 
 </div><!-- /card -->
 </div><!-- /panel-pl -->
+
+<!-- ===== DAILY REPORT PANEL ===== -->
+<div id="panel-report" style="display:none">
+<div class="card hi">
+  <div class="stitle">📊 รายงานประจำวัน <span style="font-weight:400;font-size:.68rem;color:var(--tm)">(RM + FG + กำไร/ขาดทุน รายวัน)</span></div>
+  <div id="rptSrcBadge" style="font-size:.71rem;color:var(--tm);margin-bottom:8px;min-height:18px"></div>
+
+  <!-- Latest update summary -->
+  <div id="rptLatest" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
+
+  <!-- Filter -->
+  <div class="pl-filter" style="margin-bottom:10px">
+    <span style="color:var(--tm);font-size:.72rem">ช่วงวันที่ซื้อ:</span>
+    <input type="date" id="rptDateFrom" class="pl-date">
+    <span style="color:var(--tm)">–</span>
+    <input type="date" id="rptDateTo" class="pl-date">
+    <button class="pl-qbtn" onclick="setRptRange(7)">7วัน</button>
+    <button class="pl-qbtn" onclick="setRptRange(14)">14วัน</button>
+    <button class="pl-qbtn" onclick="setRptRange(30)">30วัน</button>
+    <button class="pl-qbtn" onclick="setRptRange(0)">ทั้งหมด</button>
+    <button class="pl-apply" onclick="runDailyReport()">แสดง</button>
+  </div>
+  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0"></div>
+
+  <!-- KPI row -->
+  <div class="pl-kpi-row" id="rptKpiRow" style="display:none;margin-bottom:12px">
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">ปริมาณซื้อรวม</div>
+      <div class="pl-kpi-val" id="kRptRM">—</div>
+      <div class="pl-kpi-sub" id="kRptRMsub"></div>
+    </div>
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">FG รวม (ส่งฟรีซ)</div>
+      <div class="pl-kpi-val" id="kRptFG">—</div>
+      <div class="pl-kpi-sub" id="kRptFGsub"></div>
+    </div>
+    <div class="pl-kpi">
+      <div class="pl-kpi-label">รายได้รวม</div>
+      <div class="pl-kpi-val" id="kRptRev">—</div>
+      <div class="pl-kpi-sub" id="kRptRevSub"></div>
+    </div>
+    <div class="pl-kpi" id="kRptCard">
+      <div class="pl-kpi-label">กำไร/ขาดทุนรวม</div>
+      <div class="pl-kpi-val" id="kRptPL">—</div>
+      <div class="pl-kpi-sub" id="kRptPLsub"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div id="rptTableWrap" style="display:none;overflow-x:auto">
+    <table class="pl-tbl" style="min-width:900px">
+      <thead><tr>
+        <th style="text-align:left;min-width:80px">วันที่ซื้อ</th>
+        <th>RM ซื้อ<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
+        <th class="th-gold">ราคาซื้อ<br><span style="font-weight:400;color:var(--tm)">฿/kg</span></th>
+        <th style="min-width:160px">เกรด RM ที่ซื้อ (%)</th>
+        <th style="text-align:left;min-width:80px">วันผลิต FG<br><span style="font-weight:400;color:var(--tm)">(+8วัน)</span></th>
+        <th>FG (kg)</th>
+        <th style="min-width:160px">เกรด FG (%)</th>
+        <th class="th-gr">รายได้<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+        <th class="th-gold">RM cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+        <th class="th-or">Mfg<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+        <th class="th-gr" style="min-width:90px">กำไร/ขาดทุน<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
+      </tr></thead>
+      <tbody id="rptTbody"></tbody>
+    </table>
+  </div>
+</div>
+</div><!-- /panel-report -->
 
 <!-- ===== คู่มือการใช้งาน ===== -->
 <div class="card hi" id="guide">
@@ -1032,12 +1102,12 @@ startActual();
 // TAB SWITCHING
 // ══════════════════════════════════════════════
 function showTab(name){
-  const isSim = name==='sim';
-  document.getElementById('panel-sim').style.display = isSim?'':'none';
-  document.getElementById('panel-pl').style.display  = isSim?'none':'';
-  document.getElementById('tab-sim').className = 'tab-btn'+(isSim?' active':'');
-  document.getElementById('tab-pl').className  = 'tab-btn'+(!isSim?' active':'');
-  if(!isSim && !PL_LOADED) initDailyPL();
+  ['sim','pl','report'].forEach(t=>{
+    document.getElementById('panel-'+t).style.display = name===t?'':'none';
+    document.getElementById('tab-'+t).className = 'tab-btn'+(name===t?' active':'');
+  });
+  if(name==='pl' && !PL_LOADED) initDailyPL();
+  if(name==='report' && !PL_LOADED) initDailyPL();
 }
 window.showTab = showTab;
 
@@ -1111,6 +1181,10 @@ function parseRMDaily(values){
   // kg columns: headers with (kg)/(กก) excluding รวม/total
   const kgCols = [];
   hdr.forEach((h,idx)=>{ if(/\(kg\)|\(กก\)|kg/.test(h) && !/รวม|total/.test(h)) kgCols.push(idx); });
+  // RM grade columns: ABC, ตกไซส์, ห้องเย็น, สุดท้าย, D, จัมโบ้, รูแบ
+  const RM_GRADE_KEYS = ['abc','ตกไซส์','ห้องเย็น','สุดท้าย','\bd\b','จัมโบ้','รูแบ'];
+  const RM_GRADE_LABELS = ['ABC','ตกไซส์','ห้องเย็น','สุดท้าย','D','จัมโบ้','รูแบ'];
+  const rmGradeCols = RM_GRADE_KEYS.map(k=> hdr.findIndex(h=>new RegExp(k,'i').test(h) && /\(kg\)|\(กก\)|kg/i.test(h)));
 
   // Price column priority:
   //   1. ราคา/kg, ราคาซื้อ/kg, price/kg  — direct per-kg price
@@ -1157,13 +1231,21 @@ function parseRMDaily(values){
     }
 
     // Accumulate: weighted by kg so multi-lot days get correct weighted price
-    const prev=map.get(k)||{kg:0,wPrice:0};
-    map.set(k,{kg:prev.kg+kg, wPrice:prev.wPrice+price*kg});
+    const gKg = rmGradeCols.map(c=> c>=0 ? Math.max(0,aNum(r[c])||0) : 0);
+    const prev=map.get(k)||{kg:0,wPrice:0,gKg:RM_GRADE_KEYS.map(()=>0)};
+    map.set(k,{kg:prev.kg+kg, wPrice:prev.wPrice+price*kg,
+               gKg: prev.gKg.map((v,i)=>v+gKg[i])});
   }
 
   // Finalise: price = total(price×kg) / total_kg  (= actual price when one row/day; weighted avg for multi-lot days)
   const result=new Map();
-  map.forEach((v,k)=>{ if(v.kg>0) result.set(k,{kg:v.kg, price:v.wPrice/v.kg}); });
+  map.forEach((v,k)=>{
+    if(v.kg>0){
+      const gradeTotal = v.gKg.reduce((s,x)=>s+x,0)||v.kg;
+      const gradePct = v.gKg.map(x=>gradeTotal>0?Math.round(x/gradeTotal*100):0);
+      result.set(k,{kg:v.kg, price:v.wPrice/v.kg, gradeKg:v.gKg, gradePct});
+    }
+  });
   return result.size>0 ? result : null;
 }
 
@@ -1288,12 +1370,13 @@ function renderDailyPL(fromDate, toDate){
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
       <td class="td-bl">${fmtN(r.raw,0)}</td>
       <td>${fmtN(r.fg,0)}</td>
-      <td style="font-size:.68rem;line-height:1.6">
-        <span class="pl-gc pl-gc-a">A ${fmtN(r.A,0)}</span>
-        <span class="pl-gc pl-gc-b">B ${fmtN(r.B,0)}</span>
-        <span class="pl-gc pl-gc-c">C ${fmtN(r.C,0)}</span>
-        <span class="pl-gc pl-gc-d">D ${fmtN(r.D,0)}</span>
-        <span class="pl-gc pl-gc-bk">BK ${fmtN(r.BK,0)}</span>
+      <td style="font-size:.67rem;line-height:1.7">
+        ${(()=>{const gt=r.A+r.B+r.C+r.D+r.BK||1;const p=g=>gt>0?fmtN(g/gt*100,0):'—';return `
+        <span class="pl-gc pl-gc-a">A ${fmtN(r.A,0)} (${p(r.A)}%)</span>
+        <span class="pl-gc pl-gc-b">B ${fmtN(r.B,0)} (${p(r.B)}%)</span>
+        <span class="pl-gc pl-gc-c">C ${fmtN(r.C,0)} (${p(r.C)}%)</span>
+        <span class="pl-gc pl-gc-d">D ${fmtN(r.D,0)} (${p(r.D)}%)</span>
+        <span class="pl-gc pl-gc-bk">BK ${fmtN(r.BK,0)} (${p(r.BK)}%)</span>`;})()}
       </td>
       <td class="td-gr">${fmtN(r.rev)}</td>
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.rmCost)}</td>
@@ -1376,6 +1459,151 @@ function setPlRange(days){
 }
 window.setPlRange=setPlRange;
 
+/* ── Daily Report ── */
+function renderDailyReport(fromDate, toDate){
+  const tbody=document.getElementById('rptTbody');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  const from=fromDate?new Date(fromDate):null;
+  const to  =toDate  ?new Date(toDate  ):null;
+  const fmtN=(n,d=0)=>n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':(n/1e3).toFixed(0)+'K');
+  const dateFmt=d=>{ try{return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',timeZone:'UTC'});}catch(e){return d.toISOString().slice(0,10);} };
+  const SELL={
+    A:+($('pA')&&$('pA').value)||PL_CFG.sell.A, B:+($('pB')&&$('pB').value)||PL_CFG.sell.B,
+    C:+($('pC')&&$('pC').value)||PL_CFG.sell.C, BK:+($('pBK')&&$('pBK').value)||PL_CFG.sell.BK,
+    D:+($('pbk')&&$('pbk').value)||PL_CFG.sell.D,
+  };
+  const MFG=+($('pProd')&&$('pProd').value)||PL_CFG.mfg;
+  const LOSS=PL_CFG.loss, FB=PL_CFG.fallback;
+
+  // Build rows keyed by purchase date
+  const allDates = new Set([
+    ...(PL_RM_MAP?[...PL_RM_MAP.keys()]:[]),
+    ...(PL_ACT_MAP?[...PL_ACT_MAP.keys()].map(k=>dateKey(addDays(new Date(k),-PL_CFG.lag))):[])
+  ]);
+  let rows=[];
+  allDates.forEach(buyKey=>{
+    const buyDate=new Date(buyKey);
+    if(from && buyDate<from) return;
+    if(to   && buyDate>to  ) return;
+    const rmRec = PL_RM_MAP ? PL_RM_MAP.get(buyKey) : null;
+    const prodKey = dateKey(addDays(buyDate, PL_CFG.lag));
+    const act = PL_ACT_MAP ? PL_ACT_MAP.get(prodKey) : null;
+    if(!rmRec && !act) return;
+    const price = rmRec&&rmRec.price>0 ? rmRec.price : FB;
+    const isFb = !rmRec||rmRec.price<=0;
+    const fg   = act?act.fg:0;
+    const A=act?act.A:0, B=act?act.B:0, C=act?act.C:0, D=act?act.D:0, BK=act?act.BK:0;
+    const rmKg = rmRec?rmRec.kg:0;
+    const rev  = A*SELL.A+B*SELL.B+C*SELL.C+D*SELL.D+BK*SELL.BK;
+    const rmCost = rmKg*price/(1-LOSS);
+    const mfg  = fg*MFG;
+    const pl   = rev-rmCost-mfg;
+    rows.push({buyKey,buyDate,prodKey,prodDate:new Date(prodKey),rmRec,rmKg,price,isFb,fg,A,B,C,D,BK,rev,rmCost,mfg,pl});
+  });
+  rows.sort((a,b)=>a.buyKey.localeCompare(b.buyKey));
+  if(!rows.length){
+    document.getElementById('rptStatus').textContent='ไม่พบข้อมูลในช่วงวันที่เลือก';
+    document.getElementById('rptTableWrap').style.display='none';
+    document.getElementById('rptKpiRow').style.display='none';
+    return;
+  }
+
+  const RM_GRADE_LABELS=['ABC','ตกไซส์','ห้องเย็น','สุดท้าย','D','จัมโบ้','รูแบ'];
+  const gradeChipColor={'A':'#2ECC71','B':'#3498DB','C':'#F39C12','D':'#E74C3C','BK':'#8A8070',
+    'ABC':'#2ECC71','ตกไซส์':'#1ABC9C','ห้องเย็น':'#3498DB','สุดท้าย':'#9B59B6',
+    'จัมโบ้':'#E67E22','รูแบ':'#95A5A6'};
+
+  rows.forEach(r=>{
+    const pos=r.pl>=0;
+    const tr=document.createElement('tr');
+    // RM grade chips
+    let rmGradeHtml='<span style="color:var(--tm);font-size:.65rem">—</span>';
+    if(r.rmRec&&r.rmRec.gradePct&&r.rmRec.gradePct.some(p=>p>0)){
+      rmGradeHtml=RM_GRADE_LABELS.map((lb,i)=>{
+        const pct=r.rmRec.gradePct[i]; if(!pct) return '';
+        const col=gradeChipColor[lb]||'#888';
+        return `<span style="font-size:.63rem;padding:1px 5px;border-radius:3px;background:${col}20;color:${col};margin:1px;display:inline-block">${lb} ${pct}%</span>`;
+      }).join('');
+    }
+    // FG grade chips
+    const fgTotal=(r.A+r.B+r.C+r.D+r.BK)||1;
+    const fgGradeHtml=r.fg>0?[['A',r.A,'#2ECC71'],['B',r.B,'#3498DB'],['C',r.C,'#F39C12'],['D',r.D,'#E74C3C'],['BK',r.BK,'#8A8070']].map(([lb,kg,col])=>{
+      const pct=Math.round(kg/fgTotal*100); if(!pct) return '';
+      return `<span style="font-size:.63rem;padding:1px 5px;border-radius:3px;background:${col}20;color:${col};margin:1px;display:inline-block">${lb} ${pct}%</span>`;
+    }).join(''):'<span style="color:var(--tm);font-size:.65rem">ไม่มีข้อมูล</span>';
+
+    tr.innerHTML=`
+      <td>${dateFmt(r.buyDate)}</td>
+      <td class="td-bl">${r.rmKg>0?fmtN(r.rmKg,0):'—'}</td>
+      <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
+      <td style="max-width:180px">${rmGradeHtml}</td>
+      <td>${r.fg>0?dateFmt(r.prodDate):'—'}</td>
+      <td>${r.fg>0?fmtN(r.fg,0):'—'}</td>
+      <td style="max-width:180px">${fgGradeHtml}</td>
+      <td class="td-gr">${r.rev>0?fmtN(r.rev):'—'}</td>
+      <td class="${r.isFb?'td-fb':'td-gold'}">${r.rmCost>0?fmtN(r.rmCost):'—'}</td>
+      <td class="td-or">${r.mfg>0?fmtN(r.mfg):'—'}</td>
+      <td class="${pos?'td-gr':'td-rd'}" style="font-weight:600">${r.rev>0?(pos?'+':'')+fmtN(r.pl):'—'}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Totals
+  const T=rows.reduce((a,r)=>({rmKg:a.rmKg+r.rmKg,fg:a.fg+r.fg,rev:a.rev+r.rev,rmCost:a.rmCost+r.rmCost,mfg:a.mfg+r.mfg,pl:a.pl+r.pl}),{rmKg:0,fg:0,rev:0,rmCost:0,mfg:0,pl:0});
+  const tp=T.pl>=0;
+  const ttr=document.createElement('tr');
+  ttr.className='pl-total';
+  ttr.innerHTML=`<td>รวม ${rows.length} วัน</td><td class="td-bl">${fmtN(T.rmKg,0)}</td><td class="td-mt">avg</td><td>—</td><td>—</td><td>${fmtN(T.fg,0)}</td><td>—</td>
+    <td class="td-gr">${fmtN(T.rev)}</td><td class="td-gold">${fmtN(T.rmCost)}</td><td class="td-or">${fmtN(T.mfg)}</td>
+    <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(T.pl)}</td>`;
+  tbody.appendChild(ttr);
+
+  // KPI
+  document.getElementById('kRptRM').textContent=fmtM(T.rmKg)+' kg';
+  document.getElementById('kRptRMsub').textContent=`${rows.filter(r=>r.rmKg>0).length} วันที่มีการซื้อ`;
+  document.getElementById('kRptFG').textContent=fmtM(T.fg)+' kg';
+  document.getElementById('kRptFGsub').textContent=`Yield ${T.rmKg>0?fmtN(T.fg/T.rmKg*100,1):'—'}%`;
+  document.getElementById('kRptRev').textContent=fmtM(T.rev);
+  document.getElementById('kRptRevSub').textContent=`${fmtN(T.fg>0?T.rev/T.fg:0,1)} ฿/kg FG`;
+  document.getElementById('kRptPL').textContent=(tp?'+':'')+fmtM(T.pl);
+  document.getElementById('kRptPL').style.color=tp?'#2ECC71':'#E74C3C';
+  document.getElementById('kRptCard').className='pl-kpi '+(tp?'pos':'neg');
+  document.getElementById('kRptPLsub').textContent=`Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}%`;
+  document.getElementById('rptKpiRow').style.display='';
+
+  // Latest update
+  const latestBuy=rows[rows.length-1];
+  const latestProd=PL_ACT_MAP?[...PL_ACT_MAP.keys()].sort().pop():null;
+  const latEl=document.getElementById('rptLatest');
+  latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp;
+    ซื้อล่าสุด <strong>${dateFmt(latestBuy.buyDate)}</strong> (${fmtN(latestBuy.rmKg,0)} kg @ ${fmtN(latestBuy.price,2)} ฿/kg) &nbsp;|&nbsp;
+    ผลิตล่าสุด <strong>${latestProd?dateFmt(new Date(latestProd)):'—'}</strong>
+    ${latestBuy.fg>0?` FG ${fmtN(latestBuy.fg,0)} kg | กำไร <span style="color:${latestBuy.pl>=0?'#2ECC71':'#E74C3C'}">${latestBuy.pl>=0?'+':''}${fmtN(latestBuy.pl)}</span> ฿`:''}`;
+  latEl.style.display='';
+
+  document.getElementById('rptTableWrap').style.display='';
+  document.getElementById('rptStatus').textContent='';
+}
+
+function runDailyReport(){
+  const from=document.getElementById('rptDateFrom').value;
+  const to  =document.getElementById('rptDateTo').value;
+  renderDailyReport(from||null, to||null);
+}
+window.runDailyReport=runDailyReport;
+
+function setRptRange(days){
+  const today=new Date();
+  const toStr=today.toISOString().slice(0,10);
+  let fromStr='';
+  if(days>0){ const f=new Date(today); f.setDate(f.getDate()-days+1); fromStr=f.toISOString().slice(0,10); }
+  document.getElementById('rptDateFrom').value=fromStr;
+  document.getElementById('rptDateTo').value=toStr;
+  runDailyReport();
+}
+window.setRptRange=setRptRange;
+
 function plShowConnect(msg){
   const b=document.getElementById('plSrcBadge');
   b.innerHTML=(msg||'🔐 ต้องล็อกอิน Microsoft 365')+
@@ -1419,6 +1647,19 @@ async function initDailyPL(){
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     if(actCount>0){
+      // Also populate daily report tab with same date range
+      if(PL_ACT_MAP || PL_RM_MAP){
+        const today=new Date();
+        const toStr=today.toISOString().slice(0,10);
+        const fromDate=new Date(today); fromDate.setDate(fromDate.getDate()-29);
+        const fromStr=fromDate.toISOString().slice(0,10);
+        const rfd=document.getElementById('rptDateFrom'), rtd=document.getElementById('rptDateTo');
+        if(rfd&&!rfd.value) rfd.value=fromStr;
+        if(rtd&&!rtd.value) rtd.value=toStr;
+        renderDailyReport(document.getElementById('rptDateFrom').value||null, document.getElementById('rptDateTo').value||null);
+        const rptBadge=document.getElementById('rptSrcBadge');
+        if(rptBadge) rptBadge.innerHTML=document.getElementById('plSrcBadge').innerHTML;
+      }
       // Set default range: last 30 days
       const today=new Date();
       const toStr=today.toISOString().slice(0,10);
