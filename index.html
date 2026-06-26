@@ -1575,21 +1575,44 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
 // ══════════════════════════════════════════════
 let PC_LOADED=false, PC_DATA=null; // PC_DATA: [{date, rows:[{grade,kg,price,value,...}]}]
 const PROC_FILE='Procurement_Master_File';
+// Direct sharing URL of Procurement_Master_File.xlsx (resolved via Graph /shares API)
+const PROC_SHARE_URL='https://ksthatyai365.sharepoint.com/:x:/r/sites/KSTRMUPDATEV2/_layouts/15/doc2.aspx?sourcedoc=%7B45A073E3-CC0C-44C3-9220-9EE130738463%7D&file=Procurement_Master_File.xlsx';
+let PC_DRIVE_ID=null, PC_ITEM_ID=null;
 
-async function graphValuesProc(token, sheet, matchRe){
+function encShareUrl(u){
+  const b64=btoa(unescape(encodeURIComponent(u)));
+  return 'u!'+b64.replace(/=+$/,'').replace(/\//g,'_').replace(/\+/g,'-');
+}
+
+async function resolveProcItem(token){
+  if(PC_DRIVE_ID&&PC_ITEM_ID) return;
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
-  // Resolve file by name within the same drive
-  let pcItemId=null;
+  // 1) Resolve directly from the sharing URL
+  try{
+    const r=await fetch(`https://graph.microsoft.com/v1.0/shares/${encShareUrl(PROC_SHARE_URL)}/driveItem?$select=id,name,parentReference`,{headers:hdr});
+    if(r.ok){
+      const it=await r.json();
+      PC_ITEM_ID=it.id;
+      PC_DRIVE_ID=(it.parentReference&&it.parentReference.driveId)||SP.driveId;
+      return;
+    }
+  }catch(e){}
+  // 2) Fallback: search the same drive by name
   try{
     const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${SP.driveId}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr});
     if(sr.ok){
       const items=((await sr.json()).value||[]);
       const f=items.find(i=>/Procurement_Master_File/i.test(i.name));
-      if(f) pcItemId=f.id;
+      if(f){PC_ITEM_ID=f.id;PC_DRIVE_ID=SP.driveId;return;}
     }
   }catch(e){}
-  if(!pcItemId) throw new Error('ไม่พบไฟล์ '+PROC_FILE+' ในไดรฟ์');
-  const base=`https://graph.microsoft.com/v1.0/drives/${SP.driveId}/items/${pcItemId}/workbook`;
+  throw new Error('ไม่พบไฟล์ '+PROC_FILE);
+}
+
+async function graphValuesProc(token, sheet, matchRe){
+  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+  await resolveProcItem(token);
+  const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
   let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr});
   if(!res.ok){
     const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
@@ -1744,9 +1767,25 @@ async function initPurchase(){
     let values=null;
     // Try common sheet names
     for(const sheetName of ['Sheet1','ราคาซื้อรายวัน','Procurement','Purchase','รายการซื้อ']){
-      try{values=await graphValuesProc(token,sheetName,/sheet1|รายการ|purchase|ซื้อ/i);if(values)break;}catch(e){values=null;}
+      try{values=await graphValuesProc(token,sheetName,/sheet1|รายการ|purchase|ซื้อ/i);if(values&&values.length)break;}catch(e){values=null;}
     }
-    if(!values) throw new Error('ไม่สามารถอ่านชีทจาก '+PROC_FILE);
+    // Fallback: read the workbook's first available worksheet
+    if(!values||!values.length){
+      try{
+        await resolveProcItem(token);
+        const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+        const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
+        const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
+        if(wl.ok){
+          const list=(await wl.json()).value||[];
+          for(const w of list){
+            const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr});
+            if(res.ok){const v=(await res.json()).values; if(v&&v.length){values=v;break;}}
+          }
+        }
+      }catch(e){}
+    }
+    if(!values||!values.length) throw new Error('ไม่สามารถอ่านชีทจาก '+PROC_FILE);
     PC_DATA=parseProcurement(values);
     if(!PC_DATA) throw new Error('ไม่พบข้อมูลในชีท');
     badge.innerHTML='<span style="color:#2ECC71">●</span> '+PROC_FILE+' — '+PC_DATA.rows.length+' รายการ'+
