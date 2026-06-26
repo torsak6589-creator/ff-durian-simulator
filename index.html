@@ -320,7 +320,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </table>
   <div style="margin-top:8px;display:flex;align-items:center;gap:10px;font-size:.76rem">
     <span style="color:var(--tm)">ต้นทุนผลิต/kg FG:</span>
-    <input id="pProd" type="number" value="47" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
+    <input id="pProd" type="number" value="52" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
     <span style="color:var(--tm)">฿/kg FG</span>
   </div>
 </div>
@@ -670,7 +670,7 @@ function adj(t,v){
 function up(){
   const vol=+sV.value*1000,rm=+sR.value,aV=+sA.value,bR=+sB.value;
   const mxB=100-aV-10,bV=Math.min(bR,mxB);sB.value=bV;
-  const prod=+$("pProd").value||47;
+  const prod=+$("pProd").value||52;
   const P={A:+$("pA").value||320,B:+$("pB").value||225,C:+$("pC").value||135,BK:+$("pBK").value||90,bk:+$("pbk").value||60};
   const a=aV/100,b=bV/100,rest=1-a-b;
   const c=rest*15/25,bk1=rest*5/25,bk2=rest*5/25;
@@ -808,6 +808,11 @@ function up(){
 
 [sV,sR,sA,sB].forEach(s=>s.addEventListener("input",up));
 up();
+// เมื่อราคาขาย/ต้นทุนผลิตเปลี่ยน → P&L tab re-render อัตโนมัติ
+['pA','pB','pC','pBK','pbk','pProd'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('change',()=>{ if(PL_ACT_MAP) runDailyPL(); });
+});
 
 /* ─────────────────────────────────────────────
    LIVE ACTUAL — ดึงผลผลิตจริงจากชีท "%A DURIAN"
@@ -1225,15 +1230,16 @@ function renderDailyPL(fromDate, toDate){
     document.getElementById('plStatus').textContent='⚠️ ยังไม่มีข้อมูลผลผลิต กรุณาเชื่อมต่อ Microsoft 365 ก่อน';
     return;
   }
-  // ดึงราคาขายจาก UI เดียวกับ Simulator (pA/pB/pC/pBK/pbk)
+  // ดึงราคาขาย + ต้นทุนผลิตจาก UI เดียวกับ Simulator
   const SELL={
-    A : +($('pA') &&$('pA').value)  || PL_CFG.sell.A,
-    B : +($('pB') &&$('pB').value)  || PL_CFG.sell.B,
-    C : +($('pC') &&$('pC').value)  || PL_CFG.sell.C,
-    BK: +($('pBK')&&$('pBK').value) || PL_CFG.sell.BK,
-    D : +($('pbk')&&$('pbk').value) || PL_CFG.sell.D,
+    A : +($('pA')   &&$('pA').value)   || PL_CFG.sell.A,
+    B : +($('pB')   &&$('pB').value)   || PL_CFG.sell.B,
+    C : +($('pC')   &&$('pC').value)   || PL_CFG.sell.C,
+    BK: +($('pBK')  &&$('pBK').value)  || PL_CFG.sell.BK,
+    D : +($('pbk')  &&$('pbk').value)  || PL_CFG.sell.D,
   };
-  const MFG=PL_CFG.mfg, LOSS=PL_CFG.loss, FB=PL_CFG.fallback;
+  const MFG  = +($('pProd')&&$('pProd').value) || PL_CFG.mfg;
+  const LOSS=PL_CFG.loss, FB=PL_CFG.fallback;
   const from=fromDate?new Date(fromDate):null;
   const to  =toDate  ?new Date(toDate  ):null;
   // Collect + filter rows
