@@ -461,69 +461,11 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <!-- ===== DAILY REPORT PANEL ===== -->
 <div id="panel-report" style="display:none">
 <div class="card hi">
-  <div class="stitle">📊 รายงานประจำวัน <span style="font-weight:400;font-size:.68rem;color:var(--tm)">(RM + FG + กำไร/ขาดทุน รายวัน)</span></div>
-  <div id="rptSrcBadge" style="font-size:.71rem;color:var(--tm);margin-bottom:8px;min-height:18px"></div>
-
-  <!-- Latest update summary -->
+  <div class="stitle">📊 รายงานประจำวัน</div>
+  <div style="font-size:.71rem;color:var(--tm);margin-bottom:8px">ข้อมูลสอดคล้องกับ filter ที่เลือกใน <strong>P&amp;L รายวัน</strong> — ตั้งค่าช่วงวันที่ที่ tab P&amp;L</div>
   <div id="rptLatest" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
-
-  <!-- Filter -->
-  <div class="pl-filter" style="margin-bottom:10px">
-    <span style="color:var(--tm);font-size:.72rem">ช่วงวันที่ซื้อ:</span>
-    <input type="date" id="rptDateFrom" class="pl-date">
-    <span style="color:var(--tm)">–</span>
-    <input type="date" id="rptDateTo" class="pl-date">
-    <button class="pl-qbtn" onclick="setRptRange(7)">7วัน</button>
-    <button class="pl-qbtn" onclick="setRptRange(14)">14วัน</button>
-    <button class="pl-qbtn" onclick="setRptRange(30)">30วัน</button>
-    <button class="pl-qbtn" onclick="setRptRange(0)">ทั้งหมด</button>
-    <button class="pl-apply" onclick="runDailyReport()">แสดง</button>
-  </div>
-  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0"></div>
-
-  <!-- KPI row -->
-  <div class="pl-kpi-row" id="rptKpiRow" style="display:none;margin-bottom:12px">
-    <div class="pl-kpi">
-      <div class="pl-kpi-label">ปริมาณซื้อรวม</div>
-      <div class="pl-kpi-val" id="kRptRM">—</div>
-      <div class="pl-kpi-sub" id="kRptRMsub"></div>
-    </div>
-    <div class="pl-kpi">
-      <div class="pl-kpi-label">FG รวม (ส่งฟรีซ)</div>
-      <div class="pl-kpi-val" id="kRptFG">—</div>
-      <div class="pl-kpi-sub" id="kRptFGsub"></div>
-    </div>
-    <div class="pl-kpi">
-      <div class="pl-kpi-label">รายได้รวม</div>
-      <div class="pl-kpi-val" id="kRptRev">—</div>
-      <div class="pl-kpi-sub" id="kRptRevSub"></div>
-    </div>
-    <div class="pl-kpi" id="kRptCard">
-      <div class="pl-kpi-label">กำไร/ขาดทุนรวม</div>
-      <div class="pl-kpi-val" id="kRptPL">—</div>
-      <div class="pl-kpi-sub" id="kRptPLsub"></div>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div id="rptTableWrap" style="display:none;overflow-x:auto">
-    <table class="pl-tbl" style="min-width:900px">
-      <thead><tr>
-        <th style="text-align:left;min-width:80px">วันที่ซื้อ</th>
-        <th>RM ซื้อ<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
-        <th class="th-gold">ราคาซื้อ<br><span style="font-weight:400;color:var(--tm)">฿/kg</span></th>
-        <th style="min-width:160px">เกรด RM ที่ซื้อ (%)</th>
-        <th style="text-align:left;min-width:80px">วันผลิต FG<br><span style="font-weight:400;color:var(--tm)">(+8วัน)</span></th>
-        <th>FG (kg)</th>
-        <th style="min-width:160px">เกรด FG (%)</th>
-        <th class="th-gr">รายได้<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
-        <th class="th-gold">RM cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
-        <th class="th-or">Mfg<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
-        <th class="th-gr" style="min-width:90px">กำไร/ขาดทุน<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
-      </tr></thead>
-      <tbody id="rptTbody"></tbody>
-    </table>
-  </div>
+  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">เปิด tab P&amp;L รายวัน เพื่อโหลดข้อมูล</div>
+  <div id="rptSummary" style="display:none"></div>
 </div>
 </div><!-- /panel-report -->
 
@@ -1437,6 +1379,9 @@ function renderDailyPL(fromDate, toDate){
 
   document.getElementById('plTableWrap').style.display='';
   document.getElementById('plStatus').textContent='';
+
+  // Sync report tab with same data
+  renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD);
 }
 
 function runDailyPL(){
@@ -1461,162 +1406,122 @@ function setPlRange(days){
 }
 window.setPlRange=setPlRange;
 
-/* ── Daily Report ── */
-function renderDailyReport(fromDate, toDate){
-  const tbody=document.getElementById('rptTbody');
-  if(!tbody) return;
-  tbody.innerHTML='';
-  const from=fromDate?new Date(fromDate):null;
-  const to  =toDate  ?new Date(toDate  ):null;
+/* ── Daily Report: text summary (driven by renderDailyPL) ── */
+function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
+  const el=document.getElementById('rptSummary');
+  if(!el) return;
   const fmtN=(n,d=0)=>n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
-  const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':(n/1e3).toFixed(0)+'K');
-  const dateFmt=d=>{ try{return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',timeZone:'UTC'});}catch(e){return d.toISOString().slice(0,10);} };
-  const SELL={
-    A:+($('pA')&&$('pA').value)||PL_CFG.sell.A, B:+($('pB')&&$('pB').value)||PL_CFG.sell.B,
-    C:+($('pC')&&$('pC').value)||PL_CFG.sell.C, BK:+($('pBK')&&$('pBK').value)||PL_CFG.sell.BK,
-    D:+($('pbk')&&$('pbk').value)||PL_CFG.sell.D,
-  };
-  const MFG=+($('pProd')&&$('pProd').value)||PL_CFG.mfg;
-  const LOSS=PL_CFG.loss, FB=PL_CFG.fallback;
-
-  // Build rows keyed by purchase date
-  const allDates = new Set([
-    ...(PL_RM_MAP?[...PL_RM_MAP.keys()]:[]),
-    ...(PL_ACT_MAP?[...PL_ACT_MAP.keys()].map(k=>dateKey(addDays(new Date(k),-PL_CFG.lag))):[])
-  ]);
-  let rows=[];
-  allDates.forEach(buyKey=>{
-    const buyDate=new Date(buyKey);
-    if(from && buyDate<from) return;
-    if(to   && buyDate>to  ) return;
-    const rmRec = PL_RM_MAP ? PL_RM_MAP.get(buyKey) : null;
-    const prodKey = dateKey(addDays(buyDate, PL_CFG.lag));
-    const act = PL_ACT_MAP ? PL_ACT_MAP.get(prodKey) : null;
-    if(!rmRec && !act) return;
-    const price = rmRec&&rmRec.price>0 ? rmRec.price : FB;
-    const isFb = !rmRec||rmRec.price<=0;
-    const fg   = act?act.fg:0;
-    const raw  = act?act.raw:0;
-    const A=act?act.A:0, B=act?act.B:0, C=act?act.C:0, D=act?act.D:0, BK=act?act.BK:0;
-    const rmKg = rmRec?rmRec.kg:0;
-    // ใช้สูตรเดียวกับ P&L รายวัน: น้ำหนักดิบ (ก่อนปอก) จาก %A DURAIN เป็นฐาน
-    const rmBase = raw>0 ? raw : fg;
-    const rev  = A*SELL.A+B*SELL.B+C*SELL.C+D*SELL.D+BK*SELL.BK;
-    const rmCost = rmBase*price/(1-LOSS);
-    const mfg  = fg*MFG;
-    const pl   = rev-rmCost-mfg;
-    rows.push({buyKey,buyDate,prodKey,prodDate:new Date(prodKey),rmRec,rmKg,raw,rmBase,price,isFb,fg,A,B,C,D,BK,rev,rmCost,mfg,pl});
-  });
-  rows.sort((a,b)=>a.buyKey.localeCompare(b.buyKey));
-  if(!rows.length){
-    document.getElementById('rptStatus').textContent='ไม่พบข้อมูลในช่วงวันที่เลือก';
-    document.getElementById('rptTableWrap').style.display='none';
-    document.getElementById('rptKpiRow').style.display='none';
-    return;
-  }
-
-  const RM_GRADE_LABELS=['ABC','ตกไซส์','ห้องเย็น','สุดท้าย','D','จัมโบ้','รูแบ'];
-  const gradeChipColor={'A':'#2ECC71','B':'#3498DB','C':'#F39C12','D':'#E74C3C','BK':'#8A8070',
-    'ABC':'#2ECC71','ตกไซส์':'#1ABC9C','ห้องเย็น':'#3498DB','สุดท้าย':'#9B59B6',
-    'จัมโบ้':'#E67E22','รูแบ':'#95A5A6'};
-
-  rows.forEach(r=>{
-    const pos=r.pl>=0;
-    const tr=document.createElement('tr');
-    // RM grade chips
-    let rmGradeHtml='<span style="color:var(--tm);font-size:.65rem">—</span>';
-    if(r.rmRec&&r.rmRec.gradePct&&r.rmRec.gradePct.some(p=>p>0)){
-      rmGradeHtml=RM_GRADE_LABELS.map((lb,i)=>{
-        const pct=r.rmRec.gradePct[i]; if(!pct) return '';
-        const col=gradeChipColor[lb]||'#888';
-        return `<span style="font-size:.63rem;padding:1px 5px;border-radius:3px;background:${col}20;color:${col};margin:1px;display:inline-block">${lb} ${pct}%</span>`;
-      }).join('');
-    }
-    // FG grade chips
-    const fgTotal=(r.A+r.B+r.C+r.D+r.BK)||1;
-    const fgGradeHtml=r.fg>0?[['A',r.A,'#2ECC71'],['B',r.B,'#3498DB'],['C',r.C,'#F39C12'],['D',r.D,'#E74C3C'],['BK',r.BK,'#8A8070']].map(([lb,kg,col])=>{
-      const pct=Math.round(kg/fgTotal*100); if(!pct) return '';
-      return `<span style="font-size:.63rem;padding:1px 5px;border-radius:3px;background:${col}20;color:${col};margin:1px;display:inline-block">${lb} ${pct}%</span>`;
-    }).join(''):'<span style="color:var(--tm);font-size:.65rem">ไม่มีข้อมูล</span>';
-
-    tr.innerHTML=`
-      <td>${dateFmt(r.buyDate)}</td>
-      <td class="td-bl">${r.rmBase>0?fmtN(r.rmBase,0):r.rmKg>0?fmtN(r.rmKg,0):'—'}</td>
-      <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
-      <td style="max-width:180px">${rmGradeHtml}</td>
-      <td>${r.fg>0?dateFmt(r.prodDate):'—'}</td>
-      <td>${r.fg>0?fmtN(r.fg,0):'—'}</td>
-      <td style="max-width:180px">${fgGradeHtml}</td>
-      <td class="td-gr">${r.rev>0?fmtN(r.rev):'—'}</td>
-      <td class="${r.isFb?'td-fb':'td-gold'}">${r.rmCost>0?fmtN(r.rmCost):'—'}</td>
-      <td class="td-or">${r.mfg>0?fmtN(r.mfg):'—'}</td>
-      <td class="${pos?'td-gr':'td-rd'}" style="font-weight:600">${r.rev>0?(pos?'+':'')+fmtN(r.pl):'—'}</td>`;
-    tbody.appendChild(tr);
-  });
-
-  // Totals
-  const T=rows.reduce((a,r)=>({rmKg:a.rmKg+r.rmKg,fg:a.fg+r.fg,rev:a.rev+r.rev,rmCost:a.rmCost+r.rmCost,mfg:a.mfg+r.mfg,pl:a.pl+r.pl}),{rmKg:0,fg:0,rev:0,rmCost:0,mfg:0,pl:0});
+  const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':(Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':n.toFixed(0)));
+  const dateFmtL=d=>{try{return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}catch(e){return d.toISOString().slice(0,10);}};
+  const dateFmtS=d=>{try{return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',timeZone:'UTC'});}catch(e){return d.toISOString().slice(0,10);}};
   const tp=T.pl>=0;
-  const ttr=document.createElement('tr');
-  ttr.className='pl-total';
-  ttr.innerHTML=`<td>รวม ${rows.length} วัน</td><td class="td-bl">${fmtN(T.rmKg,0)}</td><td class="td-mt">avg</td><td>—</td><td>—</td><td>${fmtN(T.fg,0)}</td><td>—</td>
-    <td class="td-gr">${fmtN(T.rev)}</td><td class="td-gold">${fmtN(T.rmCost)}</td><td class="td-or">${fmtN(T.mfg)}</td>
-    <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(T.pl)}</td>`;
-  tbody.appendChild(ttr);
 
-  // KPI
-  document.getElementById('kRptRM').textContent=fmtM(T.rmKg)+' kg';
-  document.getElementById('kRptRMsub').textContent=`${rows.filter(r=>r.rmKg>0).length} วันที่มีการซื้อ`;
-  document.getElementById('kRptFG').textContent=fmtM(T.fg)+' kg';
-  document.getElementById('kRptFGsub').textContent=`Yield ${T.rmKg>0?fmtN(T.fg/T.rmKg*100,1):'—'}%`;
-  document.getElementById('kRptRev').textContent=fmtM(T.rev);
-  document.getElementById('kRptRevSub').textContent=`${fmtN(T.fg>0?T.rev/T.fg:0,1)} ฿/kg FG`;
-  document.getElementById('kRptPL').textContent=(tp?'+':'')+fmtM(T.pl);
-  document.getElementById('kRptPL').style.color=tp?'#2ECC71':'#E74C3C';
-  document.getElementById('kRptCard').className='pl-kpi '+(tp?'pos':'neg');
-  document.getElementById('kRptPLsub').textContent=`Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}%`;
-  document.getElementById('rptKpiRow').style.display='';
+  // FG grade totals from P&L rows
+  const FGG=rows.reduce((a,r)=>({A:a.A+r.A,B:a.B+r.B,C:a.C+r.C,D:a.D+r.D,BK:a.BK+r.BK}),{A:0,B:0,C:0,D:0,BK:0});
+  const fgTotal=FGG.A+FGG.B+FGG.C+FGG.D+FGG.BK||1;
+  const fgGradeHtml=[['A',FGG.A,'#2ECC71'],['B',FGG.B,'#3498DB'],['C',FGG.C,'#F39C12'],['D',FGG.D,'#E74C3C'],['BK',FGG.BK,'#8A8070']]
+    .map(([lb,kg,col])=>{const p=Math.round(kg/fgTotal*100);if(!p)return '';
+      return `<span style="padding:2px 9px;border-radius:12px;background:${col}22;color:${col};font-size:.72rem;margin:2px;display:inline-block">${lb} ${p}%</span>`;}).join('');
 
-  // Latest update — always from full dataset, not the filtered rows
-  const allBuyKeys = PL_RM_MAP?[...PL_RM_MAP.keys()].sort():[];
-  const latestBuyKey = allBuyKeys.length ? allBuyKeys[allBuyKeys.length-1] : null;
-  const latestProd=PL_ACT_MAP?[...PL_ACT_MAP.keys()].sort().pop():null;
+  // RM grade totals (from rmRec.gradeKg stored by parseRMDaily)
+  const RM_LABELS=['ABC','ตกไซส์','ห้องเย็น','สุดท้าย','D','จัมโบ้','รูแบ'];
+  const RM_COLORS={ABC:'#2ECC71','ตกไซส์':'#1ABC9C','ห้องเย็น':'#3498DB','สุดท้าย':'#9B59B6',D:'#E74C3C','จัมโบ้':'#E67E22','รูแบ':'#95A5A6'};
+  const rmGK=new Array(7).fill(0);
+  rows.forEach(r=>{
+    const lagKey=dateKey(addDays(r.d,-PL_CFG.lag));
+    const rmRec=PL_RM_MAP?PL_RM_MAP.get(lagKey):null;
+    if(rmRec&&rmRec.gradeKg)rmRec.gradeKg.forEach((kg,i)=>{rmGK[i]+=(kg||0);});
+  });
+  const rmGTotal=rmGK.reduce((s,v)=>s+v,0)||1;
+  const rmGradeHtml=RM_LABELS.map((lb,i)=>{const p=Math.round(rmGK[i]/rmGTotal*100);if(!p)return '';
+    const col=RM_COLORS[lb]||'#888';
+    return `<span style="padding:2px 9px;border-radius:12px;background:${col}22;color:${col};font-size:.72rem;margin:2px;display:inline-block">${lb} ${p}%</span>`;}).join('');
+
+  // Latest update banner (always full dataset)
+  const allBuyKeys=PL_RM_MAP?[...PL_RM_MAP.keys()].sort():[];
+  const latestBuyKey=allBuyKeys.length?allBuyKeys[allBuyKeys.length-1]:null;
+  const latestProdKey=PL_ACT_MAP?[...PL_ACT_MAP.keys()].sort().pop():null;
   const latEl=document.getElementById('rptLatest');
-  if(latestBuyKey){
+  if(latEl&&latestBuyKey){
     const lbRec=PL_RM_MAP.get(latestBuyKey);
-    const lbDate=new Date(latestBuyKey);
-    const lbProdKey=dateKey(addDays(lbDate,PL_CFG.lag));
-    const lbAct=PL_ACT_MAP?PL_ACT_MAP.get(lbProdKey):null;
     latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp;
-      ซื้อล่าสุด <strong>${dateFmt(lbDate)}</strong> (${fmtN(lbRec&&lbRec.kg>0?lbRec.kg:0,0)} kg @ ${fmtN(lbRec&&lbRec.price>0?lbRec.price:PL_CFG.fallback,2)} ฿/kg) &nbsp;|&nbsp;
-      ผลิตล่าสุด <strong>${latestProd?dateFmt(new Date(latestProd)):'—'}</strong>
-      ${lbAct&&lbAct.fg>0?` | FG ${fmtN(lbAct.fg,0)} kg`:''}`;
-  } else {
-    latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp; ไม่พบข้อมูล`;
+      ซื้อล่าสุด <strong>${dateFmtS(new Date(latestBuyKey))}</strong>
+      (${fmtN(lbRec&&lbRec.kg>0?lbRec.kg:0,0)} kg @ ${fmtN(lbRec&&lbRec.price>0?lbRec.price:PL_CFG.fallback,2)} ฿/kg)
+      &nbsp;|&nbsp; ผลิตล่าสุด <strong>${latestProdKey?dateFmtS(new Date(latestProdKey)):'—'}</strong>`;
+    latEl.style.display='';
   }
-  latEl.style.display='';
 
-  document.getElementById('rptTableWrap').style.display='';
+  const avgPrice=T.raw>0?T.rmCost*(1-LOSS)/T.raw:0;
+  const fbCount=rows.filter(r=>r.isFb).length;
+
+  el.innerHTML=`
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    ${[['น้ำหนักดิบรวม',fmtM(T.raw||T.fg)+' kg',rows.length+' วันผลิต','#3498DB','rgba(52,152,219,.07)'],
+       ['FG รวม (ส่งฟรีซ)',fmtM(T.fg)+' kg','Yield '+(T.raw>0?fmtN(T.fg/T.raw*100,1):'—')+'%','#2ECC71','rgba(46,204,113,.07)'],
+       ['รายได้รวม',fmtM(T.rev)+' ฿',fmtN(T.fg>0?T.rev/T.fg:0,1)+' ฿/kg FG','var(--gl)','rgba(200,152,42,.07)'],
+       ['กำไร/ขาดทุน',(tp?'+':'')+fmtM(T.pl)+' ฿','Margin '+(T.rev>0?fmtN(T.pl/T.rev*100,1):'—')+'%',tp?'#2ECC71':'#E74C3C',tp?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)'],
+    ].map(([label,val,sub,col,bg])=>`
+      <div style="flex:1;min-width:130px;background:${bg};border:1px solid ${col}44;border-radius:8px;padding:12px 14px;text-align:center">
+        <div style="font-size:.65rem;color:var(--tm)">${label}</div>
+        <div style="font-size:1.05rem;font-weight:700;color:${col};margin:2px 0">${val}</div>
+        <div style="font-size:.63rem;color:var(--tm)">${sub}</div>
+      </div>`).join('')}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div style="background:var(--nv);border-radius:8px;padding:14px 16px">
+      <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:10px">🪵 วัตถุดิบ (RM)</div>
+      <table style="font-size:.74rem;width:100%;border-collapse:collapse">
+        <tr><td style="color:var(--tm);padding:3px 0;width:55%">น้ำหนักดิบ (ก่อนปอก)</td><td style="font-weight:600;color:var(--bl)">${fmtN(T.raw||T.fg,0)} kg</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">ราคาซื้อเฉลี่ย</td><td style="font-weight:600;color:var(--or)">${fmtN(avgPrice,2)} ฿/kg${fbCount>0?' <small style="color:#E74C3C;font-weight:400">('+fbCount+' วัน fallback)</small>':''}</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">ต้นทุน RM รวม</td><td style="font-weight:600;color:var(--or)">${fmtM(T.rmCost)} ฿</td></tr>
+      </table>
+      <div style="margin-top:10px;font-size:.67rem;color:var(--tm);margin-bottom:4px">สัดส่วนเกรด RM ที่ซื้อ</div>
+      <div>${rmGradeHtml||'<span style="color:var(--tm);font-size:.67rem">ไม่มีข้อมูลเกรด</span>'}</div>
+    </div>
+    <div style="background:var(--nv);border-radius:8px;padding:14px 16px">
+      <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:10px">📦 สินค้าสำเร็จรูป (FG)</div>
+      <table style="font-size:.74rem;width:100%;border-collapse:collapse">
+        <tr><td style="color:var(--tm);padding:3px 0;width:55%">FG รวม (ส่งฟรีซ)</td><td style="font-weight:600;color:#3498DB">${fmtN(T.fg,0)} kg</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">Yield (FG÷ดิบ)</td><td style="font-weight:600">${T.raw>0?fmtN(T.fg/T.raw*100,1):'—'}%</td></tr>
+        <tr><td style="color:var(--tm);padding:3px 0">ต้นทุนผลิต</td><td style="font-weight:600;color:var(--or)">${fmtM(T.mfg)} ฿ <small style="color:var(--tm)">(@${MFG} ฿/kg)</small></td></tr>
+      </table>
+      <div style="margin-top:10px;font-size:.67rem;color:var(--tm);margin-bottom:4px">สัดส่วนเกรด FG</div>
+      <div>${fgGradeHtml||'<span style="color:var(--tm);font-size:.67rem">ไม่มีข้อมูลเกรด</span>'}</div>
+    </div>
+  </div>
+
+  <div style="background:${tp?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)'};border:1px solid ${tp?'rgba(46,204,113,.2)':'rgba(231,76,60,.2)'};border-radius:8px;padding:14px 18px">
+    <div style="font-weight:700;font-size:.82rem;color:${tp?'#2ECC71':'#E74C3C'};margin-bottom:12px">
+      💰 สรุปกำไร/ขาดทุน — ${dateFmtL(minD)} ถึง ${dateFmtL(maxD)} (${rows.length} วัน)
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;font-size:.77rem">
+      <div style="padding:8px 12px;background:rgba(46,204,113,.08);border-radius:6px">
+        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">📥 รายได้รวม</div>
+        <div style="font-weight:700;color:var(--gl)">${fmtM(T.rev)} ฿</div>
+        <div style="color:var(--tm);font-size:.67rem">${fmtN(T.fg>0?T.rev/T.fg:0,1)} ฿/kg FG</div>
+      </div>
+      <div style="padding:8px 12px;background:rgba(230,126,34,.08);border-radius:6px">
+        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">📦 ต้นทุน RM</div>
+        <div style="font-weight:700;color:var(--or)">${fmtM(T.rmCost)} ฿</div>
+        <div style="color:var(--tm);font-size:.67rem">avg ${fmtN(avgPrice,2)} ÷(1-${LOSS}) ฿/kg</div>
+      </div>
+      <div style="padding:8px 12px;background:rgba(230,126,34,.08);border-radius:6px">
+        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">🏭 ต้นทุนผลิต</div>
+        <div style="font-weight:700;color:var(--or)">${fmtM(T.mfg)} ฿</div>
+        <div style="color:var(--tm);font-size:.67rem">${MFG} ฿/kg FG</div>
+      </div>
+      <div style="padding:8px 12px;background:${tp?'rgba(46,204,113,.12)':'rgba(231,76,60,.12)'};border-radius:6px">
+        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">${tp?'✅ กำไรสุทธิ':'❌ ขาดทุน'}</div>
+        <div style="font-weight:700;font-size:1rem;color:${tp?'#2ECC71':'#E74C3C'}">${tp?'+':''}${fmtM(T.pl)} ฿</div>
+        <div style="color:var(--tm);font-size:.67rem">Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}% &nbsp;|&nbsp; ${tp?'+':''}${fmtN(T.fg>0?T.pl/T.fg:0,1)} ฿/kg FG</div>
+      </div>
+    </div>
+  </div>`;
+
+  el.style.display='';
   document.getElementById('rptStatus').textContent='';
 }
-
-function runDailyReport(){
-  const from=document.getElementById('rptDateFrom').value;
-  const to  =document.getElementById('rptDateTo').value;
-  renderDailyReport(from||null, to||null);
-}
-window.runDailyReport=runDailyReport;
-
-function setRptRange(days){
-  const today=new Date();
-  const toStr=today.toISOString().slice(0,10);
-  let fromStr='';
-  if(days>0){ const f=new Date(today); f.setDate(f.getDate()-days+1); fromStr=f.toISOString().slice(0,10); }
-  document.getElementById('rptDateFrom').value=fromStr;
-  document.getElementById('rptDateTo').value=toStr;
-  runDailyReport();
-}
-window.setRptRange=setRptRange;
 
 function plShowConnect(msg){
   const b=document.getElementById('plSrcBadge');
@@ -1661,19 +1566,6 @@ async function initDailyPL(){
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     if(actCount>0){
-      // Also populate daily report tab with same date range
-      if(PL_ACT_MAP || PL_RM_MAP){
-        const today=new Date();
-        const toStr=today.toISOString().slice(0,10);
-        const fromDate=new Date(today); fromDate.setDate(fromDate.getDate()-29);
-        const fromStr=fromDate.toISOString().slice(0,10);
-        const rfd=document.getElementById('rptDateFrom'), rtd=document.getElementById('rptDateTo');
-        if(rfd&&!rfd.value) rfd.value=fromStr;
-        if(rtd&&!rtd.value) rtd.value=toStr;
-        renderDailyReport(document.getElementById('rptDateFrom').value||null, document.getElementById('rptDateTo').value||null);
-        const rptBadge=document.getElementById('rptSrcBadge');
-        if(rptBadge) rptBadge.innerHTML=document.getElementById('plSrcBadge').innerHTML;
-      }
       // Set default range: last 30 days
       const today=new Date();
       const toStr=today.toISOString().slice(0,10);
