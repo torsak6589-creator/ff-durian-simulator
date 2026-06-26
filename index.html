@@ -1572,14 +1572,23 @@ function renderDailyReport(fromDate, toDate){
   document.getElementById('kRptPLsub').textContent=`Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}%`;
   document.getElementById('rptKpiRow').style.display='';
 
-  // Latest update
-  const latestBuy=rows[rows.length-1];
+  // Latest update — always from full dataset, not the filtered rows
+  const allBuyKeys = PL_RM_MAP?[...PL_RM_MAP.keys()].sort():[];
+  const latestBuyKey = allBuyKeys.length ? allBuyKeys[allBuyKeys.length-1] : null;
   const latestProd=PL_ACT_MAP?[...PL_ACT_MAP.keys()].sort().pop():null;
   const latEl=document.getElementById('rptLatest');
-  latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp;
-    ซื้อล่าสุด <strong>${dateFmt(latestBuy.buyDate)}</strong> (${fmtN(latestBuy.rmKg,0)} kg @ ${fmtN(latestBuy.price,2)} ฿/kg) &nbsp;|&nbsp;
-    ผลิตล่าสุด <strong>${latestProd?dateFmt(new Date(latestProd)):'—'}</strong>
-    ${latestBuy.fg>0?` FG ${fmtN(latestBuy.fg,0)} kg | กำไร <span style="color:${latestBuy.pl>=0?'#2ECC71':'#E74C3C'}">${latestBuy.pl>=0?'+':''}${fmtN(latestBuy.pl)}</span> ฿`:''}`;
+  if(latestBuyKey){
+    const lbRec=PL_RM_MAP.get(latestBuyKey);
+    const lbDate=new Date(latestBuyKey);
+    const lbProdKey=dateKey(addDays(lbDate,PL_CFG.lag));
+    const lbAct=PL_ACT_MAP?PL_ACT_MAP.get(lbProdKey):null;
+    latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp;
+      ซื้อล่าสุด <strong>${dateFmt(lbDate)}</strong> (${fmtN(lbRec&&lbRec.kg>0?lbRec.kg:0,0)} kg @ ${fmtN(lbRec&&lbRec.price>0?lbRec.price:PL_CFG.fallback,2)} ฿/kg) &nbsp;|&nbsp;
+      ผลิตล่าสุด <strong>${latestProd?dateFmt(new Date(latestProd)):'—'}</strong>
+      ${lbAct&&lbAct.fg>0?` | FG ${fmtN(lbAct.fg,0)} kg`:''}`;
+  } else {
+    latEl.innerHTML=`<strong style="color:var(--gl)">อัปเดตล่าสุด:</strong> &nbsp; ไม่พบข้อมูล`;
+  }
   latEl.style.display='';
 
   document.getElementById('rptTableWrap').style.display='';
