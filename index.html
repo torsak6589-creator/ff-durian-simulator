@@ -237,6 +237,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <button class="tab-btn active" id="tab-sim" onclick="showTab('sim')">🎚️ Simulator</button>
   <button class="tab-btn" id="tab-pl" onclick="showTab('pl')">📅 P&amp;L รายวัน</button>
   <button class="tab-btn" id="tab-report" onclick="showTab('report')">📊 รายงานประจำวัน</button>
+  <button class="tab-btn" id="tab-purchase" onclick="showTab('purchase')">🛒 รายการซื้อ</button>
 </div>
 
 <div id="panel-sim">
@@ -468,6 +469,36 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <div id="rptSummary" style="display:none"></div>
 </div>
 </div><!-- /panel-report -->
+
+<!-- ===== PURCHASE TAB ===== -->
+<div id="panel-purchase" style="display:none">
+<div class="card hi">
+  <div class="stitle">🛒 รายการซื้อวัตถุดิบรายวัน</div>
+  <div id="pcSrcBadge" style="font-size:.71rem;color:var(--tm);margin-bottom:8px;min-height:18px"></div>
+
+  <!-- Filter -->
+  <div class="pl-filter" style="margin-bottom:10px">
+    <span style="color:var(--tm);font-size:.72rem">ช่วงวันที่:</span>
+    <input type="date" id="pcDateFrom" class="pl-date">
+    <span style="color:var(--tm)">–</span>
+    <input type="date" id="pcDateTo" class="pl-date">
+    <button class="pl-qbtn" onclick="setPcRange(7)">7วัน</button>
+    <button class="pl-qbtn" onclick="setPcRange(14)">14วัน</button>
+    <button class="pl-qbtn" onclick="setPcRange(30)">30วัน</button>
+    <button class="pl-qbtn" onclick="setPcRange(0)">ทั้งหมด</button>
+    <button class="pl-apply" onclick="runPurchase()">แสดง</button>
+  </div>
+  <div id="pcStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0"></div>
+
+  <!-- Table -->
+  <div id="pcTableWrap" style="display:none;overflow-x:auto">
+    <table class="pl-tbl" id="pcTable" style="min-width:860px;font-size:.72rem">
+      <thead id="pcThead"></thead>
+      <tbody id="pcTbody"></tbody>
+    </table>
+  </div>
+</div>
+</div><!-- /panel-purchase -->
 
 <!-- ===== คู่มือการใช้งาน ===== -->
 <div class="card hi" id="guide">
@@ -1044,12 +1075,13 @@ startActual();
 // TAB SWITCHING
 // ══════════════════════════════════════════════
 function showTab(name){
-  ['sim','pl','report'].forEach(t=>{
+  ['sim','pl','report','purchase'].forEach(t=>{
     document.getElementById('panel-'+t).style.display = name===t?'':'none';
     document.getElementById('tab-'+t).className = 'tab-btn'+(name===t?' active':'');
   });
   if(name==='pl' && !PL_LOADED) initDailyPL();
   if(name==='report' && !PL_LOADED) initDailyPL();
+  if(name==='purchase' && !PC_LOADED) initPurchase();
 }
 window.showTab = showTab;
 
@@ -1532,60 +1564,206 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     </div>
   </div>
 
-  <!-- ตารางรายการซื้อรายวัน -->
-  <div style="margin-top:14px">
-    <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:8px">🛒 รายการซื้อวัตถุดิบรายวัน</div>
-    <div style="overflow-x:auto">
-      <table class="pl-tbl" style="min-width:750px;font-size:.71rem">
-        <thead><tr>
-          <th style="text-align:left;min-width:70px">วันที่ซื้อ</th>
-          <th>รวม (kg)</th>
-          <th class="th-gold">ราคา<br>฿/kg</th>
-          ${RM_LABELS.map(lb=>`<th style="font-size:.64rem">${lb}</th>`).join('')}
-        </tr></thead>
-        <tbody id="rptRmTbody">
-        ${(()=>{
-          if(!PL_RM_MAP) return '<tr><td colspan="10" style="color:var(--tm);text-align:center">ไม่มีข้อมูล</td></tr>';
-          // collect purchase keys in range (minD-lag to maxD-lag)
-          const buyMin=dateKey(addDays(minD,-PL_CFG.lag));
-          const buyMax=dateKey(addDays(maxD,-PL_CFG.lag));
-          const buyKeys=[...PL_RM_MAP.keys()].filter(k=>k>=buyMin&&k<=buyMax).sort();
-          let totalKg=0,totalVal=0;
-          const gradeTotal=new Array(7).fill(0);
-          const trs=buyKeys.map(k=>{
-            const rec=PL_RM_MAP.get(k);
-            if(!rec||rec.kg<=0) return '';
-            totalKg+=rec.kg; totalVal+=rec.kg*rec.price;
-            const gCells=RM_LABELS.map((_,i)=>{
-              const gk=rec.gradeKg&&rec.gradeKg[i]>0?rec.gradeKg[i]:0;
-              const gp=rec.gradePct&&rec.gradePct[i]>0?rec.gradePct[i]:0;
-              gradeTotal[i]+=gk;
-              return `<td style="text-align:right;color:var(--tm)">${gp>0?gp+'%':'—'}</td>`;
-            }).join('');
-            return `<tr>
-              <td>${dateFmtS(new Date(k))}</td>
-              <td class="td-bl">${fmtN(rec.kg,0)}</td>
-              <td class="${rec.price>0?'td-gold':'td-fb'}">${rec.price>0?fmtN(rec.price,2):'—'}</td>
-              ${gCells}
-            </tr>`;
-          }).join('');
-          const avgP=totalKg>0?totalVal/totalKg:0;
-          const gTotalSum=gradeTotal.reduce((s,v)=>s+v,0)||1;
-          const tfoot=`<tr class="pl-total">
-            <td>รวม ${buyKeys.length} วัน</td>
-            <td class="td-bl">${fmtN(totalKg,0)}</td>
-            <td class="td-mt">${avgP>0?fmtN(avgP,2):'—'}</td>
-            ${gradeTotal.map(g=>`<td style="text-align:right;color:var(--tm);font-size:.65rem">${g>0?Math.round(g/gTotalSum*100)+'%':'—'}</td>`).join('')}
-          </tr>`;
-          return trs+tfoot;
-        })()}
-        </tbody>
-      </table>
-    </div>
-  </div>`;
+  `;
 
   el.style.display='';
   document.getElementById('rptStatus').textContent='';
+}
+
+// ══════════════════════════════════════════════
+// PURCHASE TAB — Procurement_Master_File.xlsx
+// ══════════════════════════════════════════════
+let PC_LOADED=false, PC_DATA=null; // PC_DATA: [{date, rows:[{grade,kg,price,value,...}]}]
+const PROC_FILE='Procurement_Master_File';
+
+async function graphValuesProc(token, sheet, matchRe){
+  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+  // Resolve file by name within the same drive
+  let pcItemId=null;
+  try{
+    const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${SP.driveId}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr});
+    if(sr.ok){
+      const items=((await sr.json()).value||[]);
+      const f=items.find(i=>/Procurement_Master_File/i.test(i.name));
+      if(f) pcItemId=f.id;
+    }
+  }catch(e){}
+  if(!pcItemId) throw new Error('ไม่พบไฟล์ '+PROC_FILE+' ในไดรฟ์');
+  const base=`https://graph.microsoft.com/v1.0/drives/${SP.driveId}/items/${pcItemId}/workbook`;
+  let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr});
+  if(!res.ok){
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
+    if(!wl.ok) throw new Error('worksheets HTTP '+wl.status);
+    const list=(await wl.json()).value||[];
+    const m=list.find(w=>{const n=w.name.replace(/\s/g,'').toLowerCase(); return n===sheet.replace(/\s/g,'').toLowerCase();})||(matchRe&&list.find(w=>matchRe.test(w.name)));
+    if(!m) throw new Error('ไม่พบชีท '+sheet+' (มี: '+list.map(w=>w.name).join(', ')+')');
+    res=await fetch(base+'/worksheets/'+encodeURIComponent(m.id)+'/usedRange?$select=values',{headers:hdr});
+    if(!res.ok) throw new Error('usedRange HTTP '+res.status);
+  }
+  return (await res.json()).values;
+}
+
+function parseProcurement(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  // Find header row
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,15);i++){
+    const r=(values[i]||[]).map(c=>String(c||'').toLowerCase());
+    if(r.some(h=>h.includes('วัน')||h.includes('date'))&&r.some(h=>/kg|กก|ปริมาณ|น้ำหนัก/.test(h))){hi=i;break;}
+  }
+  if(hi<0) hi=0;
+  const hdr=(values[hi]||[]).map(h=>String(h||'').trim());
+  const hdrL=hdr.map(h=>h.toLowerCase());
+
+  const dateCol=hdrL.findIndex(h=>h.includes('วัน')||h.includes('date'))||0;
+  // Find all kg columns, value columns, price columns
+  const cols=hdr.map((h,i)=>({i,h,hl:hdrL[i]}));
+  const kgCols=cols.filter(c=>/\(kg\)|\(กก\)|kg/i.test(c.h)&&!/รวม|total/.test(c.hl));
+  const valCol=cols.find(c=>c.hl.includes('มูลค่า')||c.hl.includes('เป็นเงิน')||c.hl.includes('รวมเงิน'));
+  const priceCol=cols.find(c=>c.hl.includes('ราคาเฉลี่ย')||c.hl.includes('ราคา/kg')||(c.hl.includes('ราคา')&&!/รวม/.test(c.hl)));
+
+  const rows=[];
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||'').toLowerCase();
+    if(label.includes('รวม')||label.includes('total')) continue;
+    const d=excelToDate(r[dateCol]);
+    const k=dateKey(d); if(!k) continue;
+    let totalKg=0;
+    kgCols.forEach(c=>{const n=aNum(r[c.i]);if(!isNaN(n)&&n>0)totalKg+=n;});
+    if(totalKg<=0) continue;
+    const val=valCol?aNum(r[valCol.i]):NaN;
+    const price=priceCol?aNum(r[priceCol.i]):NaN;
+    const gradeKg=kgCols.map(c=>{const n=aNum(r[c.i]);return(!isNaN(n)&&n>0)?n:0;});
+    const gradeLabels=kgCols.map(c=>c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim());
+    rows.push({
+      k, date:d, totalKg,
+      value:(!isNaN(val)&&val>0)?val:0,
+      price:(!isNaN(price)&&price>0)?price:(!isNaN(val)&&val>0&&totalKg>0?val/totalKg:0),
+      gradeKg, gradeLabels
+    });
+  }
+  rows.sort((a,b)=>a.k.localeCompare(b.k));
+  return rows.length>0?{rows,hdr,kgCols}:null;
+}
+
+function renderPurchaseTable(data, fromStr, toStr){
+  const tbody=document.getElementById('pcTbody');
+  const thead=document.getElementById('pcThead');
+  if(!tbody||!thead) return;
+  const fmtN=(n,d=0)=>n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const dateFmt=d=>{try{return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}catch(e){return d.toISOString().slice(0,10);}};
+
+  const from=fromStr?new Date(fromStr):null;
+  const to  =toStr  ?new Date(toStr  ):null;
+  const rows=data.rows.filter(r=>{
+    if(from&&r.date<from)return false;
+    if(to  &&r.date>to  )return false;
+    return true;
+  });
+
+  const gl=data.kgCols.map(c=>c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim());
+
+  // Header
+  thead.innerHTML=`<tr>
+    <th style="text-align:left;min-width:90px">วันที่ซื้อ</th>
+    <th>รวม (kg)</th>
+    <th class="th-gold">ราคา<br>฿/kg</th>
+    <th>มูลค่า (฿)</th>
+    ${gl.map(lb=>`<th style="font-size:.64rem">${lb}<br><span style="font-weight:400;color:var(--tm)">kg</span></th>`).join('')}
+    ${gl.map(lb=>`<th style="font-size:.64rem">${lb}<br><span style="font-weight:400;color:var(--tm)">%</span></th>`).join('')}
+  </tr>`;
+
+  tbody.innerHTML='';
+  let tKg=0,tVal=0;
+  const tGrade=new Array(gl.length).fill(0);
+
+  rows.forEach(r=>{
+    tKg+=r.totalKg; tVal+=r.value;
+    r.gradeKg.forEach((g,i)=>tGrade[i]+=g);
+    const rowTotal=r.gradeKg.reduce((s,v)=>s+v,0)||1;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${dateFmt(r.date)}</td>
+      <td class="td-bl">${fmtN(r.totalKg,0)}</td>
+      <td class="${r.price>0?'td-gold':'td-fb'}">${r.price>0?fmtN(r.price,2):'—'}</td>
+      <td class="td-gr">${r.value>0?fmtN(r.value,0):'—'}</td>
+      ${r.gradeKg.map(g=>`<td style="text-align:right">${g>0?fmtN(g,0):'—'}</td>`).join('')}
+      ${r.gradeKg.map(g=>`<td style="text-align:right;color:var(--tm);font-size:.67rem">${g>0?Math.round(g/rowTotal*100)+'%':'—'}</td>`).join('')}`;
+    tbody.appendChild(tr);
+  });
+
+  // Total row
+  const avgP=tKg>0?tVal/tKg:0;
+  const tGTotal=tGrade.reduce((s,v)=>s+v,0)||1;
+  const ttr=document.createElement('tr');
+  ttr.className='pl-total';
+  ttr.innerHTML=`
+    <td>รวม ${rows.length} วัน</td>
+    <td class="td-bl">${fmtN(tKg,0)}</td>
+    <td class="td-mt">${avgP>0?fmtN(avgP,2):'—'}</td>
+    <td class="td-gr">${tVal>0?fmtN(tVal,0):'—'}</td>
+    ${tGrade.map(g=>`<td style="text-align:right;font-size:.67rem">${g>0?fmtN(g,0):'—'}</td>`).join('')}
+    ${tGrade.map(g=>`<td style="text-align:right;font-size:.67rem;color:var(--tm)">${g>0?Math.round(g/tGTotal*100)+'%':'—'}</td>`).join('')}`;
+  tbody.appendChild(ttr);
+
+  document.getElementById('pcTableWrap').style.display='';
+  document.getElementById('pcStatus').textContent='';
+}
+
+function runPurchase(){
+  if(!PC_DATA){document.getElementById('pcStatus').textContent='ยังไม่มีข้อมูล กรุณาเชื่อมต่อก่อน';return;}
+  renderPurchaseTable(PC_DATA, document.getElementById('pcDateFrom').value||null, document.getElementById('pcDateTo').value||null);
+}
+window.runPurchase=runPurchase;
+
+function setPcRange(days){
+  const today=new Date();
+  const toStr=today.toISOString().slice(0,10);
+  let fromStr='';
+  if(days>0){const f=new Date(today);f.setDate(f.getDate()-days+1);fromStr=f.toISOString().slice(0,10);}
+  document.getElementById('pcDateFrom').value=fromStr;
+  document.getElementById('pcDateTo').value=toStr;
+  runPurchase();
+}
+window.setPcRange=setPcRange;
+
+async function initPurchase(){
+  PC_LOADED=true;
+  const badge=document.getElementById('pcSrcBadge');
+  if(typeof msalApp==='undefined'||!msalApp){
+    badge.innerHTML='🔐 ต้องล็อกอิน Microsoft 365 <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">เชื่อมต่อ</button>';
+    PC_LOADED=false; return;
+  }
+  badge.textContent='🔄 กำลังดึงข้อมูล…';
+  try{
+    let token=await getToken(false);
+    if(!token){badge.innerHTML='🔐 ต้องล็อกอินใหม่ <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">เชื่อมต่อ</button>';PC_LOADED=false;return;}
+    badge.textContent='🔄 กำลังค้นหาไฟล์ '+PROC_FILE+'…';
+    // Try to list all sheets first, then use first sheet
+    let values=null;
+    // Try common sheet names
+    for(const sheetName of ['Sheet1','ราคาซื้อรายวัน','Procurement','Purchase','รายการซื้อ']){
+      try{values=await graphValuesProc(token,sheetName,/sheet1|รายการ|purchase|ซื้อ/i);if(values)break;}catch(e){values=null;}
+    }
+    if(!values) throw new Error('ไม่สามารถอ่านชีทจาก '+PROC_FILE);
+    PC_DATA=parseProcurement(values);
+    if(!PC_DATA) throw new Error('ไม่พบข้อมูลในชีท');
+    badge.innerHTML='<span style="color:#2ECC71">●</span> '+PROC_FILE+' — '+PC_DATA.rows.length+' รายการ'+
+      ' <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
+    // Default 30 days
+    const today=new Date();
+    const toStr=today.toISOString().slice(0,10);
+    const fromDate=new Date(today);fromDate.setDate(fromDate.getDate()-29);
+    const fromStr=fromDate.toISOString().slice(0,10);
+    const fd=document.getElementById('pcDateFrom'),td=document.getElementById('pcDateTo');
+    if(fd&&!fd.value)fd.value=fromStr;
+    if(td&&!td.value)td.value=toStr;
+    renderPurchaseTable(PC_DATA,fd.value||null,td.value||null);
+  }catch(e){
+    badge.innerHTML='⚠️ '+e.message+' <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">ลองใหม่</button>';
+    PC_LOADED=false;
+  }
 }
 
 function plShowConnect(msg){
