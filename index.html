@@ -42,7 +42,7 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .pl-tbl tbody tr:hover{background:rgba(255,255,255,.025)}
 .pl-tbl td{padding:7px 9px;text-align:right;font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums;font-size:.69rem;color:var(--t);white-space:nowrap}
 .pl-tbl td:first-child{text-align:left;font-family:'Noto Sans Thai',sans-serif;font-size:.69rem;color:var(--w)}
-.pl-tbl td.td-gold{color:var(--gl)}.pl-tbl td.td-gr{color:#2ECC71;font-weight:500}.pl-tbl td.td-rd{color:#E74C3C;font-weight:500}.pl-tbl td.td-or{color:var(--or)}.pl-tbl td.td-mt{color:var(--tm)}
+.pl-tbl td.td-gold{color:var(--gl)}.pl-tbl td.td-gr{color:#2ECC71;font-weight:500}.pl-tbl td.td-rd{color:#E74C3C;font-weight:500}.pl-tbl td.td-or{color:var(--or)}.pl-tbl td.td-mt{color:var(--tm)}.pl-tbl td.td-bl{color:#3498DB}
 .pl-tbl td.td-fb{color:var(--or);background:rgba(243,156,18,.07);border-left:2px solid rgba(243,156,18,.28)}
 .pl-tbl tr.pl-total{background:rgba(200,152,42,.07)!important;border-top:1px solid rgba(200,152,42,.18)!important}
 .pl-tbl tr.pl-total td{font-weight:700;color:var(--w)}
@@ -437,7 +437,8 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
           <tr>
             <th style="min-width:90px;text-align:left">วันผลิต</th>
             <th class="th-bl" style="min-width:78px">ราคาซื้อ P−8<br><span style="font-weight:400;color:var(--tm)">฿/kg ดิบ</span></th>
-            <th>FG รวม<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
+            <th class="th-bl">ดิบเข้าผลิต<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
+            <th>FG ส่งฟรีซ<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
             <th style="min-width:105px">เกรด (kg)</th>
             <th class="th-gr">รายได้<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
             <th class="th-gold">RM cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
@@ -1194,23 +1195,24 @@ function parseDailyActual(values){
     const d = excelToDate(rawDate);
     const k = dateKey(d);
     if(!k) continue;
-    const rw=cRaw>=0?aNum(r[cRaw]):NaN;
+    const rw=cRaw>=0?aNum(r[cRaw]):NaN;       // นน.ก่อนปอก = ทุเรียนดิบเข้าผลิต
     if(cRaw>=0 && (isNaN(rw)||rw<=0)) continue;
     const fg=aNum(r[cFG]); if(isNaN(fg)||fg<=0) continue;
+    const raw   = (cRaw>=0 && !isNaN(rw)) ? rw : 0;
     const a_kg  = Math.max(0, aNum(r[cA_kg]) ||0);
     const c_kg  = Math.max(0, aNum(r[cC_kg]) ||0);
     const d_kg  = Math.max(0, aNum(r[cD_kg]) ||0);
     const bk_kg = Math.max(0, aNum(r[cBK_kg])||0);
     const pure  = Math.max(0, aNum(r[cPure])  ||0);
-    const prev=map.get(k)||{fg:0,a:0,c:0,d:0,bk:0,pure:0,lots:0};
-    map.set(k,{fg:prev.fg+fg, a:prev.a+a_kg, c:prev.c+c_kg,
+    const prev=map.get(k)||{raw:0,fg:0,a:0,c:0,d:0,bk:0,pure:0,lots:0};
+    map.set(k,{raw:prev.raw+raw, fg:prev.fg+fg, a:prev.a+a_kg, c:prev.c+c_kg,
                d:prev.d+d_kg, bk:prev.bk+bk_kg, pure:prev.pure+pure, lots:prev.lots+1});
   }
   const result=new Map();
   map.forEach((v,k)=>{
     // B = FG − A − C − D − BK − เพียวเร่ (ส่วนที่เหลือ = เกรด B จริง)
     const B = Math.max(0, v.fg - v.a - v.c - v.d - v.bk - v.pure);
-    result.set(k,{fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
+    result.set(k,{raw:v.raw, fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
   });
   return result.size>0 ? result : null;
 }
@@ -1238,13 +1240,15 @@ function renderDailyPL(fromDate, toDate){
     const rmRec  = PL_RM_MAP ? PL_RM_MAP.get(lagKey) : null;
     const price  = (rmRec && rmRec.price>0) ? rmRec.price : FB;
     const isFb   = !rmRec || rmRec.price<=0;
-    const {fg,A,B,C,D,BK,lots}=act; // A/B/C/D/BK เป็น kg จริง
+    const {raw,fg,A,B,C,D,BK,lots}=act; // raw=ดิบก่อนปอก, A/B/C/D/BK เป็น kg จริง
+    // ฐานต้นทุน RM = น้ำหนักดิบ (ก่อนปอก); ถ้าไม่มีคอลัมน์ดิบ fallback เป็น FG
+    const rmBase = raw>0 ? raw : fg;
     const rev = A*SELL.A + B*SELL.B + C*SELL.C + D*SELL.D + BK*SELL.BK;
-    const rmCost = fg*price/(1-LOSS);
+    const rmCost = rmBase*price/(1-LOSS);
     const mfg    = fg*MFG;
     const pl     = rev-rmCost-mfg;
     const pl100  = fg>0?pl/fg*100:0;
-    rows.push({k,d,price,isFb,fg,A,B,C,D,BK,lots,rev,rmCost,mfg,pl,pl100});
+    rows.push({k,d,price,isFb,raw,fg,A,B,C,D,BK,lots,rev,rmCost,mfg,pl,pl100});
   });
   rows.sort((a,b)=>a.k.localeCompare(b.k));
   if(!rows.length){
@@ -1254,7 +1258,7 @@ function renderDailyPL(fromDate, toDate){
     return;
   }
   const maxAbs=Math.max(...rows.map(r=>Math.abs(r.pl)));
-  const T=rows.reduce((a,r)=>({fg:a.fg+r.fg,rev:a.rev+r.rev,rmCost:a.rmCost+r.rmCost,mfg:a.mfg+r.mfg,pl:a.pl+r.pl}),{fg:0,rev:0,rmCost:0,mfg:0,pl:0});
+  const T=rows.reduce((a,r)=>({raw:a.raw+(r.raw||0),fg:a.fg+r.fg,rev:a.rev+r.rev,rmCost:a.rmCost+r.rmCost,mfg:a.mfg+r.mfg,pl:a.pl+r.pl}),{raw:0,fg:0,rev:0,rmCost:0,mfg:0,pl:0});
   const fmtN=(n,d=0)=>n.toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
   const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':(n/1e3).toFixed(0)+'K');
   const dateFmt=d=>{
@@ -1268,6 +1272,7 @@ function renderDailyPL(fromDate, toDate){
     tr.innerHTML=`
       <td>${dateFmt(r.d)}</td>
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
+      <td class="td-bl">${fmtN(r.raw,0)}</td>
       <td>${fmtN(r.fg,0)}</td>
       <td style="font-size:.68rem;line-height:1.6">
         <span class="pl-gc pl-gc-a">A ${fmtN(r.A,0)}</span>
@@ -1295,7 +1300,8 @@ function renderDailyPL(fromDate, toDate){
   ttr.className='pl-total';
   ttr.innerHTML=`
     <td>รวม ${rows.length} วัน</td>
-    <td class="td-mt">฿/kg avg</td>
+    <td class="td-mt">${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,2)} avg</td>
+    <td class="td-bl">${fmtN(T.raw,0)}</td>
     <td>${fmtN(T.fg,0)}</td>
     <td>—</td>
     <td class="td-gr">${fmtN(T.rev)}</td>
@@ -1309,7 +1315,7 @@ function renderDailyPL(fromDate, toDate){
   const fbCount=rows.filter(r=>r.isFb).length;
   document.getElementById('kplRM').textContent=fmtM(T.rmCost);
   document.getElementById('kplRM').style.color=tp?'var(--gl)':'var(--rd)';
-  document.getElementById('kplRMsub').textContent=`gross-up ÷${(1-LOSS)} | avg ${fmtN(T.rmCost/T.fg,1)} ฿/kg FG`;
+  document.getElementById('kplRMsub').textContent=`฿/kg ดิบ avg ${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,1)} | gross-up ÷${(1-LOSS)} | ดิบรวม ${fmtN(T.raw,0)} kg`;
   document.getElementById('kplMfg').textContent=fmtM(T.mfg);
   document.getElementById('kplMfgSub').textContent=`FG รวม ${fmtN(T.fg,0)} kg`;
   document.getElementById('kplRev').textContent=fmtM(T.rev);
