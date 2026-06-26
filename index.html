@@ -1353,38 +1353,68 @@ function setPlRange(days){
 }
 window.setPlRange=setPlRange;
 
+function plShowConnect(msg){
+  const b=document.getElementById('plSrcBadge');
+  b.innerHTML=(msg||'🔐 ต้องล็อกอิน Microsoft 365')+
+    ' <button onclick="plConnect()" style="'+btnStyle+'">เชื่อมต่อ Microsoft 365</button>';
+  PL_LOADED=false; // allow retry on next tab switch or button click
+}
+window.plConnect=()=>initDailyPL();
+
 async function initDailyPL(){
   PL_LOADED=true;
-  const badge=document.getElementById('plSrcBadge');
-  // Reuse msalApp from main script
+  const b=document.getElementById('plSrcBadge');
   if(typeof msalApp==='undefined'||!msalApp){
-    badge.textContent='⚠️ กรุณาเชื่อมต่อ Microsoft 365 ในส่วน Scenario ก่อน';
-    // Try using ACTUAL data already loaded
-    if(ACTUAL){ // fallback: no daily RM, render with fallback prices
-      PL_ACT_MAP=null; // will show error
-    }
+    plShowConnect('⚠️ ยังไม่ได้เชื่อมต่อ Microsoft 365:');
     return;
   }
+  b.textContent='🔄 กำลังดึงข้อมูล…';
   try{
-    badge.textContent='🔄 กำลังดึงข้อมูล ราคาทุเรียน…';
-    const token=await getToken(false);
-    if(!token){ badge.textContent='🔐 ต้องล็อกอิน Microsoft 365 ก่อน'; return; }
-    badge.textContent='🔄 ดึง ราคาทุเรียน…';
+    let token=await getToken(false);
+    if(!token){
+      plShowConnect('🔐 ต้องล็อกอินใหม่:');
+      return;
+    }
+    b.textContent='🔄 ดึง ราคาทุเรียน…';
     try{
       const rmVals=await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน/);
       PL_RM_MAP=parseRMDaily(rmVals);
-      badge.textContent='🔄 ดึง %A DURAIN…';
-    }catch(e){ badge.textContent='⚠️ ดึง ราคาทุเรียน ไม่ได้ — ใช้ fallback ราคาเฉลี่ย'; }
+    }catch(e){ PL_RM_MAP=null; /* ใช้ fallback */ }
+    b.textContent='🔄 ดึง %A DURAIN…';
     try{
       const actVals=await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/);
       PL_ACT_MAP=parseDailyActual(actVals);
-    }catch(e){ badge.textContent='⚠️ ดึง %A DURAIN ไม่ได้: '+e.message; return; }
+    }catch(e){
+      PL_ACT_MAP=null;
+      b.innerHTML='⚠️ ดึง %A DURAIN ไม่ได้: '+e.message+
+        ' <button onclick="plConnect()" style="'+btnStyle+'">ลองใหม่</button>';
+      PL_LOADED=false;
+      return;
+    }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
-    badge.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · อัปเดตแล้ว';
-    if(actCount>0) renderDailyPL(null,null); // render all by default
+    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
+      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
+    if(actCount>0){
+      // Set default range: last 30 days
+      const today=new Date();
+      const toStr=today.toISOString().slice(0,10);
+      const fromDate=new Date(today); fromDate.setDate(fromDate.getDate()-29);
+      const fromStr=fromDate.toISOString().slice(0,10);
+      const fd=document.getElementById('plDateFrom'), td=document.getElementById('plDateTo');
+      if(fd&&!fd.value) fd.value=fromStr;
+      if(td&&!td.value) td.value=toStr;
+      renderDailyPL(document.getElementById('plDateFrom').value||null, document.getElementById('plDateTo').value||null);
+    }
   }catch(e){
-    badge.textContent='⚠️ เกิดข้อผิดพลาด: '+e.message;
+    const code=e.errorCode||'';
+    if(/interaction_required|login_required|consent_required|no_account/.test(code))
+      plShowConnect('🔐 ต้องล็อกอินใหม่:');
+    else{
+      b.innerHTML='⚠️ เกิดข้อผิดพลาด: '+e.message+
+        ' <button onclick="plConnect()" style="'+btnStyle+'">ลองใหม่</button>';
+      PL_LOADED=false;
+    }
   }
 }
 
