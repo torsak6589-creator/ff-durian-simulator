@@ -438,7 +438,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
             <th style="min-width:90px;text-align:left">วันผลิต</th>
             <th class="th-bl" style="min-width:78px">ราคาซื้อ P−8<br><span style="font-weight:400;color:var(--tm)">฿/kg ดิบ</span></th>
             <th>FG รวม<br><span style="font-weight:400;color:var(--tm)">(kg)</span></th>
-            <th style="min-width:95px">สัดส่วนเกรด</th>
+            <th style="min-width:105px">เกรด (kg)</th>
             <th class="th-gr">รายได้<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
             <th class="th-gold">RM cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
             <th class="th-or">Mfg cost<br><span style="font-weight:400;color:var(--tm)">(฿)</span></th>
@@ -1161,7 +1161,7 @@ function parseRMDaily(values){
   return result.size>0 ? result : null;
 }
 
-/* ── Parse %A DURAIN → Map<dateKey, {fg,A,B,C,D,BK,lots}> ── */
+/* ── Parse %A DURAIN → Map<dateKey, {fg,A,B,C,D,BK,lots}> (kg จริงรายเกรด) ── */
 function parseDailyActual(values){
   if(!Array.isArray(values)||!values.length) return null;
   let hi=-1;
@@ -1174,44 +1174,43 @@ function parseDailyActual(values){
   const norm=hdr.map(h=>h.replace(/\s/g,''));
   const exact=k=>norm.findIndex(h=>h===k);
   const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  const cA=exact('%a'),cB=exact('%b'),cC=exact('%c'),cD=exact('%d'),cBK=exact('%bk');
-  const cRaw=incl('ก่อนปอก','ดิบ','raw');
-  const cFG=incl('ฟร');   // ส่งเข้าฟรีซ — ตรงกับ parseActual เดิม
-  // Date column
+  const cRaw=incl('ก่อนปอก','ดิบ');
+  const cFG=incl('ฟร');           // นน.ส่งเข้าฟรีซ (col 16)
   const cDate=incl('วัน','date','ว/ด/ป','ผลิต');
-  if(cA<0||cFG<0) return null;
+  // ตามโครงสร้างชีท: หลังจาก cFG คือ A, C, D, BK, เพียวเร่ ตามลำดับ
+  // (ไม่มีคอลัมน์ B โดยตรง — คำนวณ B = FG − A − C − D − BK − เพียวเร่)
+  const cA_kg  = cFG+1;  // A (kg)
+  const cC_kg  = cFG+2;  // C (kg)
+  const cD_kg  = cFG+3;  // D (kg)
+  const cBK_kg = cFG+4;  // BK (kg)
+  const cPure  = cFG+5;  // เพียวเร่ (kg) — ไม่นับในรายได้เกรดหลัก
+  if(cFG<0) return null;
   const map=new Map();
   for(let i=hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
     const label=String(r[0]||'').toLowerCase();
     if(label.includes('รวม')||label.includes('total')) continue;
-    const rawDate = cDate>=0 ? r[cDate] : r[0];
+    const rawDate = cDate>=0 ? r[cDate] : r[1];
     const d = excelToDate(rawDate);
     const k = dateKey(d);
     if(!k) continue;
-    // ใช้ raw weight เป็น guard ถ้ามี (ตรงกับ parseActual); ถ้าไม่มีใช้ fg
     const rw=cRaw>=0?aNum(r[cRaw]):NaN;
     if(cRaw>=0 && (isNaN(rw)||rw<=0)) continue;
     const fg=aNum(r[cFG]); if(isNaN(fg)||fg<=0) continue;
-    const pA=aNum(r[cA])||0, pB=cB>=0?aNum(r[cB])||0:0;
-    const pC=cC>=0?aNum(r[cC])||0:0, pD=cD>=0?aNum(r[cD])||0:0;
-    const pBK=cBK>=0?aNum(r[cBK])||0:0;
-    const prev=map.get(k)||{fg:0,wA:0,wB:0,wC:0,wD:0,wBK:0,lots:0};
-    // Weighted accumulate
-    map.set(k,{
-      fg:prev.fg+fg,
-      wA:prev.wA+pA*fg, wB:prev.wB+pB*fg,
-      wC:prev.wC+pC*fg, wD:prev.wD+pD*fg, wBK:prev.wBK+pBK*fg,
-      lots:prev.lots+1
-    });
+    const a_kg  = Math.max(0, aNum(r[cA_kg]) ||0);
+    const c_kg  = Math.max(0, aNum(r[cC_kg]) ||0);
+    const d_kg  = Math.max(0, aNum(r[cD_kg]) ||0);
+    const bk_kg = Math.max(0, aNum(r[cBK_kg])||0);
+    const pure  = Math.max(0, aNum(r[cPure])  ||0);
+    const prev=map.get(k)||{fg:0,a:0,c:0,d:0,bk:0,pure:0,lots:0};
+    map.set(k,{fg:prev.fg+fg, a:prev.a+a_kg, c:prev.c+c_kg,
+               d:prev.d+d_kg, bk:prev.bk+bk_kg, pure:prev.pure+pure, lots:prev.lots+1});
   }
   const result=new Map();
   map.forEach((v,k)=>{
-    let A=v.wA/v.fg, B=v.wB/v.fg, C=v.wC/v.fg, D=v.wD/v.fg, BK=v.wBK/v.fg;
-    // Excel fraction (0-1) vs percent (0-100)
-    const sum=A+B+C+D+BK;
-    if(sum>0&&sum<=1.5){A*=100;B*=100;C*=100;D*=100;BK*=100;}
-    result.set(k,{fg:v.fg, A, B, C, D, BK, lots:v.lots});
+    // B = FG − A − C − D − BK − เพียวเร่ (ส่วนที่เหลือ = เกรด B จริง)
+    const B = Math.max(0, v.fg - v.a - v.c - v.d - v.bk - v.pure);
+    result.set(k,{fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
   });
   return result.size>0 ? result : null;
 }
@@ -1239,8 +1238,8 @@ function renderDailyPL(fromDate, toDate){
     const rmRec  = PL_RM_MAP ? PL_RM_MAP.get(lagKey) : null;
     const price  = (rmRec && rmRec.price>0) ? rmRec.price : FB;
     const isFb   = !rmRec || rmRec.price<=0;
-    const {fg,A,B,C,D,BK,lots}=act;
-    const rev = fg*(A/100*SELL.A + B/100*SELL.B + C/100*SELL.C + D/100*SELL.D + BK/100*SELL.BK);
+    const {fg,A,B,C,D,BK,lots}=act; // A/B/C/D/BK เป็น kg จริง
+    const rev = A*SELL.A + B*SELL.B + C*SELL.C + D*SELL.D + BK*SELL.BK;
     const rmCost = fg*price/(1-LOSS);
     const mfg    = fg*MFG;
     const pl     = rev-rmCost-mfg;
@@ -1270,12 +1269,12 @@ function renderDailyPL(fromDate, toDate){
       <td>${dateFmt(r.d)}</td>
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
       <td>${fmtN(r.fg,0)}</td>
-      <td>
-        <span class="pl-gc pl-gc-a">A${fmtN(r.A,1)}%</span>
-        <span class="pl-gc pl-gc-b">B${fmtN(r.B,1)}%</span>
-        <span class="pl-gc pl-gc-c">C${fmtN(r.C,1)}%</span>
-        <span class="pl-gc pl-gc-d">D${fmtN(r.D,1)}%</span>
-        <span class="pl-gc pl-gc-bk">BK${fmtN(r.BK,1)}%</span>
+      <td style="font-size:.68rem;line-height:1.6">
+        <span class="pl-gc pl-gc-a">A ${fmtN(r.A,0)}</span>
+        <span class="pl-gc pl-gc-b">B ${fmtN(r.B,0)}</span>
+        <span class="pl-gc pl-gc-c">C ${fmtN(r.C,0)}</span>
+        <span class="pl-gc pl-gc-d">D ${fmtN(r.D,0)}</span>
+        <span class="pl-gc pl-gc-bk">BK ${fmtN(r.BK,0)}</span>
       </td>
       <td class="td-gr">${fmtN(r.rev)}</td>
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.rmCost)}</td>
