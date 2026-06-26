@@ -1175,7 +1175,8 @@ function parseDailyActual(values){
   const exact=k=>norm.findIndex(h=>h===k);
   const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
   const cA=exact('%a'),cB=exact('%b'),cC=exact('%c'),cD=exact('%d'),cBK=exact('%bk');
-  const cFG=incl('ฟรีซ','fg','ส่งเข้าฟร','freeze');
+  const cRaw=incl('ก่อนปอก','ดิบ','raw');
+  const cFG=incl('ฟร');   // ส่งเข้าฟรีซ — ตรงกับ parseActual เดิม
   // Date column
   const cDate=incl('วัน','date','ว/ด/ป','ผลิต');
   if(cA<0||cFG<0) return null;
@@ -1188,6 +1189,9 @@ function parseDailyActual(values){
     const d = excelToDate(rawDate);
     const k = dateKey(d);
     if(!k) continue;
+    // ใช้ raw weight เป็น guard ถ้ามี (ตรงกับ parseActual); ถ้าไม่มีใช้ fg
+    const rw=cRaw>=0?aNum(r[cRaw]):NaN;
+    if(cRaw>=0 && (isNaN(rw)||rw<=0)) continue;
     const fg=aNum(r[cFG]); if(isNaN(fg)||fg<=0) continue;
     const pA=aNum(r[cA])||0, pB=cB>=0?aNum(r[cB])||0:0;
     const pC=cC>=0?aNum(r[cC])||0:0, pD=cD>=0?aNum(r[cD])||0:0;
