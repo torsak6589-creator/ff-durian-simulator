@@ -1494,13 +1494,16 @@ function renderDailyReport(fromDate, toDate){
     const price = rmRec&&rmRec.price>0 ? rmRec.price : FB;
     const isFb = !rmRec||rmRec.price<=0;
     const fg   = act?act.fg:0;
+    const raw  = act?act.raw:0;
     const A=act?act.A:0, B=act?act.B:0, C=act?act.C:0, D=act?act.D:0, BK=act?act.BK:0;
     const rmKg = rmRec?rmRec.kg:0;
+    // ใช้สูตรเดียวกับ P&L รายวัน: น้ำหนักดิบ (ก่อนปอก) จาก %A DURAIN เป็นฐาน
+    const rmBase = raw>0 ? raw : fg;
     const rev  = A*SELL.A+B*SELL.B+C*SELL.C+D*SELL.D+BK*SELL.BK;
-    const rmCost = rmKg*price/(1-LOSS);
+    const rmCost = rmBase*price/(1-LOSS);
     const mfg  = fg*MFG;
     const pl   = rev-rmCost-mfg;
-    rows.push({buyKey,buyDate,prodKey,prodDate:new Date(prodKey),rmRec,rmKg,price,isFb,fg,A,B,C,D,BK,rev,rmCost,mfg,pl});
+    rows.push({buyKey,buyDate,prodKey,prodDate:new Date(prodKey),rmRec,rmKg,raw,rmBase,price,isFb,fg,A,B,C,D,BK,rev,rmCost,mfg,pl});
   });
   rows.sort((a,b)=>a.buyKey.localeCompare(b.buyKey));
   if(!rows.length){
@@ -1536,7 +1539,7 @@ function renderDailyReport(fromDate, toDate){
 
     tr.innerHTML=`
       <td>${dateFmt(r.buyDate)}</td>
-      <td class="td-bl">${r.rmKg>0?fmtN(r.rmKg,0):'—'}</td>
+      <td class="td-bl">${r.rmBase>0?fmtN(r.rmBase,0):r.rmKg>0?fmtN(r.rmKg,0):'—'}</td>
       <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
       <td style="max-width:180px">${rmGradeHtml}</td>
       <td>${r.fg>0?dateFmt(r.prodDate):'—'}</td>
