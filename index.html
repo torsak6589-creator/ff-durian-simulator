@@ -1691,13 +1691,28 @@ function renderPurchaseTable(data, fromStr, toStr){
 
   const from=fromStr?new Date(fromStr):null;
   const to  =toStr  ?new Date(toStr  ):null;
-  const rows=data.rows.filter(r=>{
+  const filtered=data.rows.filter(r=>{
     if(from&&r.date<from)return false;
     if(to  &&r.date>to  )return false;
     return true;
   });
 
-  const gl=data.kgCols.map(c=>c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim());
+  const nGrade=data.kgCols.length;
+  // Aggregate into ONE row per day (sum kg, value, grades; price = value/kg)
+  const byDay=new Map();
+  filtered.forEach(r=>{
+    let g=byDay.get(r.k);
+    if(!g){g={k:r.k,date:r.date,totalKg:0,value:0,gradeKg:new Array(nGrade).fill(0)};byDay.set(r.k,g);}
+    g.totalKg+=r.totalKg; g.value+=r.value;
+    (r.gradeKg||[]).forEach((v,i)=>{if(i<nGrade)g.gradeKg[i]+=v;});
+  });
+  const rows=[...byDay.values()].sort((a,b)=>a.k.localeCompare(b.k));
+  rows.forEach(r=>{ r.price=r.totalKg>0&&r.value>0?r.value/r.totalKg:0; });
+
+  const gl=data.kgCols.map(c=>{
+    const lbl=c.h.replace(/\s*\(kg\)/i,'').replace(/\s*\(กก\)/i,'').trim();
+    return /^\d{1,2}(\.\d+)?$/.test(lbl)?('เบอร์ '+lbl):lbl;
+  });
 
   // Header
   thead.innerHTML=`<tr>
