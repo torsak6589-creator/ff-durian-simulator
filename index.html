@@ -988,7 +988,19 @@ async function getToken(interactive){
   if(accts.length){
     try{ return (await msalApp.acquireTokenSilent({scopes:SP.scopes,account:accts[0]})).accessToken; }catch(e){}
   }
-  if(interactive){ return (await msalApp.acquireTokenPopup({scopes:SP.scopes,prompt:"select_account"})).accessToken; }
+  if(interactive){
+    try{
+      return (await msalApp.acquireTokenPopup({scopes:SP.scopes,prompt:"select_account"})).accessToken;
+    }catch(e){
+      // Popup blocked / failed → fall back to full-page redirect login
+      const code=(e&&(e.errorCode||e.message)||'').toString();
+      if(/popup_window_error|popup.*blocked|user_cancelled|empty_window|interaction_in_progress/i.test(code)){
+        await msalApp.acquireTokenRedirect({scopes:SP.scopes,prompt:"select_account"});
+        return null; // page navigates away; resumes via handleRedirectPromise
+      }
+      throw e;
+    }
+  }
   return null;
 }
 async function graphValues(token, sheet, matchRe){
@@ -1778,17 +1790,17 @@ function setPcRange(days){
 }
 window.setPcRange=setPcRange;
 
-async function initPurchase(){
+async function initPurchase(interactive){
   PC_LOADED=true;
   const badge=document.getElementById('pcSrcBadge');
   if(typeof msalApp==='undefined'||!msalApp){
-    badge.innerHTML='🔐 ต้องล็อกอิน Microsoft 365 <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">เชื่อมต่อ</button>';
+    badge.innerHTML='🔐 ต้องล็อกอิน Microsoft 365 <button onclick="PC_LOADED=false;initPurchase(true)" style="'+btnStyle+'">เชื่อมต่อ</button>';
     PC_LOADED=false; return;
   }
   badge.textContent='🔄 กำลังดึงข้อมูล…';
   try{
-    let token=await getToken(false);
-    if(!token){badge.innerHTML='🔐 ต้องล็อกอินใหม่ <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">เชื่อมต่อ</button>';PC_LOADED=false;return;}
+    let token=await getToken(interactive);
+    if(!token){badge.innerHTML='🔐 ต้องล็อกอินใหม่ <button onclick="PC_LOADED=false;initPurchase(true)" style="'+btnStyle+'">เชื่อมต่อ</button>';PC_LOADED=false;return;}
     badge.textContent='🔄 กำลังค้นหาไฟล์ '+PROC_FILE+'…';
     // List ALL worksheets and parse each — pick the sheet that yields the most
     // valid purchase rows. (The workbook also contains log/dashboard sheets that
@@ -1829,7 +1841,7 @@ async function initPurchase(){
     if(td&&!td.value)td.value=toStr;
     renderPurchaseTable(PC_DATA,fd.value||null,td.value||null);
   }catch(e){
-    badge.innerHTML='⚠️ '+e.message+' <button onclick="PC_LOADED=false;initPurchase()" style="'+btnStyle+'">ลองใหม่</button>';
+    badge.innerHTML='⚠️ '+e.message+' <button onclick="PC_LOADED=false;initPurchase(true)" style="'+btnStyle+'">ลองใหม่</button>';
     PC_LOADED=false;
   }
 }
@@ -1840,9 +1852,9 @@ function plShowConnect(msg){
     ' <button onclick="plConnect()" style="'+btnStyle+'">เชื่อมต่อ Microsoft 365</button>';
   PL_LOADED=false; // allow retry on next tab switch or button click
 }
-window.plConnect=()=>initDailyPL();
+window.plConnect=()=>initDailyPL(true);
 
-async function initDailyPL(){
+async function initDailyPL(interactive){
   PL_LOADED=true;
   const b=document.getElementById('plSrcBadge');
   if(typeof msalApp==='undefined'||!msalApp){
@@ -1851,7 +1863,7 @@ async function initDailyPL(){
   }
   b.textContent='🔄 กำลังดึงข้อมูล…';
   try{
-    let token=await getToken(false);
+    let token=await getToken(interactive);
     if(!token){
       plShowConnect('🔐 ต้องล็อกอินใหม่:');
       return;
