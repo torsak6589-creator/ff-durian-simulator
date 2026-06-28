@@ -486,7 +486,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <div class="pl-lag-note">
     <strong style="color:#1ABC9C">⏳ Lag 8 วัน:</strong>
     FG ที่ผลิตวันที่ <strong>P</strong> → ใช้ราคาซื้อจากชีท <code style="font-family:'DM Mono',monospace;background:rgba(26,188,156,.1);border-radius:3px;padding:1px 5px;color:#1ABC9C">ราคาทุเรียน</code> วันที่ <strong>P − 8</strong> เป็นต้นทุน RM ·
-    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = ดิบ(kg) × ราคาซื้อจริง(P−8)</code> <span style="color:var(--tm)">(ไม่ gross-up loss — % recovery/yield ปอก กำหนดต้นทุน/kg FG)</span> ·
+    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = ดิบ(kg) ÷ 0.85 × ราคาซื้อจริง(P−8)</code> <span style="color:var(--tm)">(ปริมาณวัตถุดิบแท้จริงอิง recovery = ดิบ ÷ (1−loss))</span> ·
     <span style="color:var(--or)">★ ช่องสีเหลือง</span> = ไม่พบราคาวัน (P−8) → ใช้ราคาเฉลี่ยทั้งฤดู <strong>58.38 ฿/kg</strong>
   </div>
 
@@ -1448,8 +1448,8 @@ function renderDailyPL(fromDate, toDate){
     // ฐานต้นทุน RM = น้ำหนักดิบ (ก่อนปอก); ถ้าไม่มีคอลัมน์ดิบ fallback เป็น FG
     const rmBase = raw>0 ? raw : fg;
     const rev = A*SELL.A + B*SELL.B + C*SELL.C + D*SELL.D + BK*SELL.BK;
-    // ใช้ราคาซื้อจริง (ไม่ gross-up ด้วย loss) — % recovery/yield ปอก เป็นตัวกำหนดต้นทุนต่อ kg FG อยู่แล้ว
-    const rmCost = rmBase*price;
+    // ปริมาณวัตถุดิบที่แท้จริง = ดิบ ÷ recovery factor (÷0.85) = ทุเรียนสดที่ซื้อ → คูณราคาซื้อจริง P−8
+    const rmCost = rmBase*price/(1-LOSS);
     const mfg    = fg*MFG;
     const pl     = rev-rmCost-mfg;
     const plPerKg = fg>0?pl/fg:0;
@@ -1506,7 +1506,7 @@ function renderDailyPL(fromDate, toDate){
   ttr.className='pl-total';
   ttr.innerHTML=`
     <td>รวม ${rows.length} วัน</td>
-    <td class="td-mt">${fmtN(T.raw>0?T.rmCost/T.raw:0,2)} avg</td>
+    <td class="td-mt">${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,2)} avg</td>
     <td class="td-bl">${fmtN(T.raw,0)}</td>
     <td>${fmtN(T.fg,0)}</td>
     <td>—</td>
@@ -1521,7 +1521,7 @@ function renderDailyPL(fromDate, toDate){
   const fbCount=rows.filter(r=>r.isFb).length;
   document.getElementById('kplRM').textContent=fmtM(T.rmCost);
   document.getElementById('kplRM').style.color=tp?'var(--gl)':'var(--rd)';
-  document.getElementById('kplRMsub').textContent=`฿/kg ดิบ avg ${fmtN(T.raw>0?T.rmCost/T.raw:0,1)} (ราคาซื้อจริง) | ดิบรวม ${fmtN(T.raw,0)} kg`;
+  document.getElementById('kplRMsub').textContent=`ราคาซื้อจริง avg ${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,1)} ฿/kg | ดิบ ÷0.85 (recovery) | ดิบรวม ${fmtN(T.raw,0)} kg`;
   document.getElementById('kplMfg').textContent=fmtM(T.mfg);
   document.getElementById('kplMfgSub').textContent=`FG รวม ${fmtN(T.fg,0)} kg`;
   document.getElementById('kplRev').textContent=fmtM(T.rev);
@@ -1671,18 +1671,18 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   },0)/rmPurchasedKg:0;
 
   // ── derived executive metrics (มุมมองแบบ ff_durian_pnl_final) ──
-  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาซื้อจริง เฉลี่ยถ่วงน้ำหนัก ฿/kg ดิบ
-  const breakEv = T.raw>0 ? (T.rev-T.mfg)/T.raw : 0;       // จุดคุ้มทุน ฿/kg
+  const effRM   = T.raw>0 ? T.rmCost*(1-LOSS)/T.raw : 0;   // ราคาซื้อจริง เฉลี่ยถ่วงน้ำหนัก ฿/kg (rmCost grossed → ×0.85 = ราคาจริง)
+  const breakEv = T.raw>0 ? (T.rev-T.mfg)*(1-LOSS)/T.raw : 0; // จุดคุ้มทุน (ราคาซื้อจริงสูงสุดที่คุ้ม) ฿/kg
   const excess  = effRM - breakEv;                          // +เกิน BE / −ต่ำกว่า BE
   const overBE  = excess>0;
   const bvFG    = T.fg>0 ? T.rev/T.fg : 0;                  // BV ฿/kg FG
   const costFG  = T.fg>0 ? (T.rmCost+T.mfg)/T.fg : 0;       // ต้นทุนรวม ฿/kg FG
   const plFG    = T.fg>0 ? T.pl/T.fg : 0;                   // P&L ฿/kg FG
   const marginP = T.rev>0 ? T.pl/T.rev*100 : 0;
-  const recovery= T.raw>0 ? T.fg/T.raw*100 : 0;            // Recovery = FG ÷ ดิบก่อนปอก
-  const peelYield = recovery/(1-LOSS);                      // % ปอก = Recovery ÷ 0.85 (จากชีท %durian ~30-36%)
-  const yieldP  = recovery;                                 // (alias สำหรับที่อื่น)
-  const peelMeat= T.raw*peelYield/100;                      // เนื้อปอก = ดิบก่อนปอก × %ปอก
+  const peelYield = T.raw>0 ? T.fg/T.raw*100 : 0;          // %ปอก = FG(เกรดที่ขาย) ÷ ดิบก่อนปอก
+  const recovery= peelYield*(1-LOSS);                       // Recovery = %ปอก × 0.85 (= FG ÷ ทุเรียนสด)
+  const yieldP  = peelYield;                                // (alias สำหรับที่อื่น)
+  const sodKg   = T.raw/(1-LOSS);                           // ทุเรียนสดที่ซื้อจริง = ดิบก่อนปอก ÷ 0.85
   const plPer100= T.raw>0 ? T.pl/T.raw*100 : 0;           // P&L ต่อดิบก่อนปอก 100 kg
   // ราคาซื้อ ณ "วันผลิต" (ไม่หัก lag) — ไว้เทียบกับราคา P−8 ที่ใช้เป็นต้นทุน
   let prodNum=0, prodDen=0;
@@ -1793,10 +1793,10 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     <div class="rpt-panel">
       <div class="rpt-panel-t">อัตราการผลิต (เฉลี่ยตามช่วงที่เลือก)</div>
       <div class="rpt-ylds">
-        <div class="rpt-yld"><div class="yl">% ปอก</div><div class="v">${fmtN(peelYield,2)}%</div><div class="ys">เนื้อปอก ÷ ดิบก่อนปอก</div></div>
-        <div class="rpt-yld"><div class="yl">Recovery</div><div class="v">${fmtN(recovery,2)}%</div><div class="ys">FG ÷ ดิบก่อนปอก = %ปอก × ${fmtN(1-LOSS,2)}</div></div>
+        <div class="rpt-yld"><div class="yl">% ปอก</div><div class="v">${fmtN(peelYield,2)}%</div><div class="ys">FG(เกรด) ÷ ดิบก่อนปอก</div></div>
+        <div class="rpt-yld"><div class="yl">Recovery</div><div class="v">${fmtN(recovery,2)}%</div><div class="ys">FG ÷ ทุเรียนสด = %ปอก × ${fmtN(1-LOSS,2)}</div></div>
       </div>
-      <div class="rpt-caption" style="margin-top:8px">ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> → ปอก ×${fmtN(peelYield,1)}% → เนื้อปอก <b>${fmtN(peelMeat,0)} kg</b> → −${fmtN(LOSS*100,0)}% loss → FG <b>${fmtN(T.fg,0)} kg</b> · Recovery ${fmtN(recovery,1)}%</div>
+      <div class="rpt-caption" style="margin-top:8px">ทุเรียนสด <b>${fmtN(sodKg,0)} kg</b> → −${fmtN(LOSS*100,0)}% loss → ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> → ปอก ×${fmtN(peelYield,1)}% → FG <b>${fmtN(T.fg,0)} kg</b> · Recovery ${fmtN(recovery,1)}%</div>
     </div>
   </div>
 
@@ -1868,7 +1868,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   <!-- 05 FLOW -->
   <div class="rpt-seclabel"><span class="num">05</span><h3>Flow & สมการ</h3><div class="line"></div></div>
   <div class="rpt-flow">
-    ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> <span class="ar">→</span> ปอก ×${fmtN(peelYield,1)}% <span class="ar">→</span> เนื้อปอก <b>${fmtN(peelMeat,0)} kg</b> <span class="ar">→</span> −${fmtN(LOSS*100,0)}% loss <span class="ar">→</span> FG <b>${fmtN(T.fg,0)} kg</b> <span style="color:var(--tm)">· Recovery ${fmtN(recovery,1)}%</span><br>
+    ทุเรียนสด <b>${fmtN(sodKg,0)} kg</b> <span class="ar">→</span> −${fmtN(LOSS*100,0)}% loss <span class="ar">→</span> ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> <span class="ar">→</span> ปอก ×${fmtN(peelYield,1)}% <span class="ar">→</span> FG <b>${fmtN(T.fg,0)} kg</b> <span style="color:var(--tm)">· %ปอก ${fmtN(peelYield,1)}% · Recovery ${fmtN(recovery,1)}%</span><br>
     รายได้ ${M(T.rev)}M (BV ${fmtN(bvFG,2)} ฿/kgFG) <span class="${tp?'':'r'}">− RM ${M(T.rmCost)}M − ผลิต ${M(T.mfg)}M = ${tp?'+':'−'}${M(Math.abs(T.pl))}M ฿</span><br>
     ต้นทุนรวมต่อ kg FG = <b>${fmtN(costFG,2)} ฿</b> &nbsp;<span class="${tp?'':'r'}">vs รายได้ ${fmtN(bvFG,2)} ฿ → ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plFG),2)} ฿/kgFG</span>
   </div>
