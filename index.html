@@ -1800,12 +1800,13 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   <!-- 03 DAILY -->
   <div class="rpt-seclabel"><span class="num">03</span><h3>P&L รายวัน — Lag ${PL_CFG.lag} (ราคาซื้อ & ขาย จริง)</h3><div class="line"></div></div>
   <div class="pl-tbl-wrap">
-    <table class="pl-tbl" style="min-width:760px">
+    <table class="pl-tbl" style="min-width:940px">
       <thead><tr>
         <th style="text-align:left">วันผลิต</th>
         <th class="th-gold">ราคาซื้อจริง P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">฿/kg</span></th>
         <th class="th-bl">ดิบก่อนปอก</th>
         <th>FG</th>
+        <th style="text-align:left">เกรด FG (%)</th>
         <th class="th-gr">รายได้</th>
         <th class="th-gold">RM cost</th>
         <th class="th-or">Mfg</th>
@@ -1813,12 +1814,13 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         <th class="th-gr">P&L/kgFG</th>
       </tr></thead>
       <tbody>
-        ${rows.map(r=>{const pos=r.pl>=0;return `
+        ${rows.map(r=>{const pos=r.pl>=0;const gt=(r.A+r.B+r.C+r.D+r.BK)||1;const gp=([lb,kg,cls])=>{const p=Math.round(kg/gt*100);return p>0?`<span class="pl-gc ${cls}">${lb}${p}</span>`:'';};return `
         <tr>
           <td>${dateFmtS(r.d)}</td>
           <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
           <td class="td-bl">${fmtN(r.raw,0)}</td>
           <td>${fmtN(r.fg,0)}</td>
+          <td style="text-align:left;white-space:nowrap">${[['A',r.A,'pl-gc-a'],['B',r.B,'pl-gc-b'],['C',r.C,'pl-gc-c'],['D',r.D,'pl-gc-d'],['BK',r.BK,'pl-gc-bk']].map(gp).join('')}</td>
           <td class="td-gr">${fmtN(r.rev,0)}</td>
           <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.rmCost,0)}</td>
           <td class="td-or">${fmtN(r.mfg,0)}</td>
@@ -1830,6 +1832,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
           <td>${fmtN(effRM,2)}</td>
           <td class="td-bl">${fmtN(T.raw,0)}</td>
           <td>${fmtN(T.fg,0)}</td>
+          <td style="text-align:left;white-space:nowrap">${[['A',FGG.A,'pl-gc-a'],['B',FGG.B,'pl-gc-b'],['C',FGG.C,'pl-gc-c'],['D',FGG.D,'pl-gc-d'],['BK',FGG.BK,'pl-gc-bk']].map(([lb,kg,cls])=>{const p=Math.round(kg/(T.fg||1)*100);return p>0?`<span class="pl-gc ${cls}">${lb}${p}</span>`:'';}).join('')}</td>
           <td class="td-gr">${fmtN(T.rev,0)}</td>
           <td class="td-gold">${fmtN(T.rmCost,0)}</td>
           <td class="td-or">${fmtN(T.mfg,0)}</td>
