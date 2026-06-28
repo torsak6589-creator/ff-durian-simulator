@@ -115,6 +115,17 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-note b{color:var(--w)}.rpt-note code{background:rgba(0,0,0,.28);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:.63rem}
 .rpt-caption{font-size:.64rem;color:var(--tm);margin-top:6px;padding-left:2px}
 .rpt-caption b{color:var(--t)}
+.rpt-panel{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:10px;padding:14px 16px}
+.rpt-panel-t{font-size:.6rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.rpt-stack{display:flex;height:22px;border-radius:5px;overflow:hidden;margin-bottom:10px;background:rgba(255,255,255,.04)}
+.rpt-stack span{display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.5rem;color:#fff;font-weight:600;min-width:0;overflow:hidden;white-space:nowrap}
+.rpt-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rpt-chip{font-family:'DM Mono',monospace;font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:11px}
+.rpt-ylds{display:flex;gap:10px}
+.rpt-yld{flex:1;background:var(--nv);border:1px solid rgba(200,152,42,.1);border-radius:8px;padding:10px 12px;text-align:center}
+.rpt-yld .yl{font-size:.57rem;color:var(--tm);margin-bottom:5px;font-weight:600}
+.rpt-yld .v{font-family:'DM Mono',monospace;font-size:1.35rem;font-weight:600;color:var(--gl);line-height:1}
+.rpt-yld .ys{font-size:.55rem;color:var(--tm);margin-top:5px}
 .rpt-print-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;border-bottom:2px solid var(--g);padding-bottom:12px;margin-bottom:16px}
 .rpt-print-head .rph-tag{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gl)}
 .rpt-print-head .rph-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:800;color:var(--w);line-height:1.2;margin-top:3px}
@@ -475,7 +486,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <div class="pl-lag-note">
     <strong style="color:#1ABC9C">⏳ Lag 8 วัน:</strong>
     FG ที่ผลิตวันที่ <strong>P</strong> → ใช้ราคาซื้อจากชีท <code style="font-family:'DM Mono',monospace;background:rgba(26,188,156,.1);border-radius:3px;padding:1px 5px;color:#1ABC9C">ราคาทุเรียน</code> วันที่ <strong>P − 8</strong> เป็นต้นทุน RM ·
-    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = FG_kg × price(P−8) ÷ (1 − Loss%)</code> ·
+    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = ดิบ(kg) × ราคาซื้อจริง(P−8)</code> <span style="color:var(--tm)">(ไม่ gross-up loss — % recovery/yield ปอก กำหนดต้นทุน/kg FG)</span> ·
     <span style="color:var(--or)">★ ช่องสีเหลือง</span> = ไม่พบราคาวัน (P−8) → ใช้ราคาเฉลี่ยทั้งฤดู <strong>58.38 ฿/kg</strong>
   </div>
 
@@ -1437,7 +1448,8 @@ function renderDailyPL(fromDate, toDate){
     // ฐานต้นทุน RM = น้ำหนักดิบ (ก่อนปอก); ถ้าไม่มีคอลัมน์ดิบ fallback เป็น FG
     const rmBase = raw>0 ? raw : fg;
     const rev = A*SELL.A + B*SELL.B + C*SELL.C + D*SELL.D + BK*SELL.BK;
-    const rmCost = rmBase*price/(1-LOSS);
+    // ใช้ราคาซื้อจริง (ไม่ gross-up ด้วย loss) — % recovery/yield ปอก เป็นตัวกำหนดต้นทุนต่อ kg FG อยู่แล้ว
+    const rmCost = rmBase*price;
     const mfg    = fg*MFG;
     const pl     = rev-rmCost-mfg;
     const plPerKg = fg>0?pl/fg:0;
@@ -1494,7 +1506,7 @@ function renderDailyPL(fromDate, toDate){
   ttr.className='pl-total';
   ttr.innerHTML=`
     <td>รวม ${rows.length} วัน</td>
-    <td class="td-mt">${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,2)} avg</td>
+    <td class="td-mt">${fmtN(T.raw>0?T.rmCost/T.raw:0,2)} avg</td>
     <td class="td-bl">${fmtN(T.raw,0)}</td>
     <td>${fmtN(T.fg,0)}</td>
     <td>—</td>
@@ -1509,7 +1521,7 @@ function renderDailyPL(fromDate, toDate){
   const fbCount=rows.filter(r=>r.isFb).length;
   document.getElementById('kplRM').textContent=fmtM(T.rmCost);
   document.getElementById('kplRM').style.color=tp?'var(--gl)':'var(--rd)';
-  document.getElementById('kplRMsub').textContent=`฿/kg ดิบ avg ${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,1)} | gross-up ÷${(1-LOSS)} | ดิบรวม ${fmtN(T.raw,0)} kg`;
+  document.getElementById('kplRMsub').textContent=`฿/kg ดิบ avg ${fmtN(T.raw>0?T.rmCost/T.raw:0,1)} (ราคาซื้อจริง) | ดิบรวม ${fmtN(T.raw,0)} kg`;
   document.getElementById('kplMfg').textContent=fmtM(T.mfg);
   document.getElementById('kplMfgSub').textContent=`FG รวม ${fmtN(T.fg,0)} kg`;
   document.getElementById('kplRev').textContent=fmtM(T.rev);
@@ -1659,8 +1671,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   },0)/rmPurchasedKg:0;
 
   // ── derived executive metrics (มุมมองแบบ ff_durian_pnl_final) ──
-  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาที่ใช้คำนวณ ฿/kg (รวม loss)
-  const actualRM= effRM*(1-LOSS);                           // ราคาซื้อจริง ฿/kg (ราคาในชีท เฉลี่ยถ่วงน้ำหนัก)
+  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาซื้อจริง เฉลี่ยถ่วงน้ำหนัก ฿/kg ดิบ
   const breakEv = T.raw>0 ? (T.rev-T.mfg)/T.raw : 0;       // จุดคุ้มทุน ฿/kg
   const excess  = effRM - breakEv;                          // +เกิน BE / −ต่ำกว่า BE
   const overBE  = excess>0;
@@ -1668,10 +1679,15 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const costFG  = T.fg>0 ? (T.rmCost+T.mfg)/T.fg : 0;       // ต้นทุนรวม ฿/kg FG
   const plFG    = T.fg>0 ? T.pl/T.fg : 0;                   // P&L ฿/kg FG
   const marginP = T.rev>0 ? T.pl/T.rev*100 : 0;
-  const yieldP  = T.raw>0 ? T.fg/T.raw*100 : 0;
-  const plPer100= T.raw>0 ? T.pl/T.raw*100 : 0;            // P&L ต่อสด 100 kg
-  const prePeel = T.raw*0.855;                             // ก่อนปอก = สด ×0.95×0.90
-  const peelP   = prePeel>0 ? T.fg/prePeel*100 : 0;
+  const peelYield = T.raw>0 ? T.fg/T.raw*100 : 0;          // Yield ปอก = FG ÷ ดิบก่อนปอก
+  const yieldP  = peelYield;                                // (คงชื่อเดิมไว้ใช้ที่อื่น)
+  const sodKg   = rmPurchasedKg>0 ? rmPurchasedKg : T.raw; // ทุเรียนสดที่ซื้อ (lag-aligned)
+  const recovery= sodKg>0 ? T.fg/sodKg*100 : 0;            // Recovery = FG ÷ ทุเรียนสด
+  const preLossP= sodKg>0 ? (1-T.raw/sodKg)*100 : 0;       // % สูญเสียก่อนปอก (คัด/บ่ม)
+  const plPer100= sodKg>0 ? T.pl/sodKg*100 : 0;            // P&L ต่อทุเรียนสด 100 kg
+  // FG grade mix (โดยปริมาณ) เฉลี่ยตามช่วงที่เลือก
+  const FG_MIX=[['A',FGG.A,'#2ECC71'],['B',FGG.B,'#3498DB'],['C',FGG.C,'#F39C12'],['D',FGG.D,'#E74C3C'],['BK',FGG.BK,'#8A8070']];
+  const fgMixTot=T.fg||1;
   const worst   = rows.reduce((m,r)=>r.pl<m.pl?r:m, rows[0]);
   const best    = rows.reduce((m,r)=>r.pl>m.pl?r:m, rows[0]);
   const ext     = tp ? best : worst;
@@ -1708,15 +1724,15 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
       <div class="rpt-lever"><h5>③ ผสมหลายเลเวอร์</h5><div class="v">−${fmtN(halfCut,1)} ฿ ซื้อ + A ${fmtN(halfA,0)}</div><p>ลดราคาซื้อ ~${fmtN(halfCut,1)} ฿ + ดัน A เป็น ${fmtN(halfA,0)} ฿ ร่วมกัน คุ้มทุนได้แบบสมจริงกว่าใช้ตัวเดียว</p></div>
     </div>`;
     verdictHtml=`
-      <div class="rpt-note alert"><b>🚨 ขาดทุนเชิงโครงสร้าง ${M(lossAbs)} ล้านบาท ใน ${rows.length} วัน</b> — คำนวณจากราคาซื้อ (lag-${PL_CFG.lag}) และราคาขายจริงทั้งหมด ต้นเหตุหลักคือ <b>ราคาซื้อเฉลี่ย (รวม loss) ${fmtN(effRM,2)} ฿/kg</b> สูงกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg อยู่ ${fmtN(excess,2)} ฿/kg · วันขาดทุนหนักสุด <b>${dateFmtS(worst.d)} (${fmtN(worst.pl,0)} ฿)</b></div>
+      <div class="rpt-note alert"><b>🚨 ขาดทุนเชิงโครงสร้าง ${M(lossAbs)} ล้านบาท ใน ${rows.length} วัน</b> — คำนวณจากราคาซื้อจริง (lag-${PL_CFG.lag}) และราคาขายจริงทั้งหมด ต้นเหตุหลักคือ <b>ราคาซื้อจริงเฉลี่ย ${fmtN(effRM,2)} ฿/kg</b> สูงกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg อยู่ ${fmtN(excess,2)} ฿/kg · วันขาดทุนหนักสุด <b>${dateFmtS(worst.d)} (${fmtN(worst.pl,0)} ฿)</b></div>
       <div class="rpt-note warn"><b>📌 ประเด็นเชิงนโยบายจัดซื้อ:</b><br>• <b>ชะลอ/ลดปริมาณซื้อ</b> ในช่วงราคา &gt; ${fmtN(breakEv,0)} ฿/kg และดึงสต็อกห้องเย็นมาใช้แทน<br>• <b>ต่อรองราคาตกไซ/ไซใหญ่</b> ซึ่งเป็นน้ำหนักหลักและแพงสุด<br>• <b>ทบทวนราคาขาย FG</b> กับฝ่ายขาย — ถ้าตลาดส่งออกรับราคา A ได้สูงกว่า ${fmtN(SELL.A,0)} ฿ ควรปรับขึ้น</div>
-      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Loss ${fmtN(LOSS*100,0)}%${fbCount>0?` · ${fbCount} วันใช้ราคา fallback ${PL_CFG.fallback} ฿/kg`:''}</div>`;
+      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Yield ปอก ${fmtN(peelYield,1)}%${rmPurchasedKg>0?` · Recovery ${fmtN(recovery,1)}%`:''}${fbCount>0?` · ${fbCount} วันใช้ราคา fallback ${PL_CFG.fallback} ฿/kg`:''}</div>`;
   } else {
     leversHtml=`<div class="rpt-note ok"><b>✅ อยู่เหนือจุดคุ้มทุนแล้ว</b> — ราคาซื้อเฉลี่ย ${fmtN(effRM,2)} ฿/kg ต่ำกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg อยู่ <b>${fmtN(-excess,2)} ฿/kg</b> · ยังมี buffer ก่อนถึงจุดขาดทุน — รักษาราคาซื้อไม่ให้เกิน ${fmtN(breakEv,0)} ฿/kg และคุมสัดส่วนเกรด A ให้สูง</div>`;
     verdictHtml=`
       <div class="rpt-note ok"><b>✅ กำไรสุทธิ ${M(T.pl)} ล้านบาท ใน ${rows.length} วัน</b> — margin ${fmtN(marginP,1)}% · ราคาซื้อเฉลี่ย ${fmtN(effRM,2)} ฿/kg ต่ำกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg · วันกำไรสูงสุด <b>${dateFmtS(best.d)} (+${fmtN(best.pl,0)} ฿)</b></div>
       <div class="rpt-note warn"><b>📌 รักษาระดับ:</b> เฝ้าระวังราคาซื้อไม่ให้เกิน ${fmtN(breakEv,0)} ฿/kg และคุมสัดส่วนเกรด A ให้สูงไว้ เพื่อคงระดับกำไร</div>
-      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Loss ${fmtN(LOSS*100,0)}%${fbCount>0?` · ${fbCount} วันใช้ราคา fallback`:''}</div>`;
+      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Yield ปอก ${fmtN(peelYield,1)}%${rmPurchasedKg>0?` · Recovery ${fmtN(recovery,1)}%`:''}${fbCount>0?` · ${fbCount} วันใช้ราคา fallback`:''}</div>`;
   }
 
   el.innerHTML=`
@@ -1728,37 +1744,57 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
       <div class="h-sub">margin ${fmtN(marginP,1)}% · ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plPer100),0)} ฿ ต่อทุเรียนสด 100 kg · ${tp?'+':'−'}${fmtN(Math.abs(plFG),1)} ฿/kg FG</div>
     </div>
     <div class="h-right">
-      <div class="r">ราคาซื้อจริง (lag-${PL_CFG.lag}): <b>${fmtN(actualRM,2)} ฿/kg</b></div>
-      <div class="r">ราคาคิด loss (ใช้คำนวณ): <b>${fmtN(effRM,2)} ฿/kg</b></div>
+      <div class="r">ราคาซื้อจริง (lag-${PL_CFG.lag}): <b>${fmtN(effRM,2)} ฿/kg</b></div>
       <div class="r">Break-Even: <b>${fmtN(breakEv,2)} ฿/kg</b></div>
       <div class="r" style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'เกิน BE':'ต่ำกว่า BE'}: <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'+':'−'}${fmtN(Math.abs(excess),2)} ฿/kg</b> ${overBE?'❌':'✅'}</div>
     </div>
   </div>
 
   <!-- 01 GAUGE -->
-  <div class="rpt-seclabel"><span class="num">01</span><h3>RM Affordability — ราคาคิด loss vs Break-Even</h3><div class="line"></div></div>
+  <div class="rpt-seclabel"><span class="num">01</span><h3>RM Affordability — ราคาซื้อจริง vs Break-Even</h3><div class="line"></div></div>
   <div class="rpt-gauge">
-    <div class="rpt-gauge-title">Break-Even = <b style="color:var(--gl)">${fmtN(breakEv,2)} ฿/kg</b> · ราคาคิด loss = <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${fmtN(effRM,2)} ฿/kg</b> <span style="color:var(--tm)">(จริง ${fmtN(actualRM,2)})</span></div>
+    <div class="rpt-gauge-title">Break-Even = <b style="color:var(--gl)">${fmtN(breakEv,2)} ฿/kg</b> · ราคาซื้อจริง = <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${fmtN(effRM,2)} ฿/kg</b></div>
     <div class="rpt-gbar">
       <div class="rpt-gz rpt-gz1" style="width:${bePct}%">กำไร</div>
       <div class="rpt-gz rpt-gz2" style="width:${Math.max(0,amberEnd-bePct)}%">บาง</div>
       <div class="rpt-gz rpt-gz3" style="width:${Math.max(0,100-amberEnd)}%">ขาดทุน</div>
       <div class="rpt-beline" data-lbl="BE ${fmtN(breakEv,2)}" style="left:${bePct}%"></div>
-      <div class="rpt-marker" style="left:${mkPct}%"><div class="tri">▲</div><div class="lbl" style="background:${overBE?'var(--rd)':'var(--gr)'}">คิด loss ${fmtN(effRM,2)}</div></div>
+      <div class="rpt-marker" style="left:${mkPct}%"><div class="tri">▲</div><div class="lbl" style="background:${overBE?'var(--rd)':'var(--gr)'}">จริง ${fmtN(effRM,2)}</div></div>
     </div>
     <div class="rpt-gscale">${ticks.map((t,i)=>`<span>${t}${i===ticks.length-1?' ฿/kg':''}</span>`).join('')}</div>
     <div style="text-align:center;font-size:.66rem;color:var(--tm);margin-top:6px">
-      ${overBE?`ราคาคิด loss <b style="color:#FF6B5B">เกินจุดคุ้มทุน ${fmtN(excess,2)} ฿/kg → ขาดทุนเชิงโครงสร้าง</b>`:`ราคาคิด loss <b style="color:#4CD98A">ต่ำกว่าจุดคุ้มทุน ${fmtN(-excess,2)} ฿/kg → มีกำไร</b>`}
+      ${overBE?`ราคาซื้อจริง <b style="color:#FF6B5B">เกินจุดคุ้มทุน ${fmtN(excess,2)} ฿/kg → ขาดทุนเชิงโครงสร้าง</b>`:`ราคาซื้อจริง <b style="color:#4CD98A">ต่ำกว่าจุดคุ้มทุน ${fmtN(-excess,2)} ฿/kg → มีกำไร</b>`}
     </div>
   </div>
 
   <!-- 02 KPI -->
   <div class="rpt-seclabel"><span class="num">02</span><h3>ตัวชี้วัดหลัก (${rows.length} วัน)</h3><div class="line"></div></div>
   <div class="rpt-kpi-grid">
-    <div class="rpt-kpi green"><div class="k-lbl">เนื้อ FG ส่งฟรีซ</div><div class="k-val">${fmtN(T.fg,0)} <span>kg</span></div><div class="k-sub">จากสด <b>${fmtN(T.raw,0)} kg</b> · Yield ${fmtN(yieldP,2)}%</div></div>
+    <div class="rpt-kpi green"><div class="k-lbl">เนื้อ FG ส่งฟรีซ</div><div class="k-val">${fmtN(T.fg,0)} <span>kg</span></div><div class="k-sub">จากดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> · Yield ปอก ${fmtN(peelYield,2)}%</div></div>
     <div class="rpt-kpi gold"><div class="k-lbl">รายได้ FG รวม</div><div class="k-val">${M(T.rev)} <span>M฿</span></div><div class="k-sub">BV จริง <b>${fmtN(bvFG,2)} ฿/kg FG</b></div></div>
     <div class="rpt-kpi red"><div class="k-lbl">ต้นทุนรวม (RM+ผลิต)</div><div class="k-val">${M(T.rmCost+T.mfg)} <span>M฿</span></div><div class="k-sub">RM ${M(T.rmCost)}M + ผลิต ${M(T.mfg)}M</div></div>
     <div class="rpt-kpi ${tp?'green':'red'}"><div class="k-lbl">P&L สุทธิ</div><div class="k-val ${tp?'':'neg'}">${tp?'+':'−'}${M(Math.abs(T.pl))} <span>M฿</span></div><div class="k-sub">margin <b>${fmtN(marginP,1)}%</b></div></div>
+  </div>
+
+  <!-- 02.1 เกรดเฉลี่ย + อัตราการผลิต (ตาม filter) -->
+  <div class="rpt-grid2" style="margin-top:12px">
+    <div class="rpt-panel">
+      <div class="rpt-panel-t">สัดส่วนเกรด FG เฉลี่ย — โดยปริมาณ (${fmtN(T.fg,0)} kg)</div>
+      <div class="rpt-stack">
+        ${FG_MIX.map(([lb,kg,col])=>{const p=kg/fgMixTot*100; if(p<=0) return ''; return `<span style="width:${p}%;background:${col}">${p>=7?lb+' '+fmtN(p,0)+'%':''}</span>`;}).join('')}
+      </div>
+      <div class="rpt-chips">
+        ${FG_MIX.map(([lb,kg,col])=>{const p=kg/fgMixTot*100; return `<span class="rpt-chip" style="background:${col}22;color:${col};border:1px solid ${col}55">${lb} ${fmtN(p,1)}%</span>`;}).join('')}
+      </div>
+    </div>
+    <div class="rpt-panel">
+      <div class="rpt-panel-t">อัตราการผลิต (เฉลี่ยตามช่วงที่เลือก)</div>
+      <div class="rpt-ylds">
+        <div class="rpt-yld"><div class="yl">Yield ปอก</div><div class="v">${fmtN(peelYield,2)}%</div><div class="ys">FG ÷ ดิบก่อนปอก</div></div>
+        <div class="rpt-yld"><div class="yl">Recovery</div><div class="v">${rmPurchasedKg>0?fmtN(recovery,2)+'%':'—'}</div><div class="ys">FG ÷ ทุเรียนสดซื้อ${rmPurchasedKg>0?'':' (ไม่มีข้อมูลซื้อ)'}</div></div>
+      </div>
+      <div class="rpt-caption" style="margin-top:8px">ทุเรียนสดซื้อ <b>${rmPurchasedKg>0?fmtN(rmPurchasedKg,0)+' kg':'—'}</b> → ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b>${rmPurchasedKg>0?` (สูญเสียก่อนปอก ${fmtN(preLossP,1)}%)`:''} → FG <b>${fmtN(T.fg,0)} kg</b></div>
+    </div>
   </div>
 
   <!-- 03 DAILY -->
@@ -1767,8 +1803,8 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     <table class="pl-tbl" style="min-width:760px">
       <thead><tr>
         <th style="text-align:left">วันผลิต</th>
-        <th class="th-gold">ราคาซื้อ P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">รวม loss (จริง)</span></th>
-        <th class="th-bl">ทุเรียนสด</th>
+        <th class="th-gold">ราคาซื้อจริง P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">฿/kg</span></th>
+        <th class="th-bl">ดิบก่อนปอก</th>
         <th>FG</th>
         <th class="th-gr">รายได้</th>
         <th class="th-gold">RM cost</th>
@@ -1777,10 +1813,10 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         <th class="th-gr">P&L/kgFG</th>
       </tr></thead>
       <tbody>
-        ${rows.map(r=>{const rp=r.raw>0?r.rmCost/r.raw:0;const pos=r.pl>=0;return `
+        ${rows.map(r=>{const pos=r.pl>=0;return `
         <tr>
           <td>${dateFmtS(r.d)}</td>
-          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(rp,2)} <span style="color:var(--tm);font-size:.9em">(${fmtN(r.price,2)})</span>${r.isFb?' ★':''}</td>
+          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
           <td class="td-bl">${fmtN(r.raw,0)}</td>
           <td>${fmtN(r.fg,0)}</td>
           <td class="td-gr">${fmtN(r.rev,0)}</td>
@@ -1791,7 +1827,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         </tr>`;}).join('')}
         <tr class="pl-total">
           <td>รวม ${rows.length} วัน</td>
-          <td>${fmtN(effRM,2)} <span style="color:var(--tm);font-size:.9em">(${fmtN(actualRM,2)})</span></td>
+          <td>${fmtN(effRM,2)}</td>
           <td class="td-bl">${fmtN(T.raw,0)}</td>
           <td>${fmtN(T.fg,0)}</td>
           <td class="td-gr">${fmtN(T.rev,0)}</td>
@@ -1822,7 +1858,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   <!-- 05 FLOW -->
   <div class="rpt-seclabel"><span class="num">05</span><h3>Flow & สมการ</h3><div class="line"></div></div>
   <div class="rpt-flow">
-    ทุเรียนสด <b>${fmtN(T.raw,0)} kg</b> <span class="ar">→</span> −5% ขนส่ง <span class="ar">→</span> −10% บ่มสุก <span class="ar">→</span> ก่อนปอก <b>${fmtN(prePeel,0)} kg</b> <span class="ar">→</span> ปอก ×${fmtN(peelP,1)}% <span class="ar">→</span> FG <b>${fmtN(T.fg,0)} kg</b><br>
+    ${rmPurchasedKg>0?`ทุเรียนสดซื้อ <b>${fmtN(rmPurchasedKg,0)} kg</b> <span class="ar">→</span> −${fmtN(preLossP,1)}% คัด/บ่ม <span class="ar">→</span> `:''}ดิบก่อนปอก <b>${fmtN(T.raw,0)} kg</b> <span class="ar">→</span> ปอก ×${fmtN(peelYield,1)}% <span class="ar">→</span> FG <b>${fmtN(T.fg,0)} kg</b><br>
     รายได้ ${M(T.rev)}M (BV ${fmtN(bvFG,2)} ฿/kgFG) <span class="${tp?'':'r'}">− RM ${M(T.rmCost)}M − ผลิต ${M(T.mfg)}M = ${tp?'+':'−'}${M(Math.abs(T.pl))}M ฿</span><br>
     ต้นทุนรวมต่อ kg FG = <b>${fmtN(costFG,2)} ฿</b> &nbsp;<span class="${tp?'':'r'}">vs รายได้ ${fmtN(bvFG,2)} ฿ → ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plFG),2)} ฿/kgFG</span>
   </div>
