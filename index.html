@@ -56,6 +56,84 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .pl-gc-c{background:rgba(243,156,18,.14);color:var(--or);border:1px solid rgba(243,156,18,.22)}
 .pl-gc-d{background:rgba(231,76,60,.12);color:#E74C3C;border:1px solid rgba(231,76,60,.2)}
 .pl-gc-bk{background:rgba(138,128,112,.15);color:var(--tm);border:1px solid rgba(138,128,112,.2)}
+/* ── Daily Report (รายงานประจำวัน) — rich dashboard, dark theme ── */
+.rpt-seclabel{display:flex;align-items:center;gap:9px;margin:24px 0 12px}
+.rpt-seclabel .num{background:var(--nl);color:var(--gl);font-family:'DM Mono',monospace;font-size:.6rem;font-weight:600;padding:3px 7px;border-radius:4px;letter-spacing:.08em;border:1px solid rgba(200,152,42,.22)}
+.rpt-seclabel h3{font-size:.82rem;font-weight:700;color:var(--w);letter-spacing:.02em;margin:0}
+.rpt-seclabel .line{flex:1;height:1px;background:rgba(200,152,42,.14)}
+.rpt-hero{border-radius:14px;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:6px;border:1px solid}
+.rpt-hero.neg{background:linear-gradient(135deg,rgba(231,76,60,.18),rgba(120,20,20,.12));border-color:rgba(231,76,60,.35)}
+.rpt-hero.pos{background:linear-gradient(135deg,rgba(46,204,113,.18),rgba(20,83,45,.12));border-color:rgba(46,204,113,.35)}
+.rpt-hero .h-lbl{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--tm);font-family:'DM Mono',monospace}
+.rpt-hero .h-big{font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:600;line-height:1;margin-top:5px}
+.rpt-hero.neg .h-big{color:#FF6B5B}.rpt-hero.pos .h-big{color:#4CD98A}
+.rpt-hero .h-sub{font-size:.68rem;color:var(--t);margin-top:7px;line-height:1.5}
+.rpt-hero .h-right{text-align:right;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--t);min-width:200px}
+.rpt-hero .h-right .r{margin-bottom:4px}
+.rpt-hero .h-right b{color:var(--w)}
+.rpt-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.rpt-kpi-grid{grid-template-columns:1fr 1fr}}
+.rpt-kpi{background:var(--nl);border:1px solid rgba(200,152,42,.1);border-radius:10px;padding:14px 15px;position:relative;overflow:hidden}
+.rpt-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.rpt-kpi.green::before{background:var(--gr)}.rpt-kpi.gold::before{background:var(--g)}.rpt-kpi.red::before{background:var(--rd)}
+.rpt-kpi .k-lbl{font-size:.56rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.rpt-kpi .k-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;color:var(--w);line-height:1}
+.rpt-kpi .k-val span{font-size:.68rem;color:var(--tm)}
+.rpt-kpi .k-val.neg{color:#FF6B5B}
+.rpt-kpi .k-sub{font-size:.57rem;color:var(--tm);margin-top:7px}
+.rpt-kpi .k-sub b{color:var(--t)}
+.rpt-gauge{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:12px;padding:22px 24px 14px;margin-bottom:6px}
+.rpt-gauge-title{font-size:.72rem;color:var(--t);text-align:center;margin-bottom:32px}
+.rpt-gauge-title b{font-family:'DM Mono',monospace}
+.rpt-gbar{position:relative;height:32px;border-radius:7px;display:flex;margin:0 26px 26px}
+.rpt-gz{height:100%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.55rem;color:rgba(255,255,255,.9);font-weight:600;overflow:hidden}
+.rpt-gz1{background:linear-gradient(90deg,#16A34A,#22C55E);border-radius:7px 0 0 7px}
+.rpt-gz2{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.rpt-gz3{background:linear-gradient(90deg,#EF4444,#B91C1C);border-radius:0 7px 7px 0}
+.rpt-beline{position:absolute;top:-7px;bottom:-7px;width:2px;background:var(--w);box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.rpt-beline::after{content:attr(data-lbl);position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:.54rem;color:var(--w);white-space:nowrap;font-weight:600}
+.rpt-marker{position:absolute;top:-25px;transform:translateX(-50%);text-align:center}
+.rpt-marker .tri{font-size:14px;line-height:1;color:var(--gl)}
+.rpt-marker .lbl{font-family:'DM Mono',monospace;font-size:.54rem;font-weight:700;white-space:nowrap;color:#fff;padding:1px 6px;border-radius:4px;margin-top:1px}
+.rpt-gscale{display:flex;justify-content:space-between;margin:4px 26px 0;font-family:'DM Mono',monospace;font-size:.53rem;color:var(--tm)}
+.rpt-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.rpt-grid2{grid-template-columns:1fr}}
+.rpt-bar-mini{display:inline-block;height:7px;border-radius:2px;vertical-align:middle}
+.rpt-flow{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:10px;padding:16px 20px;font-family:'DM Mono',monospace;font-size:.64rem;line-height:2.1;color:var(--t)}
+.rpt-flow b{color:var(--gl)}.rpt-flow .ar{color:var(--g)}.rpt-flow .r{color:#FF6B5B}
+.rpt-levers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.rpt-levers{grid-template-columns:1fr}}
+.rpt-lever{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-top:2px solid var(--gr);border-radius:10px;padding:15px 16px}
+.rpt-lever h5{font-size:.72rem;color:var(--w);margin:0 0 7px}
+.rpt-lever .v{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;color:#4CD98A}
+.rpt-lever p{font-size:.65rem;color:var(--tm);margin-top:6px;line-height:1.6}
+.rpt-lever p b{color:var(--t)}
+.rpt-note{border-radius:8px;padding:12px 16px;margin-bottom:8px;font-size:.7rem;line-height:1.75}
+.rpt-note.alert{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);border-left:3px solid #E74C3C;color:#FFB4AC}
+.rpt-note.warn{background:rgba(243,156,18,.07);border:1px solid rgba(243,156,18,.22);border-left:3px solid var(--or);color:#FAD08A}
+.rpt-note.ok{background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.2);border-left:3px solid var(--gr);color:#A7E9C3}
+.rpt-note b{color:var(--w)}.rpt-note code{background:rgba(0,0,0,.28);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:.63rem}
+.rpt-caption{font-size:.64rem;color:var(--tm);margin-top:6px;padding-left:2px}
+.rpt-caption b{color:var(--t)}
+.rpt-print-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;border-bottom:2px solid var(--g);padding-bottom:12px;margin-bottom:16px}
+.rpt-print-head .rph-tag{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gl)}
+.rpt-print-head .rph-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:800;color:var(--w);line-height:1.2;margin-top:3px}
+.rpt-print-head .rph-r{text-align:right;font-family:'DM Mono',monospace}
+.rpt-print-head .rph-range{font-size:.82rem;font-weight:500;color:var(--gl)}
+.rpt-print-head .rph-by{font-size:.58rem;color:var(--tm);margin-top:3px}
+/* ── Print / Save-as-PDF: รายงานประจำวันเท่านั้น ── */
+@media print{
+  body{background:#0D1B2E !important;padding:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .pg{max-width:100% !important}
+  .card.hd,.tab-nav,#panel-sim,#panel-pl,#panel-purchase,#guide,.footer,.rpt-noprint{display:none !important}
+  #panel-report{display:block !important}
+  #panel-report .card.hi{box-shadow:none !important;border:none !important;padding:0 !important;background:transparent !important}
+  .pl-tbl{min-width:0 !important}
+  .pl-tbl-wrap{overflow:visible !important}
+  .rpt-seclabel,.rpt-hero,.rpt-gauge,.rpt-kpi-grid,.rpt-flow,.rpt-levers,.rpt-note,.pl-tbl-wrap{break-inside:avoid;page-break-inside:avoid}
+  @page{margin:10mm}
+}
 .pg{max-width:1060px;margin:0 auto}
 .mn{font-family:'DM Mono',monospace}
 .card{background:var(--nm);border:1px solid rgba(200,152,42,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
@@ -462,10 +540,41 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <!-- ===== DAILY REPORT PANEL ===== -->
 <div id="panel-report" style="display:none">
 <div class="card hi">
-  <div class="stitle">📊 รายงานประจำวัน</div>
-  <div style="font-size:.71rem;color:var(--tm);margin-bottom:8px">ข้อมูลสอดคล้องกับ filter ที่เลือกใน <strong>P&amp;L รายวัน</strong> — ตั้งค่าช่วงวันที่ที่ tab P&amp;L</div>
-  <div id="rptLatest" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
-  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">เปิด tab P&amp;L รายวัน เพื่อโหลดข้อมูล</div>
+  <div class="stitle rpt-noprint">📊 รายงานประจำวัน</div>
+
+  <!-- filter (ใช้งานได้ในแท็บนี้เลย) -->
+  <div class="pl-filter rpt-noprint" style="margin-bottom:12px">
+    <label>📅 ช่วงวันผลิต</label>
+    <input class="pl-date" type="date" id="rptDateFrom">
+    <span style="color:var(--tm);font-size:.8rem">→</span>
+    <input class="pl-date" type="date" id="rptDateTo">
+    <button class="pl-apply" onclick="runReport()">ดูผล</button>
+    <div style="display:flex;gap:5px">
+      <button class="pl-qbtn" onclick="setRptRange(7)">7 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(14)">14 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(30)">30 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(0)">ทั้งหมด</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="pl-qbtn" onclick="refreshReport()">🔄 รีเฟรชข้อมูล</button>
+      <button class="pl-apply" onclick="printReport()" style="background:var(--bl);color:#fff">🖨️ พิมพ์ / PDF</button>
+    </div>
+  </div>
+
+  <!-- report header (เด่นเวลาพิมพ์) -->
+  <div class="rpt-print-head" id="rptPrintHead" style="display:none">
+    <div class="rph-l">
+      <div class="rph-tag">🌾 FF BRANCH · ผลประกอบการประจำวัน</div>
+      <div class="rph-title">สรุปผลประกอบการ — ทุเรียน</div>
+    </div>
+    <div class="rph-r">
+      <div class="rph-range" id="rptRangeHead">—</div>
+      <div class="rph-by">Report by Torsak Arunpan · KST</div>
+    </div>
+  </div>
+
+  <div id="rptLatest" class="rpt-noprint" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
+  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">กำลังเตรียมข้อมูล… (เชื่อมต่อ Microsoft 365 เพื่อโหลดข้อมูลจริง)</div>
   <div id="rptSummary" style="display:none"></div>
 </div>
 </div><!-- /panel-report -->
@@ -1450,6 +1559,45 @@ function setPlRange(days){
 }
 window.setPlRange=setPlRange;
 
+/* ── Daily Report: self-contained controls (แท็บรายงานประจำวัน) ── */
+function syncRptToPl(){
+  const rf=document.getElementById('rptDateFrom'), rt=document.getElementById('rptDateTo');
+  const pf=document.getElementById('plDateFrom'), pt=document.getElementById('plDateTo');
+  if(rf&&pf) pf.value=rf.value;
+  if(rt&&pt) pt.value=rt.value;
+}
+function runReport(){
+  syncRptToPl();
+  if(!PL_LOADED){ initDailyPL(true); return; }   // โหลดครั้งแรก แล้วค่อย render
+  runDailyPL();
+}
+window.runReport=runReport;
+
+function setRptRange(days){
+  const today=new Date();
+  const toStr=today.toISOString().slice(0,10);
+  let fromStr='';
+  if(days>0){ const f=new Date(today); f.setDate(f.getDate()-days+1); fromStr=f.toISOString().slice(0,10); }
+  ['rptDateFrom','plDateFrom'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=fromStr;});
+  ['rptDateTo','plDateTo'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=toStr;});
+  if(!PL_LOADED){ initDailyPL(true); return; }
+  runDailyPL();
+}
+window.setRptRange=setRptRange;
+
+function refreshReport(){ PL_LOADED=false; syncRptToPl(); initDailyPL(true); }
+window.refreshReport=refreshReport;
+
+function printReport(){
+  const s=document.getElementById('rptSummary');
+  if(!s || s.style.display==='none'){
+    alert('ยังไม่มีข้อมูลรายงาน — กรุณาเชื่อมต่อ Microsoft 365 และเลือกช่วงวันที่ก่อนพิมพ์');
+    return;
+  }
+  window.print();
+}
+window.printReport=printReport;
+
 /* ── Daily Report: text summary (driven by renderDailyPL) ── */
 function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const el=document.getElementById('rptSummary');
@@ -1510,76 +1658,196 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     return s+(rmRec&&rmRec.kg>0&&rmRec.price>0?rmRec.kg*rmRec.price:0);
   },0)/rmPurchasedKg:0;
 
+  // ── derived executive metrics (มุมมองแบบ ff_durian_pnl_final) ──
+  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาซื้อจริง ฿/kg (รวม loss)
+  const breakEv = T.raw>0 ? (T.rev-T.mfg)/T.raw : 0;       // จุดคุ้มทุน ฿/kg
+  const excess  = effRM - breakEv;                          // +เกิน BE / −ต่ำกว่า BE
+  const overBE  = excess>0;
+  const bvFG    = T.fg>0 ? T.rev/T.fg : 0;                  // BV ฿/kg FG
+  const costFG  = T.fg>0 ? (T.rmCost+T.mfg)/T.fg : 0;       // ต้นทุนรวม ฿/kg FG
+  const plFG    = T.fg>0 ? T.pl/T.fg : 0;                   // P&L ฿/kg FG
+  const marginP = T.rev>0 ? T.pl/T.rev*100 : 0;
+  const yieldP  = T.raw>0 ? T.fg/T.raw*100 : 0;
+  const plPer100= T.raw>0 ? T.pl/T.raw*100 : 0;            // P&L ต่อสด 100 kg
+  const prePeel = T.raw*0.855;                             // ก่อนปอก = สด ×0.95×0.90
+  const peelP   = prePeel>0 ? T.fg/prePeel*100 : 0;
+  const worst   = rows.reduce((m,r)=>r.pl<m.pl?r:m, rows[0]);
+  const best    = rows.reduce((m,r)=>r.pl>m.pl?r:m, rows[0]);
+  const ext     = tp ? best : worst;
+  const lossAbs = Math.max(0,-T.pl);
+  const M       = n=>fmtN(n/1e6,2);
+
+  // ── gauge geometry ──
+  const gMin = Math.floor((Math.min(breakEv,effRM)-8)/5)*5;
+  const gMax = Math.ceil((Math.max(breakEv,effRM)+5)/5)*5;
+  const gSpan= Math.max(1,gMax-gMin);
+  const gpct = v=>Math.max(0,Math.min(100,(v-gMin)/gSpan*100));
+  const bePct=gpct(breakEv), amberEnd=gpct(breakEv*1.05), mkPct=gpct(effRM);
+  const ticks=[]; for(let v=gMin;v<=gMax;v+=5) ticks.push(v);
+
+  // ── revenue by grade ──
+  const gradeRev=[['A',FGG.A,SELL.A,'#2ECC71'],['B',FGG.B,SELL.B,'#3498DB'],['C',FGG.C,SELL.C,'#F39C12'],['BK',FGG.BK,SELL.BK,'#E74C3C'],['D',FGG.D,SELL.D,'#8A8070']]
+    .map(([lb,kg,pr,col])=>({lb,kg,pr,col,rev:kg*pr}));
+  const grTot=gradeRev.reduce((s,g)=>s+g.rev,0)||1;
+  const grMaxPct=Math.max(...gradeRev.map(g=>g.rev/grTot))||1;
+
+  // ── break-even levers ──
+  const aKg=FGG.A||0;
+  const aUp = aKg>0 ? Math.ceil(lossAbs/aKg) : 0;
+  const newA= SELL.A + aUp;
+  const halfCut = excess>0 ? excess/2 : 0;
+  const halfA   = aKg>0 ? SELL.A + Math.ceil(lossAbs/2/aKg) : SELL.A;
+
+  // ── levers + verdict (data-driven) ──
+  let leversHtml, verdictHtml;
+  if(!tp){
+    leversHtml=`<div class="rpt-levers">
+      <div class="rpt-lever"><h5>① ลดราคาซื้อ RM</h5><div class="v">≤ ${fmtN(breakEv,2)} ฿/kg</div><p>ต้องลดจาก ${fmtN(effRM,2)} ลง <b>${fmtN(excess,2)} ฿/kg</b> (−${fmtN(effRM>0?excess/effRM*100:0,1)}%) จึงจะคุ้มที่ราคาขายปัจจุบัน</p></div>
+      <div class="rpt-lever"><h5>② ดันราคาขาย A</h5><div class="v">~${fmtN(newA,0)} ฿/kg</div><p>A ต้องขึ้นจาก ${fmtN(SELL.A,0)} → <b>~${fmtN(newA,0)} ฿</b> (+${fmtN(aUp,0)}) เพื่อชดเชยขาดทุนทั้งหมดด้วยเกรด A อย่างเดียว</p></div>
+      <div class="rpt-lever"><h5>③ ผสมหลายเลเวอร์</h5><div class="v">−${fmtN(halfCut,1)} ฿ ซื้อ + A ${fmtN(halfA,0)}</div><p>ลดราคาซื้อ ~${fmtN(halfCut,1)} ฿ + ดัน A เป็น ${fmtN(halfA,0)} ฿ ร่วมกัน คุ้มทุนได้แบบสมจริงกว่าใช้ตัวเดียว</p></div>
+    </div>`;
+    verdictHtml=`
+      <div class="rpt-note alert"><b>🚨 ขาดทุนเชิงโครงสร้าง ${M(lossAbs)} ล้านบาท ใน ${rows.length} วัน</b> — คำนวณจากราคาซื้อ (lag-${PL_CFG.lag}) และราคาขายจริงทั้งหมด ต้นเหตุหลักคือ <b>ราคาซื้อเฉลี่ย (รวม loss) ${fmtN(effRM,2)} ฿/kg</b> สูงกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg อยู่ ${fmtN(excess,2)} ฿/kg · วันขาดทุนหนักสุด <b>${dateFmtS(worst.d)} (${fmtN(worst.pl,0)} ฿)</b></div>
+      <div class="rpt-note warn"><b>📌 ประเด็นเชิงนโยบายจัดซื้อ:</b><br>• <b>ชะลอ/ลดปริมาณซื้อ</b> ในช่วงราคา &gt; ${fmtN(breakEv,0)} ฿/kg และดึงสต็อกห้องเย็นมาใช้แทน<br>• <b>ต่อรองราคาตกไซ/ไซใหญ่</b> ซึ่งเป็นน้ำหนักหลักและแพงสุด<br>• <b>ทบทวนราคาขาย FG</b> กับฝ่ายขาย — ถ้าตลาดส่งออกรับราคา A ได้สูงกว่า ${fmtN(SELL.A,0)} ฿ ควรปรับขึ้น</div>
+      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Loss ${fmtN(LOSS*100,0)}%${fbCount>0?` · ${fbCount} วันใช้ราคา fallback ${PL_CFG.fallback} ฿/kg`:''}</div>`;
+  } else {
+    leversHtml=`<div class="rpt-note ok"><b>✅ อยู่เหนือจุดคุ้มทุนแล้ว</b> — ราคาซื้อเฉลี่ย ${fmtN(effRM,2)} ฿/kg ต่ำกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg อยู่ <b>${fmtN(-excess,2)} ฿/kg</b> · ยังมี buffer ก่อนถึงจุดขาดทุน — รักษาราคาซื้อไม่ให้เกิน ${fmtN(breakEv,0)} ฿/kg และคุมสัดส่วนเกรด A ให้สูง</div>`;
+    verdictHtml=`
+      <div class="rpt-note ok"><b>✅ กำไรสุทธิ ${M(T.pl)} ล้านบาท ใน ${rows.length} วัน</b> — margin ${fmtN(marginP,1)}% · ราคาซื้อเฉลี่ย ${fmtN(effRM,2)} ฿/kg ต่ำกว่าจุดคุ้มทุน ${fmtN(breakEv,2)} ฿/kg · วันกำไรสูงสุด <b>${dateFmtS(best.d)} (+${fmtN(best.pl,0)} ฿)</b></div>
+      <div class="rpt-note warn"><b>📌 รักษาระดับ:</b> เฝ้าระวังราคาซื้อไม่ให้เกิน ${fmtN(breakEv,0)} ฿/kg และคุมสัดส่วนเกรด A ให้สูงไว้ เพื่อคงระดับกำไร</div>
+      <div class="rpt-note ok"><b>✓ หมายเหตุข้อมูล:</b> ราคาซื้อจากชีท <code>ราคาทุเรียน</code> (lag ${PL_CFG.lag} วัน) · ราคาขาย A${SELL.A}/B${SELL.B}/C${SELL.C}/BK${SELL.BK}/D${SELL.D} ฿ · ต้นทุนผลิต ${MFG} ฿/kgFG · Loss ${fmtN(LOSS*100,0)}%${fbCount>0?` · ${fbCount} วันใช้ราคา fallback`:''}</div>`;
+  }
+
   el.innerHTML=`
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    ${[['RM ซื้อรวม',fmtN(rmPurchasedKg,0)+' kg',rmAvgBuyPrice>0?'@ '+fmtN(rmAvgBuyPrice,2)+' ฿/kg':rows.length+' วัน','#3498DB','rgba(52,152,219,.07)'],
-       ['FG รวม (ส่งฟรีซ)',fmtM(T.fg)+' kg','Yield '+(T.raw>0?fmtN(T.fg/T.raw*100,1):'—')+'%','#2ECC71','rgba(46,204,113,.07)'],
-       ['รายได้รวม',fmtM(T.rev)+' ฿',fmtN(T.fg>0?T.rev/T.fg:0,1)+' ฿/kg FG','var(--gl)','rgba(200,152,42,.07)'],
-       ['กำไร/ขาดทุน',(tp?'+':'')+fmtM(T.pl)+' ฿','Margin '+(T.rev>0?fmtN(T.pl/T.rev*100,1):'—')+'%',tp?'#2ECC71':'#E74C3C',tp?'rgba(46,204,113,.07)':'rgba(231,76,60,.07)'],
-    ].map(([label,val,sub,col,bg])=>`
-      <div style="flex:1;min-width:130px;background:${bg};border:1px solid ${col}44;border-radius:8px;padding:12px 14px;text-align:center">
-        <div style="font-size:.65rem;color:var(--tm)">${label}</div>
-        <div style="font-size:1.05rem;font-weight:700;color:${col};margin:2px 0">${val}</div>
-        <div style="font-size:.63rem;color:var(--tm)">${sub}</div>
-      </div>`).join('')}
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <div style="background:var(--nv);border-radius:8px;padding:14px 16px">
-      <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:10px">🪵 วัตถุดิบ (RM)</div>
-      <table style="font-size:.74rem;width:100%;border-collapse:collapse">
-        <tr><td style="color:var(--tm);padding:3px 0;width:55%">RM ซื้อรวม</td><td style="font-weight:600;color:var(--bl)">${fmtN(rmPurchasedKg,0)} kg</td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">ดิบเข้าผลิต (ก่อนปอก)</td><td style="font-weight:600;color:var(--bl)">${fmtN(T.raw||T.fg,0)} kg <small style="color:var(--tm);font-weight:400">(ฐานคำนวณ)</small></td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">ราคาซื้อเฉลี่ย</td><td style="font-weight:600;color:var(--or)">${fmtN(rmAvgBuyPrice>0?rmAvgBuyPrice:avgPrice,2)} ฿/kg${fbCount>0?' <small style="color:#E74C3C;font-weight:400">('+fbCount+' วัน fallback)</small>':''}</td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">ต้นทุน RM รวม</td><td style="font-weight:600;color:var(--or)">${fmtM(T.rmCost)} ฿</td></tr>
-      </table>
-      <div style="margin-top:10px;font-size:.67rem;color:var(--tm);margin-bottom:4px">สัดส่วนเกรด RM ที่ซื้อ</div>
-      <div>${rmGradeHtml||'<span style="color:var(--tm);font-size:.67rem">ไม่มีข้อมูลเกรด</span>'}</div>
+  <!-- HERO -->
+  <div class="rpt-hero ${tp?'pos':'neg'}">
+    <div class="h-left">
+      <div class="h-lbl">P&L สุทธิ ${rows.length} วัน (ราคาซื้อ-ขาย จริงทั้งหมด)</div>
+      <div class="h-big">${tp?'+':'−'}${M(Math.abs(T.pl))} M฿</div>
+      <div class="h-sub">margin ${fmtN(marginP,1)}% · ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plPer100),0)} ฿ ต่อทุเรียนสด 100 kg · ${tp?'+':'−'}${fmtN(Math.abs(plFG),1)} ฿/kg FG</div>
     </div>
-    <div style="background:var(--nv);border-radius:8px;padding:14px 16px">
-      <div style="font-weight:700;color:var(--gl);font-size:.8rem;margin-bottom:10px">📦 สินค้าสำเร็จรูป (FG)</div>
-      <table style="font-size:.74rem;width:100%;border-collapse:collapse">
-        <tr><td style="color:var(--tm);padding:3px 0;width:55%">FG รวม (ส่งฟรีซ)</td><td style="font-weight:600;color:#3498DB">${fmtN(T.fg,0)} kg</td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">Yield (FG÷ดิบ)</td><td style="font-weight:600">${T.raw>0?fmtN(T.fg/T.raw*100,1):'—'}%</td></tr>
-        <tr><td style="color:var(--tm);padding:3px 0">ต้นทุนผลิต</td><td style="font-weight:600;color:var(--or)">${fmtM(T.mfg)} ฿ <small style="color:var(--tm)">(@${MFG} ฿/kg)</small></td></tr>
-      </table>
-      <div style="margin-top:10px;font-size:.67rem;color:var(--tm);margin-bottom:4px">สัดส่วนเกรด FG</div>
-      <div>${fgGradeHtml||'<span style="color:var(--tm);font-size:.67rem">ไม่มีข้อมูลเกรด</span>'}</div>
+    <div class="h-right">
+      <div class="r">ราคาซื้อจริง (lag-${PL_CFG.lag}): <b>${fmtN(effRM,2)} ฿/kg</b></div>
+      <div class="r">Break-Even: <b>${fmtN(breakEv,2)} ฿/kg</b></div>
+      <div class="r" style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'เกิน BE':'ต่ำกว่า BE'}: <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'+':'−'}${fmtN(Math.abs(excess),2)} ฿/kg</b> ${overBE?'❌':'✅'}</div>
     </div>
   </div>
 
-  <div style="background:${tp?'rgba(46,204,113,.06)':'rgba(231,76,60,.06)'};border:1px solid ${tp?'rgba(46,204,113,.2)':'rgba(231,76,60,.2)'};border-radius:8px;padding:14px 18px">
-    <div style="font-weight:700;font-size:.82rem;color:${tp?'#2ECC71':'#E74C3C'};margin-bottom:12px">
-      💰 สรุปกำไร/ขาดทุน — ${dateFmtL(minD)} ถึง ${dateFmtL(maxD)} (${rows.length} วัน)
+  <!-- 01 GAUGE -->
+  <div class="rpt-seclabel"><span class="num">01</span><h3>RM Affordability — ราคาซื้อจริง vs Break-Even</h3><div class="line"></div></div>
+  <div class="rpt-gauge">
+    <div class="rpt-gauge-title">Break-Even = <b style="color:var(--gl)">${fmtN(breakEv,2)} ฿/kg</b> · ราคาซื้อจริง = <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${fmtN(effRM,2)} ฿/kg</b></div>
+    <div class="rpt-gbar">
+      <div class="rpt-gz rpt-gz1" style="width:${bePct}%">กำไร</div>
+      <div class="rpt-gz rpt-gz2" style="width:${Math.max(0,amberEnd-bePct)}%">บาง</div>
+      <div class="rpt-gz rpt-gz3" style="width:${Math.max(0,100-amberEnd)}%">ขาดทุน</div>
+      <div class="rpt-beline" data-lbl="BE ${fmtN(breakEv,2)}" style="left:${bePct}%"></div>
+      <div class="rpt-marker" style="left:${mkPct}%"><div class="tri">▲</div><div class="lbl" style="background:${overBE?'var(--rd)':'var(--gr)'}">จริง ${fmtN(effRM,2)}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;font-size:.77rem">
-      <div style="padding:8px 12px;background:rgba(46,204,113,.08);border-radius:6px">
-        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">📥 รายได้รวม</div>
-        <div style="font-weight:700;color:var(--gl)">${fmtM(T.rev)} ฿</div>
-        <div style="color:var(--tm);font-size:.67rem">${fmtN(T.fg>0?T.rev/T.fg:0,1)} ฿/kg FG</div>
-      </div>
-      <div style="padding:8px 12px;background:rgba(230,126,34,.08);border-radius:6px">
-        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">📦 ต้นทุน RM</div>
-        <div style="font-weight:700;color:var(--or)">${fmtM(T.rmCost)} ฿</div>
-        <div style="color:var(--tm);font-size:.67rem">avg ${fmtN(avgPrice,2)} ÷(1-${LOSS}) ฿/kg</div>
-      </div>
-      <div style="padding:8px 12px;background:rgba(230,126,34,.08);border-radius:6px">
-        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">🏭 ต้นทุนผลิต</div>
-        <div style="font-weight:700;color:var(--or)">${fmtM(T.mfg)} ฿</div>
-        <div style="color:var(--tm);font-size:.67rem">${MFG} ฿/kg FG</div>
-      </div>
-      <div style="padding:8px 12px;background:${tp?'rgba(46,204,113,.12)':'rgba(231,76,60,.12)'};border-radius:6px">
-        <div style="color:var(--tm);font-size:.67rem;margin-bottom:2px">${tp?'✅ กำไรสุทธิ':'❌ ขาดทุน'}</div>
-        <div style="font-weight:700;font-size:1rem;color:${tp?'#2ECC71':'#E74C3C'}">${tp?'+':''}${fmtM(T.pl)} ฿</div>
-        <div style="color:var(--tm);font-size:.67rem">Margin ${T.rev>0?fmtN(T.pl/T.rev*100,1):'—'}% &nbsp;|&nbsp; ${tp?'+':''}${fmtN(T.fg>0?T.pl/T.fg:0,1)} ฿/kg FG</div>
-      </div>
+    <div class="rpt-gscale">${ticks.map((t,i)=>`<span>${t}${i===ticks.length-1?' ฿/kg':''}</span>`).join('')}</div>
+    <div style="text-align:center;font-size:.66rem;color:var(--tm);margin-top:6px">
+      ${overBE?`ราคาซื้อจริง <b style="color:#FF6B5B">เกินจุดคุ้มทุน ${fmtN(excess,2)} ฿/kg → ขาดทุนเชิงโครงสร้าง</b>`:`ราคาซื้อจริง <b style="color:#4CD98A">ต่ำกว่าจุดคุ้มทุน ${fmtN(-excess,2)} ฿/kg → มีกำไร</b>`}
     </div>
   </div>
 
+  <!-- 02 KPI -->
+  <div class="rpt-seclabel"><span class="num">02</span><h3>ตัวชี้วัดหลัก (${rows.length} วัน)</h3><div class="line"></div></div>
+  <div class="rpt-kpi-grid">
+    <div class="rpt-kpi green"><div class="k-lbl">เนื้อ FG ส่งฟรีซ</div><div class="k-val">${fmtN(T.fg,0)} <span>kg</span></div><div class="k-sub">จากสด <b>${fmtN(T.raw,0)} kg</b> · Yield ${fmtN(yieldP,2)}%</div></div>
+    <div class="rpt-kpi gold"><div class="k-lbl">รายได้ FG รวม</div><div class="k-val">${M(T.rev)} <span>M฿</span></div><div class="k-sub">BV จริง <b>${fmtN(bvFG,2)} ฿/kg FG</b></div></div>
+    <div class="rpt-kpi red"><div class="k-lbl">ต้นทุนรวม (RM+ผลิต)</div><div class="k-val">${M(T.rmCost+T.mfg)} <span>M฿</span></div><div class="k-sub">RM ${M(T.rmCost)}M + ผลิต ${M(T.mfg)}M</div></div>
+    <div class="rpt-kpi ${tp?'green':'red'}"><div class="k-lbl">P&L สุทธิ</div><div class="k-val ${tp?'':'neg'}">${tp?'+':'−'}${M(Math.abs(T.pl))} <span>M฿</span></div><div class="k-sub">margin <b>${fmtN(marginP,1)}%</b></div></div>
+  </div>
+
+  <!-- 03 DAILY -->
+  <div class="rpt-seclabel"><span class="num">03</span><h3>P&L รายวัน — Lag ${PL_CFG.lag} (ราคาซื้อ & ขาย จริง)</h3><div class="line"></div></div>
+  <div class="pl-tbl-wrap">
+    <table class="pl-tbl" style="min-width:760px">
+      <thead><tr>
+        <th style="text-align:left">วันผลิต</th>
+        <th class="th-gold">ราคาซื้อ P−${PL_CFG.lag}</th>
+        <th class="th-bl">ทุเรียนสด</th>
+        <th>FG</th>
+        <th class="th-gr">รายได้</th>
+        <th class="th-gold">RM cost</th>
+        <th class="th-or">Mfg</th>
+        <th class="th-gr">P&L</th>
+        <th class="th-gr">P&L/kgFG</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>{const rp=r.raw>0?r.rmCost/r.raw:0;const pos=r.pl>=0;return `
+        <tr>
+          <td>${dateFmtS(r.d)}</td>
+          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(rp,2)}${r.isFb?' ★':''}</td>
+          <td class="td-bl">${fmtN(r.raw,0)}</td>
+          <td>${fmtN(r.fg,0)}</td>
+          <td class="td-gr">${fmtN(r.rev,0)}</td>
+          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.rmCost,0)}</td>
+          <td class="td-or">${fmtN(r.mfg,0)}</td>
+          <td class="${pos?'td-gr':'td-rd'}">${pos?'+':''}${fmtN(r.pl,0)}</td>
+          <td class="${pos?'td-gr':'td-rd'}">${pos?'+':''}${fmtN(r.fg>0?r.pl/r.fg:0,1)}</td>
+        </tr>`;}).join('')}
+        <tr class="pl-total">
+          <td>รวม ${rows.length} วัน</td>
+          <td>${fmtN(effRM,2)}</td>
+          <td class="td-bl">${fmtN(T.raw,0)}</td>
+          <td>${fmtN(T.fg,0)}</td>
+          <td class="td-gr">${fmtN(T.rev,0)}</td>
+          <td class="td-gold">${fmtN(T.rmCost,0)}</td>
+          <td class="td-or">${fmtN(T.mfg,0)}</td>
+          <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(T.pl,0)}</td>
+          <td class="${tp?'td-gr':'td-rd'}">${tp?'+':''}${fmtN(plFG,1)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="rpt-caption">💡 วัน${tp?'กำไรสูงสุด':'ขาดทุนหนักสุด'} = <b>${dateFmtS(ext.d)} (${ext.pl>=0?'+':''}${fmtN(ext.pl,0)} ฿)</b></div>
+
+  <!-- 04 REVENUE BY GRADE -->
+  <div class="rpt-seclabel"><span class="num">04</span><h3>รายได้แยกเกรด (ราคาขายจริง)</h3><div class="line"></div></div>
+  <div class="pl-tbl-wrap">
+    <table class="pl-tbl" style="min-width:520px">
+      <thead><tr><th style="text-align:left">เกรด</th><th class="th-bl">ปริมาณ (kg)</th><th class="th-gold">ราคาขาย (฿/kg)</th><th class="th-gr">รายได้ (฿)</th><th>% รายได้</th><th style="text-align:left"></th></tr></thead>
+      <tbody>
+        ${gradeRev.map(g=>{const pct=g.rev/grTot*100;const bw=Math.round(pct/(grMaxPct*100)*150);return `
+        <tr><td>${g.lb}</td><td class="td-bl">${fmtN(g.kg,0)}</td><td class="td-gold">${fmtN(g.pr,0)}</td><td class="td-gr">${fmtN(g.rev,0)}</td><td>${fmtN(pct,1)}%</td><td style="text-align:left"><span class="rpt-bar-mini" style="width:${bw}px;background:${g.col}"></span></td></tr>`;}).join('')}
+        <tr class="pl-total"><td>รวม FG</td><td>${fmtN(T.fg,0)}</td><td>BV ${fmtN(bvFG,2)}</td><td>${fmtN(T.rev,0)}</td><td>100%</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="rpt-caption">สัดส่วนเกรด RM ที่ซื้อ: ${rmGradeHtml||'<span style="color:var(--tm)">ไม่มีข้อมูลเกรด</span>'}</div>
+
+  <!-- 05 FLOW -->
+  <div class="rpt-seclabel"><span class="num">05</span><h3>Flow & สมการ</h3><div class="line"></div></div>
+  <div class="rpt-flow">
+    ทุเรียนสด <b>${fmtN(T.raw,0)} kg</b> <span class="ar">→</span> −5% ขนส่ง <span class="ar">→</span> −10% บ่มสุก <span class="ar">→</span> ก่อนปอก <b>${fmtN(prePeel,0)} kg</b> <span class="ar">→</span> ปอก ×${fmtN(peelP,1)}% <span class="ar">→</span> FG <b>${fmtN(T.fg,0)} kg</b><br>
+    รายได้ ${M(T.rev)}M (BV ${fmtN(bvFG,2)} ฿/kgFG) <span class="${tp?'':'r'}">− RM ${M(T.rmCost)}M − ผลิต ${M(T.mfg)}M = ${tp?'+':'−'}${M(Math.abs(T.pl))}M ฿</span><br>
+    ต้นทุนรวมต่อ kg FG = <b>${fmtN(costFG,2)} ฿</b> &nbsp;<span class="${tp?'':'r'}">vs รายได้ ${fmtN(bvFG,2)} ฿ → ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plFG),2)} ฿/kgFG</span>
+  </div>
+
+  <!-- 06 LEVERS -->
+  <div class="rpt-seclabel"><span class="num">06</span><h3>เส้นทางสู่จุดคุ้มทุน</h3><div class="line"></div></div>
+  ${leversHtml}
+
+  <!-- 07 VERDICT -->
+  <div class="rpt-seclabel"><span class="num">07</span><h3>ข้อสรุปเชิงบริหาร</h3><div class="line"></div></div>
+  ${verdictHtml}
   `;
 
   el.style.display='';
   document.getElementById('rptStatus').textContent='';
+
+  // sync ช่องวันที่ของแท็บรายงาน ให้ตรงกับช่วงที่ render จริง + แสดงหัวรายงาน (สำหรับพิมพ์)
+  const pf=document.getElementById('plDateFrom'), pt=document.getElementById('plDateTo');
+  const rf=document.getElementById('rptDateFrom'), rt=document.getElementById('rptDateTo');
+  if(rf&&pf) rf.value=pf.value;
+  if(rt&&pt) rt.value=pt.value;
+  const head=document.getElementById('rptPrintHead'), rh=document.getElementById('rptRangeHead');
+  if(rh){
+    let printDate=''; try{ printDate=new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+    rh.innerHTML=`ผลิต ${dateFmtL(minD)} – ${dateFmtL(maxD)} (${rows.length} วัน)${printDate?` · พิมพ์ ${printDate}`:''}`;
+  }
+  if(head) head.style.display='';
 }
 
 // ══════════════════════════════════════════════
