@@ -115,6 +115,25 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-note b{color:var(--w)}.rpt-note code{background:rgba(0,0,0,.28);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:.63rem}
 .rpt-caption{font-size:.64rem;color:var(--tm);margin-top:6px;padding-left:2px}
 .rpt-caption b{color:var(--t)}
+.rpt-print-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;border-bottom:2px solid var(--g);padding-bottom:12px;margin-bottom:16px}
+.rpt-print-head .rph-tag{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gl)}
+.rpt-print-head .rph-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:800;color:var(--w);line-height:1.2;margin-top:3px}
+.rpt-print-head .rph-r{text-align:right;font-family:'DM Mono',monospace}
+.rpt-print-head .rph-range{font-size:.82rem;font-weight:500;color:var(--gl)}
+.rpt-print-head .rph-by{font-size:.58rem;color:var(--tm);margin-top:3px}
+/* ── Print / Save-as-PDF: รายงานประจำวันเท่านั้น ── */
+@media print{
+  body{background:#0D1B2E !important;padding:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  .pg{max-width:100% !important}
+  .card.hd,.tab-nav,#panel-sim,#panel-pl,#panel-purchase,#guide,.footer,.rpt-noprint{display:none !important}
+  #panel-report{display:block !important}
+  #panel-report .card.hi{box-shadow:none !important;border:none !important;padding:0 !important;background:transparent !important}
+  .pl-tbl{min-width:0 !important}
+  .pl-tbl-wrap{overflow:visible !important}
+  .rpt-seclabel,.rpt-hero,.rpt-gauge,.rpt-kpi-grid,.rpt-flow,.rpt-levers,.rpt-note,.pl-tbl-wrap{break-inside:avoid;page-break-inside:avoid}
+  @page{margin:10mm}
+}
 .pg{max-width:1060px;margin:0 auto}
 .mn{font-family:'DM Mono',monospace}
 .card{background:var(--nm);border:1px solid rgba(200,152,42,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
@@ -521,10 +540,41 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <!-- ===== DAILY REPORT PANEL ===== -->
 <div id="panel-report" style="display:none">
 <div class="card hi">
-  <div class="stitle">📊 รายงานประจำวัน</div>
-  <div style="font-size:.71rem;color:var(--tm);margin-bottom:8px">ข้อมูลสอดคล้องกับ filter ที่เลือกใน <strong>P&amp;L รายวัน</strong> — ตั้งค่าช่วงวันที่ที่ tab P&amp;L</div>
-  <div id="rptLatest" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
-  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">เปิด tab P&amp;L รายวัน เพื่อโหลดข้อมูล</div>
+  <div class="stitle rpt-noprint">📊 รายงานประจำวัน</div>
+
+  <!-- filter (ใช้งานได้ในแท็บนี้เลย) -->
+  <div class="pl-filter rpt-noprint" style="margin-bottom:12px">
+    <label>📅 ช่วงวันผลิต</label>
+    <input class="pl-date" type="date" id="rptDateFrom">
+    <span style="color:var(--tm);font-size:.8rem">→</span>
+    <input class="pl-date" type="date" id="rptDateTo">
+    <button class="pl-apply" onclick="runReport()">ดูผล</button>
+    <div style="display:flex;gap:5px">
+      <button class="pl-qbtn" onclick="setRptRange(7)">7 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(14)">14 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(30)">30 วัน</button>
+      <button class="pl-qbtn" onclick="setRptRange(0)">ทั้งหมด</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="pl-qbtn" onclick="refreshReport()">🔄 รีเฟรชข้อมูล</button>
+      <button class="pl-apply" onclick="printReport()" style="background:var(--bl);color:#fff">🖨️ พิมพ์ / PDF</button>
+    </div>
+  </div>
+
+  <!-- report header (เด่นเวลาพิมพ์) -->
+  <div class="rpt-print-head" id="rptPrintHead" style="display:none">
+    <div class="rph-l">
+      <div class="rph-tag">🌾 FF BRANCH · ผลประกอบการประจำวัน</div>
+      <div class="rph-title">สรุปผลประกอบการ — ทุเรียน</div>
+    </div>
+    <div class="rph-r">
+      <div class="rph-range" id="rptRangeHead">—</div>
+      <div class="rph-by">Report by Torsak Arunpan · KST</div>
+    </div>
+  </div>
+
+  <div id="rptLatest" class="rpt-noprint" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
+  <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">กำลังเตรียมข้อมูล… (เชื่อมต่อ Microsoft 365 เพื่อโหลดข้อมูลจริง)</div>
   <div id="rptSummary" style="display:none"></div>
 </div>
 </div><!-- /panel-report -->
@@ -1509,6 +1559,45 @@ function setPlRange(days){
 }
 window.setPlRange=setPlRange;
 
+/* ── Daily Report: self-contained controls (แท็บรายงานประจำวัน) ── */
+function syncRptToPl(){
+  const rf=document.getElementById('rptDateFrom'), rt=document.getElementById('rptDateTo');
+  const pf=document.getElementById('plDateFrom'), pt=document.getElementById('plDateTo');
+  if(rf&&pf) pf.value=rf.value;
+  if(rt&&pt) pt.value=rt.value;
+}
+function runReport(){
+  syncRptToPl();
+  if(!PL_LOADED){ initDailyPL(true); return; }   // โหลดครั้งแรก แล้วค่อย render
+  runDailyPL();
+}
+window.runReport=runReport;
+
+function setRptRange(days){
+  const today=new Date();
+  const toStr=today.toISOString().slice(0,10);
+  let fromStr='';
+  if(days>0){ const f=new Date(today); f.setDate(f.getDate()-days+1); fromStr=f.toISOString().slice(0,10); }
+  ['rptDateFrom','plDateFrom'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=fromStr;});
+  ['rptDateTo','plDateTo'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=toStr;});
+  if(!PL_LOADED){ initDailyPL(true); return; }
+  runDailyPL();
+}
+window.setRptRange=setRptRange;
+
+function refreshReport(){ PL_LOADED=false; syncRptToPl(); initDailyPL(true); }
+window.refreshReport=refreshReport;
+
+function printReport(){
+  const s=document.getElementById('rptSummary');
+  if(!s || s.style.display==='none'){
+    alert('ยังไม่มีข้อมูลรายงาน — กรุณาเชื่อมต่อ Microsoft 365 และเลือกช่วงวันที่ก่อนพิมพ์');
+    return;
+  }
+  window.print();
+}
+window.printReport=printReport;
+
 /* ── Daily Report: text summary (driven by renderDailyPL) ── */
 function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const el=document.getElementById('rptSummary');
@@ -1747,6 +1836,18 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
 
   el.style.display='';
   document.getElementById('rptStatus').textContent='';
+
+  // sync ช่องวันที่ของแท็บรายงาน ให้ตรงกับช่วงที่ render จริง + แสดงหัวรายงาน (สำหรับพิมพ์)
+  const pf=document.getElementById('plDateFrom'), pt=document.getElementById('plDateTo');
+  const rf=document.getElementById('rptDateFrom'), rt=document.getElementById('rptDateTo');
+  if(rf&&pf) rf.value=pf.value;
+  if(rt&&pt) rt.value=pt.value;
+  const head=document.getElementById('rptPrintHead'), rh=document.getElementById('rptRangeHead');
+  if(rh){
+    let printDate=''; try{ printDate=new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+    rh.innerHTML=`ผลิต ${dateFmtL(minD)} – ${dateFmtL(maxD)} (${rows.length} วัน)${printDate?` · พิมพ์ ${printDate}`:''}`;
+  }
+  if(head) head.style.display='';
 }
 
 // ══════════════════════════════════════════════
