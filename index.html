@@ -1684,6 +1684,10 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const yieldP  = recovery;                                 // (alias สำหรับที่อื่น)
   const peelMeat= T.raw*peelYield/100;                      // เนื้อปอก = ดิบก่อนปอก × %ปอก
   const plPer100= T.raw>0 ? T.pl/T.raw*100 : 0;           // P&L ต่อดิบก่อนปอก 100 kg
+  // ราคาซื้อ ณ "วันผลิต" (ไม่หัก lag) — ไว้เทียบกับราคา P−8 ที่ใช้เป็นต้นทุน
+  let prodNum=0, prodDen=0;
+  rows.forEach(r=>{const pr=PL_RM_MAP?PL_RM_MAP.get(dateKey(r.d)):null; if(pr&&pr.price>0){prodNum+=r.raw*pr.price; prodDen+=r.raw;}});
+  const prodAvg = prodDen>0 ? prodNum/prodDen : 0;          // ราคา ณ วันผลิต เฉลี่ยถ่วงน้ำหนักดิบ
   // FG grade mix (โดยปริมาณ) เฉลี่ยตามช่วงที่เลือก
   const FG_MIX=[['A',FGG.A,'#2ECC71'],['B',FGG.B,'#3498DB'],['C',FGG.C,'#F39C12'],['D',FGG.D,'#E74C3C'],['BK',FGG.BK,'#8A8070']];
   const fgMixTot=T.fg||1;
@@ -1799,10 +1803,11 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   <!-- 03 DAILY -->
   <div class="rpt-seclabel"><span class="num">03</span><h3>P&L รายวัน — Lag ${PL_CFG.lag} (ราคาซื้อ & ขาย จริง)</h3><div class="line"></div></div>
   <div class="pl-tbl-wrap">
-    <table class="pl-tbl" style="min-width:940px">
+    <table class="pl-tbl" style="min-width:1040px">
       <thead><tr>
         <th style="text-align:left">วันผลิต</th>
-        <th class="th-gold">ราคาซื้อจริง P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">฿/kg</span></th>
+        <th class="th-gold">ราคาซื้อ P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">฿/kg (ต้นทุน)</span></th>
+        <th>ราคา ณ วันผลิต<br><span style="font-weight:400;color:var(--tm);font-size:.85em">฿/kg (อ้างอิง)</span></th>
         <th class="th-bl">ดิบก่อนปอก</th>
         <th>FG</th>
         <th style="text-align:left">เกรด FG (%)</th>
@@ -1813,10 +1818,11 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         <th class="th-gr">P&L/kgFG</th>
       </tr></thead>
       <tbody>
-        ${rows.map(r=>{const pos=r.pl>=0;const gt=(r.A+r.B+r.C+r.D+r.BK)||1;const gp=([lb,kg,cls])=>{const p=Math.round(kg/gt*100);return p>0?`<span class="pl-gc ${cls}">${lb}${p}</span>`:'';};return `
+        ${rows.map(r=>{const pos=r.pl>=0;const gt=(r.A+r.B+r.C+r.D+r.BK)||1;const gp=([lb,kg,cls])=>{const p=Math.round(kg/gt*100);return p>0?`<span class="pl-gc ${cls}">${lb}${p}</span>`:'';};const pr=PL_RM_MAP?PL_RM_MAP.get(dateKey(r.d)):null;const prodP=pr&&pr.price>0?pr.price:null;return `
         <tr>
           <td>${dateFmtS(r.d)}</td>
           <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(r.price,2)}${r.isFb?' ★':''}</td>
+          <td style="color:var(--tm)">${prodP!=null?fmtN(prodP,2):'—'}</td>
           <td class="td-bl">${fmtN(r.raw,0)}</td>
           <td>${fmtN(r.fg,0)}</td>
           <td style="text-align:left;white-space:nowrap">${[['A',r.A,'pl-gc-a'],['B',r.B,'pl-gc-b'],['C',r.C,'pl-gc-c'],['D',r.D,'pl-gc-d'],['BK',r.BK,'pl-gc-bk']].map(gp).join('')}</td>
@@ -1829,6 +1835,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         <tr class="pl-total">
           <td>รวม ${rows.length} วัน</td>
           <td>${fmtN(effRM,2)}</td>
+          <td style="color:var(--tm)">${prodAvg>0?fmtN(prodAvg,2):'—'}</td>
           <td class="td-bl">${fmtN(T.raw,0)}</td>
           <td>${fmtN(T.fg,0)}</td>
           <td style="text-align:left;white-space:nowrap">${[['A',FGG.A,'pl-gc-a'],['B',FGG.B,'pl-gc-b'],['C',FGG.C,'pl-gc-c'],['D',FGG.D,'pl-gc-d'],['BK',FGG.BK,'pl-gc-bk']].map(([lb,kg,cls])=>{const p=Math.round(kg/(T.fg||1)*100);return p>0?`<span class="pl-gc ${cls}">${lb}${p}</span>`:'';}).join('')}</td>
@@ -1842,6 +1849,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     </table>
   </div>
   <div class="rpt-caption">💡 วัน${tp?'กำไรสูงสุด':'ขาดทุนหนักสุด'} = <b>${dateFmtS(ext.d)} (${ext.pl>=0?'+':''}${fmtN(ext.pl,0)} ฿)</b></div>
+  <div class="rpt-caption">🔎 <b>ราคาซื้อ P−${PL_CFG.lag}</b> = ราคา ${PL_CFG.lag} วันก่อนผลิต (ใช้เป็นต้นทุนจริงของ FG ตามรอบบ่ม) · <b>ราคา ณ วันผลิต</b> = ราคาซื้อวันเดียวกับวันผลิต (อ้างอิงเทียบ) — เฉลี่ยถ่วงน้ำหนักดิบ: P−${PL_CFG.lag} <b>${fmtN(effRM,2)}</b> vs ณ วันผลิต <b>${prodAvg>0?fmtN(prodAvg,2):'—'}</b> ฿/kg</div>
 
   <!-- 04 REVENUE BY GRADE -->
   <div class="rpt-seclabel"><span class="num">04</span><h3>รายได้แยกเกรด (ราคาขายจริง)</h3><div class="line"></div></div>
