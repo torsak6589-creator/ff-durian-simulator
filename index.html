@@ -1659,7 +1659,8 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   },0)/rmPurchasedKg:0;
 
   // ── derived executive metrics (มุมมองแบบ ff_durian_pnl_final) ──
-  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาซื้อจริง ฿/kg (รวม loss)
+  const effRM   = T.raw>0 ? T.rmCost/T.raw : 0;            // ราคาที่ใช้คำนวณ ฿/kg (รวม loss)
+  const actualRM= effRM*(1-LOSS);                           // ราคาซื้อจริง ฿/kg (ราคาในชีท เฉลี่ยถ่วงน้ำหนัก)
   const breakEv = T.raw>0 ? (T.rev-T.mfg)/T.raw : 0;       // จุดคุ้มทุน ฿/kg
   const excess  = effRM - breakEv;                          // +เกิน BE / −ต่ำกว่า BE
   const overBE  = excess>0;
@@ -1727,26 +1728,27 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
       <div class="h-sub">margin ${fmtN(marginP,1)}% · ${tp?'กำไร':'ขาดทุน'} ${fmtN(Math.abs(plPer100),0)} ฿ ต่อทุเรียนสด 100 kg · ${tp?'+':'−'}${fmtN(Math.abs(plFG),1)} ฿/kg FG</div>
     </div>
     <div class="h-right">
-      <div class="r">ราคาซื้อจริง (lag-${PL_CFG.lag}): <b>${fmtN(effRM,2)} ฿/kg</b></div>
+      <div class="r">ราคาซื้อจริง (lag-${PL_CFG.lag}): <b>${fmtN(actualRM,2)} ฿/kg</b></div>
+      <div class="r">ราคาคิด loss (ใช้คำนวณ): <b>${fmtN(effRM,2)} ฿/kg</b></div>
       <div class="r">Break-Even: <b>${fmtN(breakEv,2)} ฿/kg</b></div>
       <div class="r" style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'เกิน BE':'ต่ำกว่า BE'}: <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${overBE?'+':'−'}${fmtN(Math.abs(excess),2)} ฿/kg</b> ${overBE?'❌':'✅'}</div>
     </div>
   </div>
 
   <!-- 01 GAUGE -->
-  <div class="rpt-seclabel"><span class="num">01</span><h3>RM Affordability — ราคาซื้อจริง vs Break-Even</h3><div class="line"></div></div>
+  <div class="rpt-seclabel"><span class="num">01</span><h3>RM Affordability — ราคาคิด loss vs Break-Even</h3><div class="line"></div></div>
   <div class="rpt-gauge">
-    <div class="rpt-gauge-title">Break-Even = <b style="color:var(--gl)">${fmtN(breakEv,2)} ฿/kg</b> · ราคาซื้อจริง = <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${fmtN(effRM,2)} ฿/kg</b></div>
+    <div class="rpt-gauge-title">Break-Even = <b style="color:var(--gl)">${fmtN(breakEv,2)} ฿/kg</b> · ราคาคิด loss = <b style="color:${overBE?'#FF6B5B':'#4CD98A'}">${fmtN(effRM,2)} ฿/kg</b> <span style="color:var(--tm)">(จริง ${fmtN(actualRM,2)})</span></div>
     <div class="rpt-gbar">
       <div class="rpt-gz rpt-gz1" style="width:${bePct}%">กำไร</div>
       <div class="rpt-gz rpt-gz2" style="width:${Math.max(0,amberEnd-bePct)}%">บาง</div>
       <div class="rpt-gz rpt-gz3" style="width:${Math.max(0,100-amberEnd)}%">ขาดทุน</div>
       <div class="rpt-beline" data-lbl="BE ${fmtN(breakEv,2)}" style="left:${bePct}%"></div>
-      <div class="rpt-marker" style="left:${mkPct}%"><div class="tri">▲</div><div class="lbl" style="background:${overBE?'var(--rd)':'var(--gr)'}">จริง ${fmtN(effRM,2)}</div></div>
+      <div class="rpt-marker" style="left:${mkPct}%"><div class="tri">▲</div><div class="lbl" style="background:${overBE?'var(--rd)':'var(--gr)'}">คิด loss ${fmtN(effRM,2)}</div></div>
     </div>
     <div class="rpt-gscale">${ticks.map((t,i)=>`<span>${t}${i===ticks.length-1?' ฿/kg':''}</span>`).join('')}</div>
     <div style="text-align:center;font-size:.66rem;color:var(--tm);margin-top:6px">
-      ${overBE?`ราคาซื้อจริง <b style="color:#FF6B5B">เกินจุดคุ้มทุน ${fmtN(excess,2)} ฿/kg → ขาดทุนเชิงโครงสร้าง</b>`:`ราคาซื้อจริง <b style="color:#4CD98A">ต่ำกว่าจุดคุ้มทุน ${fmtN(-excess,2)} ฿/kg → มีกำไร</b>`}
+      ${overBE?`ราคาคิด loss <b style="color:#FF6B5B">เกินจุดคุ้มทุน ${fmtN(excess,2)} ฿/kg → ขาดทุนเชิงโครงสร้าง</b>`:`ราคาคิด loss <b style="color:#4CD98A">ต่ำกว่าจุดคุ้มทุน ${fmtN(-excess,2)} ฿/kg → มีกำไร</b>`}
     </div>
   </div>
 
@@ -1765,7 +1767,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
     <table class="pl-tbl" style="min-width:760px">
       <thead><tr>
         <th style="text-align:left">วันผลิต</th>
-        <th class="th-gold">ราคาซื้อ P−${PL_CFG.lag}</th>
+        <th class="th-gold">ราคาซื้อ P−${PL_CFG.lag}<br><span style="font-weight:400;color:var(--tm);font-size:.85em">รวม loss (จริง)</span></th>
         <th class="th-bl">ทุเรียนสด</th>
         <th>FG</th>
         <th class="th-gr">รายได้</th>
@@ -1778,7 +1780,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         ${rows.map(r=>{const rp=r.raw>0?r.rmCost/r.raw:0;const pos=r.pl>=0;return `
         <tr>
           <td>${dateFmtS(r.d)}</td>
-          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(rp,2)}${r.isFb?' ★':''}</td>
+          <td class="${r.isFb?'td-fb':'td-gold'}">${fmtN(rp,2)} <span style="color:var(--tm);font-size:.9em">(${fmtN(r.price,2)})</span>${r.isFb?' ★':''}</td>
           <td class="td-bl">${fmtN(r.raw,0)}</td>
           <td>${fmtN(r.fg,0)}</td>
           <td class="td-gr">${fmtN(r.rev,0)}</td>
@@ -1789,7 +1791,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
         </tr>`;}).join('')}
         <tr class="pl-total">
           <td>รวม ${rows.length} วัน</td>
-          <td>${fmtN(effRM,2)}</td>
+          <td>${fmtN(effRM,2)} <span style="color:var(--tm);font-size:.9em">(${fmtN(actualRM,2)})</span></td>
           <td class="td-bl">${fmtN(T.raw,0)}</td>
           <td>${fmtN(T.fg,0)}</td>
           <td class="td-gr">${fmtN(T.rev,0)}</td>
