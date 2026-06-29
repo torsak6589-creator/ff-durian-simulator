@@ -17,8 +17,12 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 /* ── Daily P&L styles ── */
 .pl-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:rgba(200,152,42,.05);border:1px solid rgba(200,152,42,.12);border-radius:8px}
 .pl-filter label{font-size:.66rem;color:var(--tm);font-weight:600}
-.pl-date{background:var(--nv);border:1px solid rgba(200,152,42,.22);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:.7rem;padding:4px 8px;outline:none}
+.pl-date{background:var(--nl);border:1px solid rgba(200,152,42,.35);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:.7rem;padding:4px 8px;outline:none;color-scheme:dark}
 .pl-date:focus{border-color:var(--gl)}
+.pl-date:hover{border-color:rgba(200,152,42,.6)}
+/* ไอคอนปฏิทินให้เป็นสีทอง ตัดกับพื้นหลังเข้ม */
+.pl-date::-webkit-calendar-picker-indicator{filter:invert(72%) sepia(55%) saturate(520%) hue-rotate(1deg) brightness(95%);cursor:pointer;opacity:1;padding:2px;border-radius:3px}
+.pl-date::-webkit-calendar-picker-indicator:hover{background:rgba(200,152,42,.25)}
 .pl-qbtn{background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
 .pl-apply{background:var(--g);color:#0D1B2E;border:none;border-radius:6px;font-weight:700;font-size:.7rem;padding:4px 13px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
 .pl-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
