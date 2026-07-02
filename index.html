@@ -23,7 +23,13 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 /* ไอคอนปฏิทินให้เป็นสีทอง ตัดกับพื้นหลังเข้ม */
 .pl-date::-webkit-calendar-picker-indicator{filter:invert(72%) sepia(55%) saturate(520%) hue-rotate(1deg) brightness(95%);cursor:pointer;opacity:1;padding:2px;border-radius:3px}
 .pl-date::-webkit-calendar-picker-indicator:hover{background:rgba(200,152,42,.25)}
-.pl-qbtn{background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
+.pl-qbtn{background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif;transition:all .12s}
+.pl-qbtn:hover{border-color:rgba(200,152,42,.5)}
+.pl-qbtn.active{background:var(--g);color:#0D1B2E;border-color:var(--gl);font-weight:700;box-shadow:0 0 0 2px rgba(229,184,75,.28)}
+/* แถบสีบอกช่วงเวลาที่กำลังดูอยู่ */
+.pl-range-band{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.62rem;font-weight:500;color:#0D1B2E;background:linear-gradient(90deg,var(--gl),var(--g));border:1px solid var(--gl);border-radius:14px;padding:3px 11px;white-space:nowrap;box-shadow:0 1px 4px rgba(200,152,42,.25)}
+.pl-range-band.custom{background:rgba(52,152,219,.14);color:#7FC4F0;border-color:rgba(52,152,219,.4);box-shadow:none}
+.pl-range-band.all{background:rgba(200,152,42,.12);color:var(--gl);border-color:rgba(200,152,42,.3);box-shadow:none}
 .pl-apply{background:var(--g);color:#0D1B2E;border:none;border-radius:6px;font-weight:700;font-size:.7rem;padding:4px 13px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
 .pl-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 @media(max-width:700px){.pl-kpi-row{grid-template-columns:1fr 1fr}}
@@ -478,11 +484,12 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <input class="pl-date" type="date" id="plDateTo">
     <button class="pl-apply" onclick="runDailyPL()">ดูผล</button>
     <div style="display:flex;gap:5px">
-      <button class="pl-qbtn" onclick="setPlRange(7)">7 วัน</button>
-      <button class="pl-qbtn" onclick="setPlRange(14)">14 วัน</button>
-      <button class="pl-qbtn" onclick="setPlRange(30)">30 วัน</button>
-      <button class="pl-qbtn" onclick="setPlRange(0)">ทั้งหมด</button>
+      <button class="pl-qbtn qbtn-pl" data-days="7" onclick="setPlRange(7)">7 วัน</button>
+      <button class="pl-qbtn qbtn-pl" data-days="14" onclick="setPlRange(14)">14 วัน</button>
+      <button class="pl-qbtn qbtn-pl" data-days="30" onclick="setPlRange(30)">30 วัน</button>
+      <button class="pl-qbtn qbtn-pl" data-days="0" onclick="setPlRange(0)">ทั้งหมด</button>
     </div>
+    <span class="pl-range-band" id="plBand" style="display:none"></span>
     <div id="plSrcBadge" style="margin-left:auto;font-size:.58rem;color:var(--tm);background:rgba(200,152,42,.06);border:1px solid rgba(200,152,42,.15);border-radius:5px;padding:3px 8px">⏳ รอดึงข้อมูล…</div>
   </div>
 
@@ -565,11 +572,12 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <input class="pl-date" type="date" id="rptDateTo">
     <button class="pl-apply" onclick="runReport()">ดูผล</button>
     <div style="display:flex;gap:5px">
-      <button class="pl-qbtn" onclick="setRptRange(7)">7 วัน</button>
-      <button class="pl-qbtn" onclick="setRptRange(14)">14 วัน</button>
-      <button class="pl-qbtn" onclick="setRptRange(30)">30 วัน</button>
-      <button class="pl-qbtn" onclick="setRptRange(0)">ทั้งหมด</button>
+      <button class="pl-qbtn qbtn-rpt" data-days="7" onclick="setRptRange(7)">7 วัน</button>
+      <button class="pl-qbtn qbtn-rpt" data-days="14" onclick="setRptRange(14)">14 วัน</button>
+      <button class="pl-qbtn qbtn-rpt" data-days="30" onclick="setRptRange(30)">30 วัน</button>
+      <button class="pl-qbtn qbtn-rpt" data-days="0" onclick="setRptRange(0)">ทั้งหมด</button>
     </div>
+    <span class="pl-range-band" id="rptBand" style="display:none"></span>
     <div style="margin-left:auto;display:flex;gap:6px">
       <button class="pl-qbtn" onclick="refreshReport()">🔄 รีเฟรชข้อมูล</button>
       <button class="pl-apply" onclick="printReport()" style="background:var(--bl);color:#fff">🖨️ พิมพ์ / PDF</button>
@@ -606,11 +614,12 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <input type="date" id="pcDateFrom" class="pl-date">
     <span style="color:var(--tm)">–</span>
     <input type="date" id="pcDateTo" class="pl-date">
-    <button class="pl-qbtn" onclick="setPcRange(7)">7วัน</button>
-    <button class="pl-qbtn" onclick="setPcRange(14)">14วัน</button>
-    <button class="pl-qbtn" onclick="setPcRange(30)">30วัน</button>
-    <button class="pl-qbtn" onclick="setPcRange(0)">ทั้งหมด</button>
+    <button class="pl-qbtn qbtn-pc" data-days="7" onclick="setPcRange(7)">7วัน</button>
+    <button class="pl-qbtn qbtn-pc" data-days="14" onclick="setPcRange(14)">14วัน</button>
+    <button class="pl-qbtn qbtn-pc" data-days="30" onclick="setPcRange(30)">30วัน</button>
+    <button class="pl-qbtn qbtn-pc" data-days="0" onclick="setPcRange(0)">ทั้งหมด</button>
     <button class="pl-apply" onclick="runPurchase()">แสดง</button>
+    <span class="pl-range-band" id="pcBand" style="display:none"></span>
   </div>
   <div id="pcStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0"></div>
 
@@ -1553,9 +1562,50 @@ function renderDailyPL(fromDate, toDate){
   renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD);
 }
 
+/* ── แถบสีบอกช่วงเวลาที่กำลังดูอยู่ (ใช้ร่วมกันทั้ง 3 แท็บ) ── */
+function rangeBandText(fv,tv){
+  const fmt=s=>{ const d=new Date(s+'T00:00:00Z');
+    try{ return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit',timeZone:'UTC'}); }
+    catch(e){ return s; } };
+  if(!fv) return {txt:'ทั้งหมด', cls:'all'};
+  if(fv&&tv){
+    if(fv===tv) return {txt:fmt(fv)+' · วันเดียว', cls:''};
+    const days=Math.round((Date.parse(tv)-Date.parse(fv))/864e5)+1;
+    return {txt:fmt(fv)+' – '+fmt(tv)+' · '+days+' วัน', cls:''};
+  }
+  return {txt:'ตั้งแต่ '+fmt(fv), cls:''};
+}
+/* prefix = 'pl' | 'rpt' | 'pc' */
+function updateRangeUI(prefix){
+  const from=document.getElementById(prefix+'DateFrom');
+  const to  =document.getElementById(prefix+'DateTo');
+  if(!from||!to) return;
+  const fv=from.value, tv=to.value;
+  // หา preset ที่ตรงกับช่วงปัจจุบัน (7/14/30/ทั้งหมด) ไม่งั้นถือเป็น "กำหนดเอง"
+  const todayStr=new Date().toISOString().slice(0,10);
+  let match='custom';
+  if(!fv) match='0';
+  else if(tv===todayStr){
+    const days=Math.round((Date.parse(tv)-Date.parse(fv))/864e5)+1;
+    if(days===7||days===14||days===30) match=String(days);
+  }
+  document.querySelectorAll('.qbtn-'+prefix).forEach(b=>{
+    b.classList.toggle('active', b.dataset.days===match);
+  });
+  const band=document.getElementById(prefix+'Band');
+  if(band){
+    const info=rangeBandText(fv,tv);
+    band.textContent='📅 กำลังดู: '+info.txt;
+    band.className='pl-range-band'+(match==='custom'?' custom':(info.cls?(' '+info.cls):''));
+    band.style.display='inline-flex';
+  }
+}
+window.updateRangeUI=updateRangeUI;
+
 function runDailyPL(){
   const from=document.getElementById('plDateFrom').value;
   const to  =document.getElementById('plDateTo').value;
+  updateRangeUI('pl');
   renderDailyPL(from||null, to||null);
 }
 window.runDailyPL=runDailyPL;
@@ -1584,6 +1634,7 @@ function syncRptToPl(){
 }
 function runReport(){
   syncRptToPl();
+  updateRangeUI('rpt');
   if(!PL_LOADED){ initDailyPL(true); return; }   // โหลดครั้งแรก แล้วค่อย render
   runDailyPL();
 }
@@ -1596,6 +1647,7 @@ function setRptRange(days){
   if(days>0){ const f=new Date(today); f.setDate(f.getDate()-days+1); fromStr=f.toISOString().slice(0,10); }
   ['rptDateFrom','plDateFrom'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=fromStr;});
   ['rptDateTo','plDateTo'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=toStr;});
+  updateRangeUI('rpt');
   if(!PL_LOADED){ initDailyPL(true); return; }
   runDailyPL();
 }
@@ -2094,6 +2146,7 @@ function renderPurchaseTable(data, fromStr, toStr){
 }
 
 function runPurchase(){
+  updateRangeUI('pc');
   if(!PC_DATA){document.getElementById('pcStatus').textContent='ยังไม่มีข้อมูล กรุณาเชื่อมต่อก่อน';return;}
   renderPurchaseTable(PC_DATA, document.getElementById('pcDateFrom').value||null, document.getElementById('pcDateTo').value||null);
 }
@@ -2159,6 +2212,7 @@ async function initPurchase(interactive){
     const fd=document.getElementById('pcDateFrom'),td=document.getElementById('pcDateTo');
     if(fd&&!fd.value)fd.value=fromStr;
     if(td&&!td.value)td.value=toStr;
+    updateRangeUI('pc');
     renderPurchaseTable(PC_DATA,fd.value||null,td.value||null);
   }catch(e){
     badge.innerHTML='⚠️ '+e.message+' <button onclick="PC_LOADED=false;initPurchase(true)" style="'+btnStyle+'">ลองใหม่</button>';
@@ -2217,6 +2271,11 @@ async function initDailyPL(interactive){
       const fd=document.getElementById('plDateFrom'), td=document.getElementById('plDateTo');
       if(fd&&!fd.value) fd.value=fromStr;
       if(td&&!td.value) td.value=toStr;
+      // มิเรอร์ช่วงเริ่มต้นไปแท็บรายงาน เพื่อให้แถบสีขึ้นตรงกันทั้งสองแท็บ
+      const rf=document.getElementById('rptDateFrom'), rt=document.getElementById('rptDateTo');
+      if(rf&&!rf.value) rf.value=fd?fd.value:fromStr;
+      if(rt&&!rt.value) rt.value=td?td.value:toStr;
+      updateRangeUI('pl'); updateRangeUI('rpt');
       renderDailyPL(document.getElementById('plDateFrom').value||null, document.getElementById('plDateTo').value||null);
     }
   }catch(e){
