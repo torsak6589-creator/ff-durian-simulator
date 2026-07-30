@@ -1008,6 +1008,17 @@ const SP = {
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
 
+/* ── แหล่งใหม่ของ "% grade fg" (สัดส่วนเกรด %A/%B/%C/%D/%BK) ──
+   ย้ายจาก Procurement_Master_File → ชีท DATA ของ "DATA PRODUCTION ทุเรียน.xlsx"
+   (SharePoint site Durian, Shared Documents/General)
+   token ตัวเดียวกับ SP (Files.Read.All / Sites.Read.All) เข้าถึงได้ข้าม drive
+   เฉพาะ "เกรด" ที่เปลี่ยนแหล่ง — ปริมาณดิบ/yield/ราคา ยังอ่านจากชีทเดิมตามปกติ */
+const GRADE_FG = {
+  driveId:"b!6YUgaw8QA0GezyJpLS9zXtbeQGfqGHZFhz4RewpCli1gez3egxoDSpidAMzxxotB",
+  itemId :"017TMAJHA4FRGR3UCVABGJDIGZ7LOYWBEP",
+  sheet  :"DATA",
+};
+
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
 let ACTUAL_RM=null;// ข้อมูลรับซื้อจริงจาก RM-RECIVE (kg, value, avg)
@@ -1077,6 +1088,49 @@ function parseActual(values){
   return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK,
            cost: costRows>0?cost:NaN };
 }
+/* parse ชีท DATA ของ "DATA PRODUCTION ทุเรียน.xlsx" → สัดส่วนเกรด { A,B,C,D,BK }
+   ชีทมีคอลัมน์ %A %B %C %D %BK ตรงตัว
+   - ถ้ามีคอลัมน์น้ำหนัก (นน.ส่งเข้าฟรีซ / ก่อนปอก) → ถัวเฉลี่ยถ่วงน้ำหนัก
+   - ถ้าไม่มี → เฉลี่ยแบบธรรมดาจากทุกแถวที่มีค่า
+   - ข้ามแถว "รวม/total"
+   - รองรับค่าที่เก็บเป็นเศษส่วน (0.5 = 50%) เช่นเดียวกับ parseActual */
+function parseGradeFG(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,20);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
+    if(row.some(h=>h==="%a")){hi=i;break;}
+  }
+  if(hi<0) return null;
+  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
+  const norm=hdr.map(h=>h.replace(/\s/g,""));
+  const exact=k=>norm.findIndex(h=>h===k);
+  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
+  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
+  if(cA<0) return null;
+  const cW=incl("ฟร","ก่อนปอก","น้ำหนัก","นน.");   // คอลัมน์น้ำหนักสำหรับถ่วง (ถ้ามี)
+  let gA=0,gB=0,gC=0,gD=0,gBK=0, wSum=0, rows=0;
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||"").toLowerCase();
+    if(label.includes("รวม")||label.includes("total")||label.includes("avg")) continue;
+    const a=aNum(r[cA]);
+    if(isNaN(a)) continue;                 // ต้องมีค่า %A จึงนับเป็นแถวข้อมูล
+    let w=cW>=0?aNum(r[cW]):NaN;
+    if(isNaN(w)||w<=0) w=1;                 // ไม่มีน้ำหนัก → ถ่วงเท่ากัน (เฉลี่ยธรรมดา)
+    gA +=a*w;
+    gB +=(cB>=0?(aNum(r[cB ])||0):0)*w;
+    gC +=(cC>=0?(aNum(r[cC ])||0):0)*w;
+    gD +=(cD>=0?(aNum(r[cD ])||0):0)*w;
+    gBK+=(cBK>=0?(aNum(r[cBK])||0):0)*w;
+    wSum+=w; rows++;
+  }
+  if(rows===0||wSum<=0) return null;
+  let A=gA/wSum,B=gB/wSum,C=gC/wSum,D=gD/wSum,BK=gBK/wSum;
+  const sum=A+B+C+D+BK;
+  if(sum>0 && sum<=1.5){ A*=100; B*=100; C*=100; D*=100; BK*=100; }
+  return { A,B,C,D,BK, rows };
+}
 const ACT_AVG_PRICE=64399270/1160619;  // ราคาเฉลี่ยเดิม (~55.49฿/kg) ใช้เมื่อไม่พบมูลค่าในชีท
 function applyActual(){
   if(!ACTUAL) return;
@@ -1101,7 +1155,7 @@ const btnStyle="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;backg
 function showConnect(msg){
   setBadge(`${msg||"🔐 ดึงผลผลิตจริงจากชีท %A DURAIN"} <button onclick="connectActual()" style="${btnStyle}">เชื่อมต่อ Microsoft 365</button>`,"warn");
 }
-function showOk(p, rm){
+function showOk(p, rm, gradeFromData){
   ACTUAL=p; ACTUAL_RM=rm||null;
   // ราคา/kg actual: ใช้จาก RM-RECIVE ถ้าได้ ไม่งั้นใช้ราคาเฉลี่ยเดิม
   const priceKg = rm ? rm.avg : ACT_AVG_PRICE;
@@ -1109,10 +1163,12 @@ function showOk(p, rm){
   const priceTxt = rm
     ? ` · <strong>รับซื้อ ${fmt(rm.kg,0)}kg</strong> @ <strong>${fmt(rm.avg)}฿/kg</strong> (มูลค่า ${fmt(valM)}M, ${rm.rows} บิล)`
     : ` · ราคา ${fmt(priceKg)}฿/kg (ราคาเฉลี่ยเดิม — อ่าน ${RM_SHEET} ไม่ได้)`;
+  // ที่มาของ % grade fg: ชีท DATA (แหล่งใหม่) หรือ fallback เป็น %A DURAIN
+  const gradeSrc = gradeFromData ? "DATA" : ACTUAL_SHEET+" (fallback)";
   setBadge(
     `📊 <strong>ผลผลิตจริง</strong> (${ACTUAL_SHEET}, ${p.rows} ล็อต) — `+
     `ผลิตดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong> · `+
-    `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}%`+priceTxt+` `+
+    `เกรด[${gradeSrc}] A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}%`+priceTxt+` `+
     `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
     "ok");
 }
@@ -1136,8 +1192,8 @@ async function getToken(interactive){
   }
   return null;
 }
-async function graphValues(token, sheet, matchRe){
-  const base="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/workbook";
+async function graphValues(token, sheet, matchRe, driveId, itemId){
+  const base="https://graph.microsoft.com/v1.0/drives/"+(driveId||SP.driveId)+"/items/"+(itemId||SP.itemId)+"/workbook";
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   // เรียกชีทตามชื่อก่อน (ชื่อมี % และเว้นวรรค → encode)
   let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr});
@@ -1193,10 +1249,17 @@ async function doFetch(interactive){
     setBadge("🔄 กำลังอ่านชีท "+ACTUAL_SHEET+"…");
     const p=parseActual(await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/));
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
+    // "% grade fg": อ่านสัดส่วนเกรดจากชีท DATA ของ DATA PRODUCTION ทุเรียน.xlsx
+    // (แทนที่เกรดที่คำนวณจาก %A DURAIN) — ถ้าพลาด ใช้เกรดจากชีทเดิมเป็น fallback
+    let gradeFromData=false;
+    try{
+      const g=parseGradeFG(await graphValues(token, GRADE_FG.sheet, /^data$/i, GRADE_FG.driveId, GRADE_FG.itemId));
+      if(g){ p.A=g.A; p.B=g.B; p.C=g.C; p.D=g.D; p.BK=g.BK; gradeFromData=true; }
+    }catch(e){ /* คงเกรดจาก %A DURAIN ไว้ */ }
     // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
     let rm=null;
     try{ rm=parseRM(await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน|durian.*price/)); }catch(e){ /* ใช้ fallback */ }
-    showOk(p, rm);
+    showOk(p, rm, gradeFromData);
   }catch(e){
     const code=e.errorCode||"";
     if(/interaction_required|login_required|consent_required|no_account/.test(code)) showConnect("🔐 ต้องล็อกอินใหม่:");
@@ -1423,6 +1486,56 @@ function parseDailyActual(values){
     result.set(k,{raw:v.raw, fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
   });
   return result.size>0 ? result : null;
+}
+
+/* parse ชีท DATA (DATA PRODUCTION ทุเรียน.xlsx) → สัดส่วนเกรด "% grade fg" สำหรับ P&L รายวัน
+   คืน { perDate: Map<dateKey,{A,B,C,D,BK}> | null, agg: {A,B,C,D,BK} }  (ค่าเป็น % 0-100)
+   - ถ้าชีทมีคอลัมน์วันที่ → เก็บ % เกรดแยกรายวัน (ถ่วงน้ำหนักภายในวันถ้ามีคอลัมน์น้ำหนัก)
+   - agg = ค่าเฉลี่ยรวม ใช้เป็น fallback สำหรับวันที่ไม่มีข้อมูลในชีท DATA
+   ตัว P&L จะเอา % นี้ไปแบ่งน้ำหนัก FG รายวัน (จาก %A DURAIN) เป็นเกรด kg */
+function parseDailyGradeFG(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,20);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
+    if(row.some(h=>h==="%a")){hi=i;break;}
+  }
+  if(hi<0) return null;
+  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
+  const norm=hdr.map(h=>h.replace(/\s/g,""));
+  const exact=k=>norm.findIndex(h=>h===k);
+  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
+  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
+  if(cA<0) return null;
+  const cDate=incl("วัน","date","ว/ด/ป","ผลิต");
+  const cW=incl("ฟร","ก่อนปอก","น้ำหนัก","นน.");   // น้ำหนักสำหรับถ่วง (ถ้ามี)
+  // แปลงเศษส่วน (0.5) → เปอร์เซ็นต์ (50) ถ้าผลรวม ≈ 1
+  const toPct=o=>{const s=o.A+o.B+o.C+o.D+o.BK; if(s>0&&s<=1.5){o.A*=100;o.B*=100;o.C*=100;o.D*=100;o.BK*=100;} return o;};
+  let gA=0,gB=0,gC=0,gD=0,gBK=0,wSum=0,rows=0;
+  const acc=new Map();   // dateKey → ผลรวมถ่วงน้ำหนักภายในวัน
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||"").toLowerCase();
+    if(label.includes("รวม")||label.includes("total")||label.includes("avg")) continue;
+    const a=aNum(r[cA]); if(isNaN(a)) continue;
+    let w=cW>=0?aNum(r[cW]):NaN; if(isNaN(w)||w<=0) w=1;
+    const b=cB>=0?(aNum(r[cB])||0):0, c=cC>=0?(aNum(r[cC])||0):0,
+          d=cD>=0?(aNum(r[cD])||0):0, bk=cBK>=0?(aNum(r[cBK])||0):0;
+    gA+=a*w; gB+=b*w; gC+=c*w; gD+=d*w; gBK+=bk*w; wSum+=w; rows++;
+    if(cDate>=0){
+      const k=dateKey(excelToDate(r[cDate]));
+      if(k){
+        const p=acc.get(k)||{A:0,B:0,C:0,D:0,BK:0,w:0};
+        p.A+=a*w; p.B+=b*w; p.C+=c*w; p.D+=d*w; p.BK+=bk*w; p.w+=w;
+        acc.set(k,p);
+      }
+    }
+  }
+  if(rows===0||wSum<=0) return null;
+  const perDate=new Map();
+  acc.forEach((p,k)=>{ if(p.w>0) perDate.set(k, toPct({A:p.A/p.w,B:p.B/p.w,C:p.C/p.w,D:p.D/p.w,BK:p.BK/p.w})); });
+  const agg=toPct({A:gA/wSum,B:gB/wSum,C:gC/wSum,D:gD/wSum,BK:gBK/wSum});
+  return { perDate: perDate.size>0?perDate:null, agg };
 }
 
 /* ── Render P&L table ── */
@@ -2258,9 +2371,27 @@ async function initDailyPL(interactive){
       PL_LOADED=false;
       return;
     }
+    // "% grade fg" รายวัน: เอา % เกรดจากชีท DATA มาแบ่งน้ำหนัก FG ของแต่ละวัน (คงน้ำหนัก FG จาก %A DURAIN)
+    // มีคอลัมน์วันที่ → ใช้ % รายวัน · ไม่มี → ใช้ % รวมกับทุกวัน · อ่านไม่ได้ → คงเกรดจาก %A DURAIN
+    let gradeSrc='%A DURAIN';
+    if(PL_ACT_MAP){
+      b.textContent='🔄 ดึง % grade fg (ชีท DATA)…';
+      try{
+        const gd=parseDailyGradeFG(await graphValues(token, GRADE_FG.sheet, /^data$/i, GRADE_FG.driveId, GRADE_FG.itemId));
+        if(gd){
+          PL_ACT_MAP.forEach((v,k)=>{
+            const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
+            if(!pct) return;
+            const fg=v.fg||0;
+            v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
+          });
+          gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)');
+        }
+      }catch(e){ /* คงเกรดจาก %A DURAIN */ }
+    }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
-    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
+    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · เกรด: '+gradeSrc+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     if(actCount>0){
       // Set default range: last 30 days
