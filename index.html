@@ -1088,48 +1088,47 @@ function parseActual(values){
   return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK,
            cost: costRows>0?cost:NaN };
 }
-/* parse ชีท DATA ของ "DATA PRODUCTION ทุเรียน.xlsx" → สัดส่วนเกรด { A,B,C,D,BK }
-   ชีทมีคอลัมน์ %A %B %C %D %BK ตรงตัว
-   - ถ้ามีคอลัมน์น้ำหนัก (นน.ส่งเข้าฟรีซ / ก่อนปอก) → ถัวเฉลี่ยถ่วงน้ำหนัก
-   - ถ้าไม่มี → เฉลี่ยแบบธรรมดาจากทุกแถวที่มีค่า
-   - ข้ามแถว "รวม/total"
-   - รองรับค่าที่เก็บเป็นเศษส่วน (0.5 = 50%) เช่นเดียวกับ parseActual */
-function parseGradeFG(values){
-  if(!Array.isArray(values)||!values.length) return null;
+/* ── หา header row + คอลัมน์เกรดของชีท DATA (ตาราง T_Data) ──
+   หัวตาราง: … นน.ส่งเข้าฟรีซ | A | B | C | D | E | BK | เพียวเร่ | …
+   เกรดเก็บเป็น "น้ำหนัก (kg)" → % grade fg = kg ÷ นน.ส่งเข้าฟรีซ
+   (A+B+C+D+E+BK = นน.ส่งเข้าฟรีซ; เพียวเร่/เมล็ด/เสีย แยกออกจาก FG)
+   app ใช้แค่ A/B/C/D/BK — ไม่รวม E (≈0.3%) กับเพียวเร่ */
+function dataGradeCols(values){
   let hi=-1;
-  for(let i=0;i<Math.min(values.length,20);i++){
-    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
-    if(row.some(h=>h==="%a")){hi=i;break;}
+  for(let i=0;i<Math.min(values.length,25);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").trim().toLowerCase());
+    if(row.some(h=>h==="a") && row.some(h=>h.includes("ส่งเข้าฟร"))){ hi=i; break; }
   }
   if(hi<0) return null;
   const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
-  const norm=hdr.map(h=>h.replace(/\s/g,""));
-  const exact=k=>norm.findIndex(h=>h===k);
+  const exact=k=>hdr.findIndex(h=>h===k);
   const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
-  if(cA<0) return null;
-  const cW=incl("ฟร","ก่อนปอก","น้ำหนัก","นน.");   // คอลัมน์น้ำหนักสำหรับถ่วง (ถ้ามี)
-  let gA=0,gB=0,gC=0,gD=0,gBK=0, wSum=0, rows=0;
-  for(let i=hi+1;i<values.length;i++){
+  const cFG=incl("ส่งเข้าฟร");                       // นน.ส่งเข้าฟรีซ (FG)
+  const cA=exact("a"),cB=exact("b"),cC=exact("c"),cD=exact("d"),cBK=exact("bk");
+  if(cFG<0||cA<0) return null;
+  const cDate=incl("วันที่ผลิต","ผลิต");             // วันที่ผลิต (สำหรับเกรดรายวัน)
+  return { hi, cFG, cA, cB, cC, cD, cBK, cDate };
+}
+/* parse ชีท DATA → สัดส่วนเกรดรวม { A,B,C,D,BK } (หน่วย %) = Σkg เกรด ÷ Σ นน.ส่งเข้าฟรีซ */
+function parseGradeFG(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  const c=dataGradeCols(values); if(!c) return null;
+  let sFG=0,sA=0,sB=0,sC=0,sD=0,sBK=0,rows=0;
+  for(let i=c.hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
     const label=String(r[0]||"").toLowerCase();
-    if(label.includes("รวม")||label.includes("total")||label.includes("avg")) continue;
-    const a=aNum(r[cA]);
-    if(isNaN(a)) continue;                 // ต้องมีค่า %A จึงนับเป็นแถวข้อมูล
-    let w=cW>=0?aNum(r[cW]):NaN;
-    if(isNaN(w)||w<=0) w=1;                 // ไม่มีน้ำหนัก → ถ่วงเท่ากัน (เฉลี่ยธรรมดา)
-    gA +=a*w;
-    gB +=(cB>=0?(aNum(r[cB ])||0):0)*w;
-    gC +=(cC>=0?(aNum(r[cC ])||0):0)*w;
-    gD +=(cD>=0?(aNum(r[cD ])||0):0)*w;
-    gBK+=(cBK>=0?(aNum(r[cBK])||0):0)*w;
-    wSum+=w; rows++;
+    if(label.includes("รวม")||label.includes("total")) continue;
+    const fg=aNum(r[c.cFG]); if(isNaN(fg)||fg<=0) continue;
+    sFG+=fg;
+    sA +=(aNum(r[c.cA])||0);
+    sB +=(c.cB>=0?(aNum(r[c.cB])||0):0);
+    sC +=(c.cC>=0?(aNum(r[c.cC])||0):0);
+    sD +=(c.cD>=0?(aNum(r[c.cD])||0):0);
+    sBK+=(c.cBK>=0?(aNum(r[c.cBK])||0):0);
+    rows++;
   }
-  if(rows===0||wSum<=0) return null;
-  let A=gA/wSum,B=gB/wSum,C=gC/wSum,D=gD/wSum,BK=gBK/wSum;
-  const sum=A+B+C+D+BK;
-  if(sum>0 && sum<=1.5){ A*=100; B*=100; C*=100; D*=100; BK*=100; }
-  return { A,B,C,D,BK, rows };
+  if(rows===0||sFG<=0) return null;
+  return { A:sA/sFG*100, B:sB/sFG*100, C:sC/sFG*100, D:sD/sFG*100, BK:sBK/sFG*100, rows };
 }
 const ACT_AVG_PRICE=64399270/1160619;  // ราคาเฉลี่ยเดิม (~55.49฿/kg) ใช้เมื่อไม่พบมูลค่าในชีท
 function applyActual(){
@@ -1326,6 +1325,15 @@ function excelToDate(serial){
     else if(y < 100) y += (y > 50 ? 1900 : 2000);
     return new Date(Date.UTC(y, parseInt(m[2])-1, parseInt(m[1])));
   }
+  // Match วันแบบไทย: "24-พ.ค.-2024" / "1 ก.ค. 2569"
+  const TH_MON={'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,
+                'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
+  const tm = s.match(/^(\d{1,2})[-\s]*([ก-ฮ]+\.?[ก-ฮ]?\.?)[-\s]*(\d{2,4})$/);
+  if(tm && TH_MON[tm[2]]){
+    let y=parseInt(tm[3]);
+    if(y>2400) y-=543; else if(y<100) y+=(y>50?1900:2000);
+    return new Date(Date.UTC(y, TH_MON[tm[2]]-1, parseInt(tm[1])));
+  }
   const d = new Date(s);
   return isNaN(d)?null:d;
 }
@@ -1488,53 +1496,36 @@ function parseDailyActual(values){
   return result.size>0 ? result : null;
 }
 
-/* parse ชีท DATA (DATA PRODUCTION ทุเรียน.xlsx) → สัดส่วนเกรด "% grade fg" สำหรับ P&L รายวัน
+/* parse ชีท DATA → สัดส่วนเกรด "% grade fg" สำหรับ P&L รายวัน
    คืน { perDate: Map<dateKey,{A,B,C,D,BK}> | null, agg: {A,B,C,D,BK} }  (ค่าเป็น % 0-100)
-   - ถ้าชีทมีคอลัมน์วันที่ → เก็บ % เกรดแยกรายวัน (ถ่วงน้ำหนักภายในวันถ้ามีคอลัมน์น้ำหนัก)
-   - agg = ค่าเฉลี่ยรวม ใช้เป็น fallback สำหรับวันที่ไม่มีข้อมูลในชีท DATA
-   ตัว P&L จะเอา % นี้ไปแบ่งน้ำหนัก FG รายวัน (จาก %A DURAIN) เป็นเกรด kg */
+   % เกรด = Σ kg เกรด ÷ Σ นน.ส่งเข้าฟรีซ (แยกตาม "วันที่ผลิต")
+   P&L จะเอา % นี้ไปแบ่งน้ำหนัก FG รายวัน (จาก %A DURAIN) เป็นเกรด kg */
 function parseDailyGradeFG(values){
   if(!Array.isArray(values)||!values.length) return null;
-  let hi=-1;
-  for(let i=0;i<Math.min(values.length,20);i++){
-    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
-    if(row.some(h=>h==="%a")){hi=i;break;}
-  }
-  if(hi<0) return null;
-  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
-  const norm=hdr.map(h=>h.replace(/\s/g,""));
-  const exact=k=>norm.findIndex(h=>h===k);
-  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
-  if(cA<0) return null;
-  const cDate=incl("วัน","date","ว/ด/ป","ผลิต");
-  const cW=incl("ฟร","ก่อนปอก","น้ำหนัก","นน.");   // น้ำหนักสำหรับถ่วง (ถ้ามี)
-  // แปลงเศษส่วน (0.5) → เปอร์เซ็นต์ (50) ถ้าผลรวม ≈ 1
-  const toPct=o=>{const s=o.A+o.B+o.C+o.D+o.BK; if(s>0&&s<=1.5){o.A*=100;o.B*=100;o.C*=100;o.D*=100;o.BK*=100;} return o;};
-  let gA=0,gB=0,gC=0,gD=0,gBK=0,wSum=0,rows=0;
-  const acc=new Map();   // dateKey → ผลรวมถ่วงน้ำหนักภายในวัน
-  for(let i=hi+1;i<values.length;i++){
+  const c=dataGradeCols(values); if(!c) return null;
+  let sFG=0,sA=0,sB=0,sC=0,sD=0,sBK=0,rows=0;
+  const acc=new Map();   // dateKey(วันที่ผลิต) → ผลรวม kg
+  for(let i=c.hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
     const label=String(r[0]||"").toLowerCase();
-    if(label.includes("รวม")||label.includes("total")||label.includes("avg")) continue;
-    const a=aNum(r[cA]); if(isNaN(a)) continue;
-    let w=cW>=0?aNum(r[cW]):NaN; if(isNaN(w)||w<=0) w=1;
-    const b=cB>=0?(aNum(r[cB])||0):0, c=cC>=0?(aNum(r[cC])||0):0,
-          d=cD>=0?(aNum(r[cD])||0):0, bk=cBK>=0?(aNum(r[cBK])||0):0;
-    gA+=a*w; gB+=b*w; gC+=c*w; gD+=d*w; gBK+=bk*w; wSum+=w; rows++;
-    if(cDate>=0){
-      const k=dateKey(excelToDate(r[cDate]));
+    if(label.includes("รวม")||label.includes("total")) continue;
+    const fg=aNum(r[c.cFG]); if(isNaN(fg)||fg<=0) continue;
+    const a=(aNum(r[c.cA])||0), b=(c.cB>=0?(aNum(r[c.cB])||0):0), cc=(c.cC>=0?(aNum(r[c.cC])||0):0),
+          d=(c.cD>=0?(aNum(r[c.cD])||0):0), bk=(c.cBK>=0?(aNum(r[c.cBK])||0):0);
+    sFG+=fg; sA+=a; sB+=b; sC+=cc; sD+=d; sBK+=bk; rows++;
+    if(c.cDate>=0){
+      const k=dateKey(excelToDate(r[c.cDate]));
       if(k){
-        const p=acc.get(k)||{A:0,B:0,C:0,D:0,BK:0,w:0};
-        p.A+=a*w; p.B+=b*w; p.C+=c*w; p.D+=d*w; p.BK+=bk*w; p.w+=w;
+        const p=acc.get(k)||{fg:0,A:0,B:0,C:0,D:0,BK:0};
+        p.fg+=fg; p.A+=a; p.B+=b; p.C+=cc; p.D+=d; p.BK+=bk;
         acc.set(k,p);
       }
     }
   }
-  if(rows===0||wSum<=0) return null;
+  if(rows===0||sFG<=0) return null;
   const perDate=new Map();
-  acc.forEach((p,k)=>{ if(p.w>0) perDate.set(k, toPct({A:p.A/p.w,B:p.B/p.w,C:p.C/p.w,D:p.D/p.w,BK:p.BK/p.w})); });
-  const agg=toPct({A:gA/wSum,B:gB/wSum,C:gC/wSum,D:gD/wSum,BK:gBK/wSum});
+  acc.forEach((p,k)=>{ if(p.fg>0) perDate.set(k,{A:p.A/p.fg*100,B:p.B/p.fg*100,C:p.C/p.fg*100,D:p.D/p.fg*100,BK:p.BK/p.fg*100}); });
+  const agg={A:sA/sFG*100,B:sB/sFG*100,C:sC/sFG*100,D:sD/sFG*100,BK:sBK/sFG*100};
   return { perDate: perDate.size>0?perDate:null, agg };
 }
 
