@@ -1488,6 +1488,56 @@ function parseDailyActual(values){
   return result.size>0 ? result : null;
 }
 
+/* parse ชีท DATA (DATA PRODUCTION ทุเรียน.xlsx) → สัดส่วนเกรด "% grade fg" สำหรับ P&L รายวัน
+   คืน { perDate: Map<dateKey,{A,B,C,D,BK}> | null, agg: {A,B,C,D,BK} }  (ค่าเป็น % 0-100)
+   - ถ้าชีทมีคอลัมน์วันที่ → เก็บ % เกรดแยกรายวัน (ถ่วงน้ำหนักภายในวันถ้ามีคอลัมน์น้ำหนัก)
+   - agg = ค่าเฉลี่ยรวม ใช้เป็น fallback สำหรับวันที่ไม่มีข้อมูลในชีท DATA
+   ตัว P&L จะเอา % นี้ไปแบ่งน้ำหนัก FG รายวัน (จาก %A DURAIN) เป็นเกรด kg */
+function parseDailyGradeFG(values){
+  if(!Array.isArray(values)||!values.length) return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(values.length,20);i++){
+    const row=(values[i]||[]).map(c=>String(c||"").replace(/\s/g,"").toLowerCase());
+    if(row.some(h=>h==="%a")){hi=i;break;}
+  }
+  if(hi<0) return null;
+  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
+  const norm=hdr.map(h=>h.replace(/\s/g,""));
+  const exact=k=>norm.findIndex(h=>h===k);
+  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
+  const cA=exact("%a"),cB=exact("%b"),cC=exact("%c"),cD=exact("%d"),cBK=exact("%bk");
+  if(cA<0) return null;
+  const cDate=incl("วัน","date","ว/ด/ป","ผลิต");
+  const cW=incl("ฟร","ก่อนปอก","น้ำหนัก","นน.");   // น้ำหนักสำหรับถ่วง (ถ้ามี)
+  // แปลงเศษส่วน (0.5) → เปอร์เซ็นต์ (50) ถ้าผลรวม ≈ 1
+  const toPct=o=>{const s=o.A+o.B+o.C+o.D+o.BK; if(s>0&&s<=1.5){o.A*=100;o.B*=100;o.C*=100;o.D*=100;o.BK*=100;} return o;};
+  let gA=0,gB=0,gC=0,gD=0,gBK=0,wSum=0,rows=0;
+  const acc=new Map();   // dateKey → ผลรวมถ่วงน้ำหนักภายในวัน
+  for(let i=hi+1;i<values.length;i++){
+    const r=values[i]; if(!r) continue;
+    const label=String(r[0]||"").toLowerCase();
+    if(label.includes("รวม")||label.includes("total")||label.includes("avg")) continue;
+    const a=aNum(r[cA]); if(isNaN(a)) continue;
+    let w=cW>=0?aNum(r[cW]):NaN; if(isNaN(w)||w<=0) w=1;
+    const b=cB>=0?(aNum(r[cB])||0):0, c=cC>=0?(aNum(r[cC])||0):0,
+          d=cD>=0?(aNum(r[cD])||0):0, bk=cBK>=0?(aNum(r[cBK])||0):0;
+    gA+=a*w; gB+=b*w; gC+=c*w; gD+=d*w; gBK+=bk*w; wSum+=w; rows++;
+    if(cDate>=0){
+      const k=dateKey(excelToDate(r[cDate]));
+      if(k){
+        const p=acc.get(k)||{A:0,B:0,C:0,D:0,BK:0,w:0};
+        p.A+=a*w; p.B+=b*w; p.C+=c*w; p.D+=d*w; p.BK+=bk*w; p.w+=w;
+        acc.set(k,p);
+      }
+    }
+  }
+  if(rows===0||wSum<=0) return null;
+  const perDate=new Map();
+  acc.forEach((p,k)=>{ if(p.w>0) perDate.set(k, toPct({A:p.A/p.w,B:p.B/p.w,C:p.C/p.w,D:p.D/p.w,BK:p.BK/p.w})); });
+  const agg=toPct({A:gA/wSum,B:gB/wSum,C:gC/wSum,D:gD/wSum,BK:gBK/wSum});
+  return { perDate: perDate.size>0?perDate:null, agg };
+}
+
 /* ── Render P&L table ── */
 function renderDailyPL(fromDate, toDate){
   const tbody=document.getElementById('plTbody');
@@ -2321,9 +2371,27 @@ async function initDailyPL(interactive){
       PL_LOADED=false;
       return;
     }
+    // "% grade fg" รายวัน: เอา % เกรดจากชีท DATA มาแบ่งน้ำหนัก FG ของแต่ละวัน (คงน้ำหนัก FG จาก %A DURAIN)
+    // มีคอลัมน์วันที่ → ใช้ % รายวัน · ไม่มี → ใช้ % รวมกับทุกวัน · อ่านไม่ได้ → คงเกรดจาก %A DURAIN
+    let gradeSrc='%A DURAIN';
+    if(PL_ACT_MAP){
+      b.textContent='🔄 ดึง % grade fg (ชีท DATA)…';
+      try{
+        const gd=parseDailyGradeFG(await graphValues(token, GRADE_FG.sheet, /^data$/i, GRADE_FG.driveId, GRADE_FG.itemId));
+        if(gd){
+          PL_ACT_MAP.forEach((v,k)=>{
+            const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
+            if(!pct) return;
+            const fg=v.fg||0;
+            v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
+          });
+          gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)');
+        }
+      }catch(e){ /* คงเกรดจาก %A DURAIN */ }
+    }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
-    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
+    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · เกรด: '+gradeSrc+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     if(actCount>0){
       // Set default range: last 30 days
