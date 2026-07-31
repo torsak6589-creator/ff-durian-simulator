@@ -1025,7 +1025,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-9 (auto-connect)";
+const APP_BUILD="gradefg-10 (fresh-nocache)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1205,16 +1205,16 @@ async function graphValues(token, sheet, matchRe, driveId, itemId){
   const base="https://graph.microsoft.com/v1.0/drives/"+(driveId||SP.driveId)+"/items/"+(itemId||SP.itemId)+"/workbook";
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   // เรียกชีทตามชื่อก่อน (ชื่อมี % และเว้นวรรค → encode)
-  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr});
+  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
   if(!res.ok){
     // fallback: list ชีททั้งหมดแล้ว match ชื่อ
-    const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr});
+    const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr,cache:"no-store"});
     if(!wl.ok) throw new Error("worksheets HTTP "+wl.status);
     const list=(await wl.json()).value||[];
     const key=sheet.replace(/\s/g,"").toLowerCase();
     const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||(matchRe&&list.find(w=>matchRe.test(w.name.toLowerCase())));
     if(!m) throw new Error("ไม่พบชีท "+sheet+" (มี: "+list.map(w=>w.name).join(", ")+")");
-    res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr});
+    res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
     if(!res.ok) throw new Error("usedRange HTTP "+res.status);
   }
   return (await res.json()).values;
@@ -1225,7 +1225,7 @@ async function gfetchJSON(url, hdr, tries){
   let lastErr=null;
   for(let i=0;i<tries;i++){
     try{
-      const res=await fetch(url,{headers:hdr});
+      const res=await fetch(url,{headers:hdr,cache:"no-store"});
       if(res.ok) return await res.json();
       if(res.status===429||res.status>=500){ lastErr=new Error("HTTP "+res.status); await new Promise(r=>setTimeout(r,700*(i+1))); continue; }
       throw new Error("HTTP "+res.status);
@@ -1279,11 +1279,12 @@ function loadGradeCache(){
    คืน values แบบ array-of-arrays เหมือน usedRange */
 async function downloadDataValues(token){
   if(typeof XLSX==="undefined") throw new Error("SheetJS ยังไม่โหลด");
-  const url="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/content";
+  // cache-bust: ?nc=<เวลา> + no-store → บังคับได้ไฟล์ล่าสุดเสมอ (ข้อมูลที่เพิ่งแก้ในชีทมาทันที)
+  const url="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/content?nc="+Date.now();
   let res=null, lastErr=null;
   for(let i=0;i<3;i++){
     try{
-      res=await fetch(url,{headers:{Authorization:"Bearer "+token}});
+      res=await fetch(url,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
       if(res.ok) break;
       lastErr=new Error("HTTP "+res.status);
       if(res.status===429||res.status>=500){ await new Promise(r=>setTimeout(r,900*(i+1))); continue; }
@@ -2217,12 +2218,12 @@ async function resolveProcItem(token){
   // Verify accessible; fall back to search-by-name if not
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   try{
-    const r=await fetch(`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}?$select=id,name`,{headers:hdr});
+    const r=await fetch(`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}?$select=id,name`,{headers:hdr,cache:"no-store"});
     if(r.ok) return;
   }catch(e){}
   PC_DRIVE_ID=null; PC_ITEM_ID=null;
   try{
-    const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${PROC_DRIVE}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr});
+    const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${PROC_DRIVE}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr,cache:"no-store"});
     if(sr.ok){
       const items=((await sr.json()).value||[]);
       const f=items.find(i=>i.name&&i.name.includes(PROC_FILE));
@@ -2236,14 +2237,14 @@ async function graphValuesProc(token, sheet, matchRe){
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   await resolveProcItem(token);
   const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
-  let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr});
+  let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
   if(!res.ok){
-    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr,cache:"no-store"});
     if(!wl.ok) throw new Error('worksheets HTTP '+wl.status);
     const list=(await wl.json()).value||[];
     const m=list.find(w=>{const n=w.name.replace(/\s/g,'').toLowerCase(); return n===sheet.replace(/\s/g,'').toLowerCase();})||(matchRe&&list.find(w=>matchRe.test(w.name)));
     if(!m) throw new Error('ไม่พบชีท '+sheet+' (มี: '+list.map(w=>w.name).join(', ')+')');
-    res=await fetch(base+'/worksheets/'+encodeURIComponent(m.id)+'/usedRange?$select=values',{headers:hdr});
+    res=await fetch(base+'/worksheets/'+encodeURIComponent(m.id)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
     if(!res.ok) throw new Error('usedRange HTTP '+res.status);
   }
   return (await res.json()).values;
@@ -2427,7 +2428,7 @@ async function initPurchase(interactive){
     await resolveProcItem(token);
     const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
     const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
-    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr,cache:"no-store"});
     if(!wl.ok) throw new Error('อ่านรายชื่อชีทไม่ได้ (HTTP '+wl.status+')');
     let list=(await wl.json()).value||[];
     // Skip obvious non-data sheets; prioritise likely purchase sheets
@@ -2440,7 +2441,7 @@ async function initPurchase(interactive){
       sheetTried.push(w.name);
       let v=null;
       try{
-        const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr});
+        const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
         if(res.ok) v=(await res.json()).values;
       }catch(e){}
       if(!v||!v.length) continue;
@@ -2537,9 +2538,10 @@ async function initDailyPL(interactive){
     const gradeTxt = (okData
       ? '<span style="color:#2ECC71">เกรด: '+gradeSrc+'</span>'
       : '<span style="color:#E74C3C">⚠️ เกรด: %A DURAIN (อ่านชีท DATA ไม่สำเร็จ — B ไม่ตรง)</span>')+info;
+    let tnow=""; try{ tnow=new Date().toLocaleTimeString('th-TH'); }catch(e){}
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · '+gradeTxt+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>'+
-      '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">'+APP_BUILD+'</span>';
+      '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">ดึงเมื่อ '+tnow+' · '+APP_BUILD+'</span>';
     if(actCount>0){
       // Set default range: last 30 days
       const today=new Date();
