@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- กันเบราว์เซอร์ cache โค้ดเก่า → โหลดเวอร์ชันใหม่ทันทีหลัง deploy โดยไม่ต้อง hard refresh -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>FF Durian — Break-Even Simulator 2569</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -1019,7 +1023,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-4 (DATA+cache)";
+const APP_BUILD="gradefg-5 (DATA+cache+summary)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1267,12 +1271,33 @@ function loadGradeCache(){
   }catch(e){}
   return null;
 }
+/* อ่านเฉพาะ "แถวสรุป" ของชีท DATA (range เล็ก A1:AZ4) → agg { A,B,C,D,BK } (%)
+   ใช้เป็น fallback ที่เชื่อถือได้เมื่ออ่านทั้งตาราง (6พันแถว) พลาด — payload จิ๋ว
+   แถวรวม (SUM) อยู่เหนือ header 1 แถว → agg = Σเกรด ÷ Σนน.ส่งเข้าฟรีซ */
+async function graphDataSummary(token){
+  const base="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/workbook";
+  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+  const url=base+"/worksheets/"+encodeURIComponent(GRADE_FG.sheet)+"/range(address='A1:AZ6')?$select=values";
+  const j=await gfetchJSON(url, hdr, 3);
+  const vals=j&&j.values; const c=vals&&dataGradeCols(vals);
+  if(!c||c.hi<1) return null;
+  const tot=vals[c.hi-1]||[];                 // แถวรวม (SUM) เหนือ header
+  const fg=aNum(tot[c.cFG]);
+  if(isNaN(fg)||fg<=0) return null;
+  const g=i=>i>=0?(aNum(tot[i])||0):0;
+  return { A:g(c.cA)/fg*100, B:g(c.cB)/fg*100, C:g(c.cC)/fg*100, D:g(c.cD)/fg*100, BK:g(c.cBK)/fg*100 };
+}
 /* อ่าน % grade fg จากชีท DATA → { gd:{perDate,agg}|null, cached:bool }
-   สำเร็จ → เก็บ cache · พลาด → ใช้ cache ล่าสุด (ถ้ามี) แทนการ fallback ไป %A DURAIN */
+   ลำดับ: (1) ทั้งตาราง = ได้รายวัน · (2) แถวสรุป = ได้ค่าเฉลี่ยรวม (เชื่อถือได้)
+          (3) cache ล่าสุด — ไม่ fallback ไป %A DURAIN เพื่อไม่ให้เกรดกลับไปค่าเก่า */
 async function fetchGradeFG(token){
   try{
     const gd=parseDailyGradeFG(await graphDataValues(token));
     if(gd&&gd.agg){ saveGradeCache(gd); return { gd, cached:false }; }
+  }catch(e){ /* ลองแถวสรุปต่อ */ }
+  try{
+    const agg=await graphDataSummary(token);
+    if(agg){ const gd={perDate:null, agg}; saveGradeCache(gd); return { gd, cached:false }; }
   }catch(e){ /* ใช้ cache */ }
   const c=loadGradeCache();
   return { gd:c, cached:!!c };
