@@ -1386,14 +1386,10 @@ function parseDailyActual(values){
   const cRaw=incl('ก่อนปอก','ดิบ');
   const cFG=incl('ฟร');           // นน.ส่งเข้าฟรีซ (col 16)
   const cDate=incl('วัน','date','ว/ด/ป','ผลิต');
-  // ตามโครงสร้างชีท: หลังจาก cFG คือ A, C, D, BK, เพียวเร่ ตามลำดับ
-  // (ไม่มีคอลัมน์ B โดยตรง — คำนวณ B = FG − A − C − D − BK − เพียวเร่)
-  const cA_kg  = cFG+1;  // A (kg)
-  const cC_kg  = cFG+2;  // C (kg)
-  const cD_kg  = cFG+3;  // D (kg)
-  const cBK_kg = cFG+4;  // BK (kg)
-  const cPure  = cFG+5;  // เพียวเร่ (kg) — ไม่นับในรายได้เกรดหลัก
-  if(cFG<0) return null;
+  // อ่านสัดส่วนเกรดจากคอลัมน์ %A %B %C %D %BK (ครบทั้ง 5 เกรด รวม B) ชุดเดียวกับ badge Scenario
+  // แล้วคูณด้วย FG ของวันนั้น → เกรดเป็น kg รายวัน (ค่า % จาก Excel มักเป็นเศษส่วน เช่น 0.54)
+  const cA=exact('%a'),cB=exact('%b'),cC=exact('%c'),cD=exact('%d'),cBK=exact('%bk');
+  if(cFG<0||cA<0) return null;
   const map=new Map();
   for(let i=hi+1;i<values.length;i++){
     const r=values[i]; if(!r) continue;
@@ -1407,20 +1403,18 @@ function parseDailyActual(values){
     if(cRaw>=0 && (isNaN(rw)||rw<=0)) continue;
     const fg=aNum(r[cFG]); if(isNaN(fg)||fg<=0) continue;
     const raw   = (cRaw>=0 && !isNaN(rw)) ? rw : 0;
-    const a_kg  = Math.max(0, aNum(r[cA_kg]) ||0);
-    const c_kg  = Math.max(0, aNum(r[cC_kg]) ||0);
-    const d_kg  = Math.max(0, aNum(r[cD_kg]) ||0);
-    const bk_kg = Math.max(0, aNum(r[cBK_kg])||0);
-    const pure  = Math.max(0, aNum(r[cPure])  ||0);
-    const prev=map.get(k)||{raw:0,fg:0,a:0,c:0,d:0,bk:0,pure:0,lots:0};
-    map.set(k,{raw:prev.raw+raw, fg:prev.fg+fg, a:prev.a+a_kg, c:prev.c+c_kg,
-               d:prev.d+d_kg, bk:prev.bk+bk_kg, pure:prev.pure+pure, lots:prev.lots+1});
+    const fr=ci=>{ const x=ci>=0?aNum(r[ci]):NaN; return (isNaN(x)||x<0)?0:x; };
+    let pa=fr(cA),pb=fr(cB),pc=fr(cC),pd=fr(cD),pbk=fr(cBK);
+    const psum=pa+pb+pc+pd+pbk;
+    const div=(psum>1.5)?100:1;   // รองรับทั้งค่า % (54) และเศษส่วน (0.54)
+    const a_kg=pa/div*fg, b_kg=pb/div*fg, c_kg=pc/div*fg, d_kg=pd/div*fg, bk_kg=pbk/div*fg;
+    const prev=map.get(k)||{raw:0,fg:0,a:0,b:0,c:0,d:0,bk:0,lots:0};
+    map.set(k,{raw:prev.raw+raw, fg:prev.fg+fg, a:prev.a+a_kg, b:prev.b+b_kg, c:prev.c+c_kg,
+               d:prev.d+d_kg, bk:prev.bk+bk_kg, lots:prev.lots+1});
   }
   const result=new Map();
   map.forEach((v,k)=>{
-    // B = FG − A − C − D − BK − เพียวเร่ (ส่วนที่เหลือ = เกรด B จริง)
-    const B = Math.max(0, v.fg - v.a - v.c - v.d - v.bk - v.pure);
-    result.set(k,{raw:v.raw, fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
+    result.set(k,{raw:v.raw, fg:v.fg, A:v.a, B:v.b, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
   });
   return result.size>0 ? result : null;
 }
