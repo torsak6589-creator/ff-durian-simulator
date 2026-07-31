@@ -3,13 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- กันเบราว์เซอร์ cache โค้ดเก่า → โหลดเวอร์ชันใหม่ทันทีหลัง deploy โดยไม่ต้อง hard refresh -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>FF Durian — Break-Even Simulator 2569</title>
-<!-- SheetJS: ดาวน์โหลดไฟล์ DATA มา parse เอง (เลี่ยง workbook API ที่ timeout 504) -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--nv:#0D1B2E;--nm:#132840;--nl:#1A3352;--g:#C8982A;--gl:#E5B84B;--gd:rgba(200,152,42,0.15);--w:#F5F0E8;--t:#D4CBB8;--tm:#8A8070;--gr:#2ECC71;--rd:#E74C3C;--or:#F39C12;--bl:#3498DB;--cy:#1ABC9C}
@@ -1014,20 +1008,6 @@ const SP = {
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
 
-/* ── แหล่งใหม่ของ "% grade fg" (สัดส่วนเกรด %A/%B/%C/%D/%BK) ──
-   ย้ายจาก Procurement_Master_File → ชีท DATA ของ "DATA PRODUCTION ทุเรียน.xlsx"
-   (SharePoint site Durian, Shared Documents/General)
-   token ตัวเดียวกับ SP (Files.Read.All / Sites.Read.All) เข้าถึงได้ข้าม drive
-   เฉพาะ "เกรด" ที่เปลี่ยนแหล่ง — ปริมาณดิบ/yield/ราคา ยังอ่านจากชีทเดิมตามปกติ */
-const GRADE_FG = {
-  driveId:"b!6YUgaw8QA0GezyJpLS9zXtbeQGfqGHZFhz4RewpCli1gez3egxoDSpidAMzxxotB",
-  itemId :"017TMAJHA4FRGR3UCVABGJDIGZ7LOYWBEP",
-  sheet  :"DATA",
-};
-/* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-10 (fresh-nocache)";
-try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
-
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
 let ACTUAL_RM=null;// ข้อมูลรับซื้อจริงจาก RM-RECIVE (kg, value, avg)
@@ -1097,49 +1077,6 @@ function parseActual(values){
   return { rawKg:raw, fgKg:fg, rows, yield: fg>0?fg/raw*100:NaN, A,B,C,D,BK,
            cost: costRows>0?cost:NaN };
 }
-/* ── หา header row + คอลัมน์เกรดของชีท DATA (ตาราง T_Data) ──
-   หัวตาราง: … นน.ส่งเข้าฟรีซ | A | B | C | D | E | BK | เพียวเร่ | …
-   เกรดเก็บเป็น "น้ำหนัก (kg)" → % grade fg = kg ÷ นน.ส่งเข้าฟรีซ
-   (A+B+C+D+E+BK = นน.ส่งเข้าฟรีซ; เพียวเร่/เมล็ด/เสีย แยกออกจาก FG)
-   app ใช้แค่ A/B/C/D/BK — ไม่รวม E (≈0.3%) กับเพียวเร่ */
-function dataGradeCols(values){
-  let hi=-1, fg=-1;
-  // หา header row: มีคอลัมน์ "นน.ส่งเข้าฟรีซ" และคอลัมน์ถัดไปคือ "A" (ยืนยันการเรียงเกรด)
-  for(let i=0;i<Math.min(values.length,25);i++){
-    const row=(values[i]||[]).map(c=>String(c||"").trim().toLowerCase());
-    const fi=row.findIndex(h=>h.includes("ส่งเข้าฟร"));
-    if(fi>=0 && row[fi+1]==="a"){ hi=i; fg=fi; break; }
-  }
-  if(hi<0) return null;
-  const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
-  const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  // อ่านเกรดแบบ "ตำแหน่ง" ต่อจาก FG เสมอ: FG | A | B | C | D | E | BK | เพียวเร่
-  // (ทนต่อหัวคอลัมน์ที่อาจต่างจาก CSV — ไม่พึ่ง match ตัวอักษร "b" ตรง ๆ)
-  const cA=fg+1, cB=fg+2, cC=fg+3, cD=fg+4, cBK=fg+6;   // ข้าม E (fg+5)
-  const cDate=incl("วันที่ผลิต","ผลิต");             // วันที่ผลิต (สำหรับเกรดรายวัน)
-  return { hi, cFG:fg, cA, cB, cC, cD, cBK, cDate };
-}
-/* parse ชีท DATA → สัดส่วนเกรดรวม { A,B,C,D,BK } (หน่วย %) = Σkg เกรด ÷ Σ นน.ส่งเข้าฟรีซ */
-function parseGradeFG(values){
-  if(!Array.isArray(values)||!values.length) return null;
-  const c=dataGradeCols(values); if(!c) return null;
-  let sFG=0,sA=0,sB=0,sC=0,sD=0,sBK=0,rows=0;
-  for(let i=c.hi+1;i<values.length;i++){
-    const r=values[i]; if(!r) continue;
-    const label=String(r[0]||"").toLowerCase();
-    if(label.includes("รวม")||label.includes("total")) continue;
-    const fg=aNum(r[c.cFG]); if(isNaN(fg)||fg<=0) continue;
-    sFG+=fg;
-    sA +=(aNum(r[c.cA])||0);
-    sB +=(c.cB>=0?(aNum(r[c.cB])||0):0);
-    sC +=(c.cC>=0?(aNum(r[c.cC])||0):0);
-    sD +=(c.cD>=0?(aNum(r[c.cD])||0):0);
-    sBK+=(c.cBK>=0?(aNum(r[c.cBK])||0):0);
-    rows++;
-  }
-  if(rows===0||sFG<=0) return null;
-  return { A:sA/sFG*100, B:sB/sFG*100, C:sC/sFG*100, D:sD/sFG*100, BK:sBK/sFG*100, rows };
-}
 const ACT_AVG_PRICE=64399270/1160619;  // ราคาเฉลี่ยเดิม (~55.49฿/kg) ใช้เมื่อไม่พบมูลค่าในชีท
 function applyActual(){
   if(!ACTUAL) return;
@@ -1164,7 +1101,7 @@ const btnStyle="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;backg
 function showConnect(msg){
   setBadge(`${msg||"🔐 ดึงผลผลิตจริงจากชีท %A DURAIN"} <button onclick="connectActual()" style="${btnStyle}">เชื่อมต่อ Microsoft 365</button>`,"warn");
 }
-function showOk(p, rm, gradeFromData){
+function showOk(p, rm){
   ACTUAL=p; ACTUAL_RM=rm||null;
   // ราคา/kg actual: ใช้จาก RM-RECIVE ถ้าได้ ไม่งั้นใช้ราคาเฉลี่ยเดิม
   const priceKg = rm ? rm.avg : ACT_AVG_PRICE;
@@ -1172,12 +1109,10 @@ function showOk(p, rm, gradeFromData){
   const priceTxt = rm
     ? ` · <strong>รับซื้อ ${fmt(rm.kg,0)}kg</strong> @ <strong>${fmt(rm.avg)}฿/kg</strong> (มูลค่า ${fmt(valM)}M, ${rm.rows} บิล)`
     : ` · ราคา ${fmt(priceKg)}฿/kg (ราคาเฉลี่ยเดิม — อ่าน ${RM_SHEET} ไม่ได้)`;
-  // ที่มาของ % grade fg: ชีท DATA (แหล่งใหม่) หรือ fallback เป็น %A DURAIN
-  const gradeSrc = gradeFromData ? "DATA" : ACTUAL_SHEET+" (fallback)";
   setBadge(
     `📊 <strong>ผลผลิตจริง</strong> (${ACTUAL_SHEET}, ${p.rows} ล็อต) — `+
     `ผลิตดิบ <strong>${fmt(p.rawKg,0)}kg</strong> · yield <strong>${fmt(p.yield,2)}%</strong> · `+
-    `เกรด[${gradeSrc}] A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}%`+priceTxt+` `+
+    `A <strong>${fmt(p.A,1)}%</strong> B ${fmt(p.B,1)}% C ${fmt(p.C,1)}% D ${fmt(p.D,1)}% BK ${fmt(p.BK,1)}%`+priceTxt+` `+
     `<button onclick="applyActual()" style="margin-left:6px;padding:2px 8px;border:0;border-radius:5px;background:#2ECC71;color:#06281a;font-weight:700;font-size:.6rem;cursor:pointer">📥 ใช้ค่า actual</button>`,
     "ok");
 }
@@ -1201,149 +1136,23 @@ async function getToken(interactive){
   }
   return null;
 }
-async function graphValues(token, sheet, matchRe, driveId, itemId){
-  const base="https://graph.microsoft.com/v1.0/drives/"+(driveId||SP.driveId)+"/items/"+(itemId||SP.itemId)+"/workbook";
+async function graphValues(token, sheet, matchRe){
+  const base="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/workbook";
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   // เรียกชีทตามชื่อก่อน (ชื่อมี % และเว้นวรรค → encode)
-  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
+  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr});
   if(!res.ok){
     // fallback: list ชีททั้งหมดแล้ว match ชื่อ
-    const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr,cache:"no-store"});
+    const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr});
     if(!wl.ok) throw new Error("worksheets HTTP "+wl.status);
     const list=(await wl.json()).value||[];
     const key=sheet.replace(/\s/g,"").toLowerCase();
     const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||(matchRe&&list.find(w=>matchRe.test(w.name.toLowerCase())));
     if(!m) throw new Error("ไม่พบชีท "+sheet+" (มี: "+list.map(w=>w.name).join(", ")+")");
-    res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
+    res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr});
     if(!res.ok) throw new Error("usedRange HTTP "+res.status);
   }
   return (await res.json()).values;
-}
-/* fetch JSON จาก Graph + retry เมื่อเจอ throttle (429) / server error (5xx) / network error */
-async function gfetchJSON(url, hdr, tries){
-  tries=tries||3;
-  let lastErr=null;
-  for(let i=0;i<tries;i++){
-    try{
-      const res=await fetch(url,{headers:hdr,cache:"no-store"});
-      if(res.ok) return await res.json();
-      if(res.status===429||res.status>=500){ lastErr=new Error("HTTP "+res.status); await new Promise(r=>setTimeout(r,700*(i+1))); continue; }
-      throw new Error("HTTP "+res.status);
-    }catch(e){ lastErr=e; await new Promise(r=>setTimeout(r,700*(i+1))); }
-  }
-  throw lastErr||new Error("fetch failed");
-}
-/* อ่านชีท DATA แบบทนทาน: ลองผ่าน Table T_Data ก่อน (payload เล็ก ไม่รวมคอลัมน์ว่างท้ายชีท)
-   ถ้าไม่ได้ค่อย fallback ไป usedRange ทั้งชีท — ทั้งสองทางมี retry กัน throttle/timeout
-   ชีทนี้ใหญ่ (~6พันแถว) usedRange ทั้งชีทมักช้า/พลาด จึงให้ table เป็นทางหลัก */
-async function graphDataValues(token){
-  const base="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/workbook";
-  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
-  const wsPath="/worksheets/"+encodeURIComponent(GRADE_FG.sheet);
-  // 1) ผ่าน Table (ต้อง parse header ได้จริงถึงจะใช้)
-  try{
-    const tj=await gfetchJSON(base+wsPath+"/tables?$select=id,name", hdr, 2);
-    const tables=(tj&&tj.value)||[];
-    if(tables.length){
-      const t=tables.find(x=>/t.?data/i.test(x.name))||tables[0];
-      const rj=await gfetchJSON(base+"/tables/"+encodeURIComponent(t.id)+"/range?$select=values", hdr, 3);
-      if(rj&&rj.values&&dataGradeCols(rj.values)) return rj.values;
-    }
-  }catch(e){ /* ลอง usedRange ต่อ */ }
-  // 2) fallback usedRange ทั้งชีท (retry)
-  const uj=await gfetchJSON(base+wsPath+"/usedRange?$select=values", hdr, 3);
-  return uj&&uj.values;
-}
-/* ── cache "% grade fg" ล่าสุดที่อ่านสำเร็จ (in-memory + localStorage) ──
-   กันกรณี Graph ตอบพลาดชั่วคราวแล้วเกรดหลุดกลับไป %A DURAIN (B หาย)
-   อ่านสำเร็จครั้งเดียว → ค่าจะคงอยู่ข้ามการรีเฟรช/เปิดใหม่ */
-let GRADE_CACHE=null;
-const GRADE_CACHE_KEY="ffDurianGradeFG2";   // bump: กัน cache เก่าที่อาจ B=0 (poisoned)
-const gradeValid=gd=>!!(gd&&gd.agg&&gd.agg.B>0);   // เกรด B ต้อง > 0 จึงถือว่าใช้ได้
-function saveGradeCache(gd){
-  if(!gradeValid(gd)) return;
-  GRADE_CACHE=gd;
-  try{ localStorage.setItem(GRADE_CACHE_KEY, JSON.stringify({
-    agg:gd.agg, perDate:gd.perDate?[...gd.perDate.entries()]:null, ts:Date.now()
-  })); }catch(e){}
-}
-function loadGradeCache(){
-  if(gradeValid(GRADE_CACHE)) return GRADE_CACHE;
-  try{
-    const o=JSON.parse(localStorage.getItem(GRADE_CACHE_KEY)||"null");
-    if(o&&o.agg&&o.agg.B>0){ GRADE_CACHE={agg:o.agg, perDate:o.perDate?new Map(o.perDate):null, ts:o.ts}; return GRADE_CACHE; }
-  }catch(e){}
-  return null;
-}
-/* ดาวน์โหลดไฟล์ DATA (bytes) แล้ว parse ด้วย SheetJS — ไม่ใช้ workbook API (ที่ 504)
-   คืน values แบบ array-of-arrays เหมือน usedRange */
-async function downloadDataValues(token){
-  if(typeof XLSX==="undefined") throw new Error("SheetJS ยังไม่โหลด");
-  // cache-bust: ?nc=<เวลา> + no-store → บังคับได้ไฟล์ล่าสุดเสมอ (ข้อมูลที่เพิ่งแก้ในชีทมาทันที)
-  const url="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/content?nc="+Date.now();
-  let res=null, lastErr=null;
-  for(let i=0;i<3;i++){
-    try{
-      res=await fetch(url,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-      if(res.ok) break;
-      lastErr=new Error("HTTP "+res.status);
-      if(res.status===429||res.status>=500){ await new Promise(r=>setTimeout(r,900*(i+1))); continue; }
-      throw lastErr;
-    }catch(e){ lastErr=e; if(i<2) await new Promise(r=>setTimeout(r,900*(i+1))); }
-  }
-  if(!res||!res.ok) throw lastErr||new Error("download failed");
-  const buf=await res.arrayBuffer();
-  const wb=XLSX.read(new Uint8Array(buf),{type:"array",cellDates:true});
-  const name=wb.SheetNames.find(n=>n.replace(/\s/g,"").toLowerCase()==="data")||GRADE_FG.sheet;
-  const ws=wb.Sheets[name];
-  if(!ws) throw new Error("ไม่พบชีท DATA ในไฟล์");
-  return XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
-}
-/* อ่านเฉพาะ "แถวสรุป" ของชีท DATA (range เล็ก A1:AZ4) → agg { A,B,C,D,BK } (%)
-   ใช้เป็น fallback ที่เชื่อถือได้เมื่ออ่านทั้งตาราง (6พันแถว) พลาด — payload จิ๋ว
-   แถวรวม (SUM) อยู่เหนือ header 1 แถว → agg = Σเกรด ÷ Σนน.ส่งเข้าฟรีซ */
-async function graphDataSummary(token){
-  const base="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/workbook";
-  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
-  const url=base+"/worksheets/"+encodeURIComponent(GRADE_FG.sheet)+"/range(address='A1:AZ6')?$select=values";
-  const j=await gfetchJSON(url, hdr, 3);
-  const vals=j&&j.values; const c=vals&&dataGradeCols(vals);
-  if(!c||c.hi<1) return null;
-  const tot=vals[c.hi-1]||[];                 // แถวรวม (SUM) เหนือ header
-  const fg=aNum(tot[c.cFG]);
-  if(isNaN(fg)||fg<=0) return null;
-  const g=i=>i>=0?(aNum(tot[i])||0):0;
-  return { A:g(c.cA)/fg*100, B:g(c.cB)/fg*100, C:g(c.cC)/fg*100, D:g(c.cD)/fg*100, BK:g(c.cBK)/fg*100 };
-}
-/* อ่าน % grade fg จากชีท DATA → { gd:{perDate,agg}|null, cached:bool }
-   ลำดับ: (1) ทั้งตาราง = ได้รายวัน · (2) แถวสรุป = ได้ค่าเฉลี่ยรวม (เชื่อถือได้)
-          (3) cache ล่าสุด — ไม่ fallback ไป %A DURAIN เพื่อไม่ให้เกรดกลับไปค่าเก่า */
-let GRADE_LAST_INFO="";   // สรุปผลการอ่าน DATA ล่าสุด (โชว์บนแถบสถานะเพื่อวินิจฉัย)
-async function fetchGradeFG(token){
-  GRADE_LAST_INFO="";
-  // (1) ดาวน์โหลดไฟล์ + parse ด้วย SheetJS — ทางหลัก (เลี่ยง workbook API ที่ 504)
-  try{
-    const vals=await downloadDataValues(token);
-    const n=Array.isArray(vals)?vals.length:0;
-    const gd=parseDailyGradeFG(vals);
-    if(gradeValid(gd)){ saveGradeCache(gd); GRADE_LAST_INFO="download ok ("+n+" แถว, B="+gd.agg.B.toFixed(1)+"%"+(gd.perDate?", รายวัน":"")+")"; return { gd, cached:false }; }
-    GRADE_LAST_INFO="download: parse ไม่ได้ ("+n+" แถว)";
-  }catch(e){ GRADE_LAST_INFO="download ผิดพลาด: "+(e&&e.message||e); }
-  // (2) workbook API ทั้งตาราง (อาจ 504)
-  try{
-    const gd=parseDailyGradeFG(await graphDataValues(token));
-    if(gradeValid(gd)){ saveGradeCache(gd); GRADE_LAST_INFO+=" | workbook ok (B="+gd.agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
-  }catch(e){ GRADE_LAST_INFO+=" | workbook ผิดพลาด: "+(e&&e.message||e); }
-  // (3) summary แถวสรุป (เล็ก)
-  try{
-    const agg=await graphDataSummary(token);
-    if(agg&&agg.B>0){ const gd={perDate:null, agg}; saveGradeCache(gd); GRADE_LAST_INFO+=" | summary ok (B="+agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
-  }catch(e){ GRADE_LAST_INFO+=" | summary ผิดพลาด: "+(e&&e.message||e); }
-  // (4) cache ล่าสุดที่ B>0
-  const c=loadGradeCache();
-  GRADE_LAST_INFO+=c?" | ใช้ cache":" | ไม่มี cache → %A DURAIN";
-  try{ console.log("[FF Durian] grade read:", GRADE_LAST_INFO); }catch(e){}
-  return { gd:c, cached:!!c };
 }
 /* parse ชีท RM-RECIVE (รับซื้อจริง) → { kg, value, avg, rows }
    - ปริมาณรวม = ผลรวมทุกคอลัมน์ที่หัวมี "(kg)" (เช่น ABC(KG), ตกไซส์(KG)…)
@@ -1377,30 +1186,17 @@ function parseRM(values){
   if(kg<=0||value<=0) return null;
   return { kg, value, avg:value/kg, rows };
 }
-async function doFetch(interactive, autoConnect){
+async function doFetch(interactive){
   try{
-    let token=await getToken(interactive);
-    if(!token && autoConnect && !sessionStorage.getItem("ffAutoConnTried")){
-      // เชื่อมต่ออัตโนมัติ: ถ้ายังไม่มี token และมี session M365 อยู่ → redirect เงียบ ๆ (ไม่ต้องกดปุ่ม)
-      // กันวนลูปด้วย sessionStorage (ลองอัตโนมัติครั้งเดียวต่อแท็บ)
-      sessionStorage.setItem("ffAutoConnTried","1");
-      setBadge("🔄 กำลังเชื่อมต่อ Microsoft 365 อัตโนมัติ…");
-      try{ await msalApp.acquireTokenRedirect({scopes:SP.scopes}); return; }catch(e){ /* redirect ไม่ได้ → โชว์ปุ่ม */ }
-    }
+    const token=await getToken(interactive);
     if(!token){ showConnect(); return; }
     setBadge("🔄 กำลังอ่านชีท "+ACTUAL_SHEET+"…");
     const p=parseActual(await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/));
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
-    // "% grade fg": อ่านสัดส่วนเกรดจากชีท DATA (มี cache กันหลุดกลับ %A DURAIN ตอน Graph พลาด)
-    let gradeFromData=false;
-    const gres=await fetchGradeFG(token);
-    if(gres.gd&&gres.gd.agg){ const g=gres.gd.agg; p.A=g.A; p.B=g.B; p.C=g.C; p.D=g.D; p.BK=g.BK; gradeFromData=true; }
     // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
     let rm=null;
     try{ rm=parseRM(await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน|durian.*price/)); }catch(e){ /* ใช้ fallback */ }
-    showOk(p, rm, gradeFromData);
-    // เชื่อมต่ออัตโนมัติ → นำค่า actual เข้าโมเดลให้เอง (ครั้งเดียวต่อการโหลดหน้า ไม่ทับค่าที่ผู้ใช้ปรับเอง)
-    if(autoConnect && !window.__ffAutoApplied){ window.__ffAutoApplied=true; try{ applyActual(); }catch(e){} }
+    showOk(p, rm);
   }catch(e){
     const code=e.errorCode||"";
     if(/interaction_required|login_required|consent_required|no_account/.test(code)) showConnect("🔐 ต้องล็อกอินใหม่:");
@@ -1415,7 +1211,7 @@ function startActual(){
       auth:{clientId:SP.clientId,authority:"https://login.microsoftonline.com/"+SP.tenantId,redirectUri:window.location.href.split("?")[0].split("#")[0],navigateToLoginRequestUrl:false},
       cache:{cacheLocation:"localStorage",storeAuthStateInCookie:true}
     });
-    msalApp.handleRedirectPromise().then(()=>doFetch(false, true)).catch(()=>doFetch(false, true));
+    msalApp.handleRedirectPromise().then(()=>doFetch(false)).catch(()=>doFetch(false));
   }catch(e){ setBadge("⚠️ เริ่ม MSAL ไม่ได้: "+e.message,"err"); }
 }
 startActual();
@@ -1451,7 +1247,6 @@ let PL_ACT_MAP = null;   // Map<"YYYY-MM-DD", {fg,A,B,C,D,BK,lots}>
 
 /* ── Excel serial date → JS Date ── */
 function excelToDate(serial){
-  if(serial instanceof Date) return isNaN(serial.getTime())?null:serial;   // SheetJS cellDates:true
   if(typeof serial === 'number'){
     // Excel epoch: serial 1 = Jan 1, 1900. Excel has fake Feb 29 1900 (serial 60),
     // so for all modern dates (serial>=61) subtract 1 to compensate.
@@ -1467,15 +1262,6 @@ function excelToDate(serial){
     if(y > 2400) y -= 543; // BE → CE
     else if(y < 100) y += (y > 50 ? 1900 : 2000);
     return new Date(Date.UTC(y, parseInt(m[2])-1, parseInt(m[1])));
-  }
-  // Match วันแบบไทย: "24-พ.ค.-2024" / "1 ก.ค. 2569"
-  const TH_MON={'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,
-                'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
-  const tm = s.match(/^(\d{1,2})[-\s]*([ก-ฮ]+\.?[ก-ฮ]?\.?)[-\s]*(\d{2,4})$/);
-  if(tm && TH_MON[tm[2]]){
-    let y=parseInt(tm[3]);
-    if(y>2400) y-=543; else if(y<100) y+=(y>50?1900:2000);
-    return new Date(Date.UTC(y, TH_MON[tm[2]]-1, parseInt(tm[1])));
   }
   const d = new Date(s);
   return isNaN(d)?null:d;
@@ -1637,39 +1423,6 @@ function parseDailyActual(values){
     result.set(k,{raw:v.raw, fg:v.fg, A:v.a, B, C:v.c, D:v.d, BK:v.bk, lots:v.lots});
   });
   return result.size>0 ? result : null;
-}
-
-/* parse ชีท DATA → สัดส่วนเกรด "% grade fg" สำหรับ P&L รายวัน
-   คืน { perDate: Map<dateKey,{A,B,C,D,BK}> | null, agg: {A,B,C,D,BK} }  (ค่าเป็น % 0-100)
-   % เกรด = Σ kg เกรด ÷ Σ นน.ส่งเข้าฟรีซ (แยกตาม "วันที่ผลิต")
-   P&L จะเอา % นี้ไปแบ่งน้ำหนัก FG รายวัน (จาก %A DURAIN) เป็นเกรด kg */
-function parseDailyGradeFG(values){
-  if(!Array.isArray(values)||!values.length) return null;
-  const c=dataGradeCols(values); if(!c) return null;
-  let sFG=0,sA=0,sB=0,sC=0,sD=0,sBK=0,rows=0;
-  const acc=new Map();   // dateKey(วันที่ผลิต) → ผลรวม kg
-  for(let i=c.hi+1;i<values.length;i++){
-    const r=values[i]; if(!r) continue;
-    const label=String(r[0]||"").toLowerCase();
-    if(label.includes("รวม")||label.includes("total")) continue;
-    const fg=aNum(r[c.cFG]); if(isNaN(fg)||fg<=0) continue;
-    const a=(aNum(r[c.cA])||0), b=(c.cB>=0?(aNum(r[c.cB])||0):0), cc=(c.cC>=0?(aNum(r[c.cC])||0):0),
-          d=(c.cD>=0?(aNum(r[c.cD])||0):0), bk=(c.cBK>=0?(aNum(r[c.cBK])||0):0);
-    sFG+=fg; sA+=a; sB+=b; sC+=cc; sD+=d; sBK+=bk; rows++;
-    if(c.cDate>=0){
-      const k=dateKey(excelToDate(r[c.cDate]));
-      if(k){
-        const p=acc.get(k)||{fg:0,A:0,B:0,C:0,D:0,BK:0};
-        p.fg+=fg; p.A+=a; p.B+=b; p.C+=cc; p.D+=d; p.BK+=bk;
-        acc.set(k,p);
-      }
-    }
-  }
-  if(rows===0||sFG<=0) return null;
-  const perDate=new Map();
-  acc.forEach((p,k)=>{ if(p.fg>0) perDate.set(k,{A:p.A/p.fg*100,B:p.B/p.fg*100,C:p.C/p.fg*100,D:p.D/p.fg*100,BK:p.BK/p.fg*100}); });
-  const agg={A:sA/sFG*100,B:sB/sFG*100,C:sC/sFG*100,D:sD/sFG*100,BK:sBK/sFG*100};
-  return { perDate: perDate.size>0?perDate:null, agg };
 }
 
 /* ── Render P&L table ── */
@@ -2218,12 +1971,12 @@ async function resolveProcItem(token){
   // Verify accessible; fall back to search-by-name if not
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   try{
-    const r=await fetch(`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}?$select=id,name`,{headers:hdr,cache:"no-store"});
+    const r=await fetch(`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}?$select=id,name`,{headers:hdr});
     if(r.ok) return;
   }catch(e){}
   PC_DRIVE_ID=null; PC_ITEM_ID=null;
   try{
-    const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${PROC_DRIVE}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr,cache:"no-store"});
+    const sr=await fetch(`https://graph.microsoft.com/v1.0/drives/${PROC_DRIVE}/root/search(q='${encodeURIComponent(PROC_FILE)}')`,{headers:hdr});
     if(sr.ok){
       const items=((await sr.json()).value||[]);
       const f=items.find(i=>i.name&&i.name.includes(PROC_FILE));
@@ -2237,14 +1990,14 @@ async function graphValuesProc(token, sheet, matchRe){
   const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
   await resolveProcItem(token);
   const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
-  let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
+  let res=await fetch(base+'/worksheets/'+encodeURIComponent(sheet)+'/usedRange?$select=values',{headers:hdr});
   if(!res.ok){
-    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr,cache:"no-store"});
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
     if(!wl.ok) throw new Error('worksheets HTTP '+wl.status);
     const list=(await wl.json()).value||[];
     const m=list.find(w=>{const n=w.name.replace(/\s/g,'').toLowerCase(); return n===sheet.replace(/\s/g,'').toLowerCase();})||(matchRe&&list.find(w=>matchRe.test(w.name)));
     if(!m) throw new Error('ไม่พบชีท '+sheet+' (มี: '+list.map(w=>w.name).join(', ')+')');
-    res=await fetch(base+'/worksheets/'+encodeURIComponent(m.id)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
+    res=await fetch(base+'/worksheets/'+encodeURIComponent(m.id)+'/usedRange?$select=values',{headers:hdr});
     if(!res.ok) throw new Error('usedRange HTTP '+res.status);
   }
   return (await res.json()).values;
@@ -2428,7 +2181,7 @@ async function initPurchase(interactive){
     await resolveProcItem(token);
     const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
     const base=`https://graph.microsoft.com/v1.0/drives/${PC_DRIVE_ID}/items/${PC_ITEM_ID}/workbook`;
-    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr,cache:"no-store"});
+    const wl=await fetch(base+'/worksheets?$select=id,name',{headers:hdr});
     if(!wl.ok) throw new Error('อ่านรายชื่อชีทไม่ได้ (HTTP '+wl.status+')');
     let list=(await wl.json()).value||[];
     // Skip obvious non-data sheets; prioritise likely purchase sheets
@@ -2441,7 +2194,7 @@ async function initPurchase(interactive){
       sheetTried.push(w.name);
       let v=null;
       try{
-        const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr,cache:"no-store"});
+        const res=await fetch(base+'/worksheets/'+encodeURIComponent(w.id)+'/usedRange?$select=values',{headers:hdr});
         if(res.ok) v=(await res.json()).values;
       }catch(e){}
       if(!v||!v.length) continue;
@@ -2505,43 +2258,10 @@ async function initDailyPL(interactive){
       PL_LOADED=false;
       return;
     }
-    // "% grade fg" รายวัน: เอา % เกรดจากชีท DATA มาแบ่งน้ำหนัก FG ของแต่ละวัน (คงน้ำหนัก FG จาก %A DURAIN)
-    // มีคอลัมน์วันที่ → ใช้ % รายวัน · ไม่มี → ใช้ % รวมกับทุกวัน · อ่านไม่ได้ → คงเกรดจาก %A DURAIN
-    let gradeSrc='%A DURAIN';
-    if(PL_ACT_MAP){
-      b.textContent='🔄 ดึง % grade fg (ชีท DATA)…';
-      const gres=await fetchGradeFG(token);
-      const gd=gres.gd;
-      if(gd&&gd.agg){
-        let noData=0;
-        PL_ACT_MAP.forEach((v,k)=>{
-          let pct;
-          if(gd.perDate){
-            pct=gd.perDate.get(k);
-            // วันที่ยังไม่มีในชีท DATA → คงเกรดจริงของวันนั้น (%A DURAIN) ไม่เอาค่าเฉลี่ยมาแปะ
-            if(!pct){ noData++; return; }
-          }else{
-            pct=gd.agg;   // มีแต่ค่าเฉลี่ยรวม (โหมด fallback) → ใช้กับทุกวัน
-          }
-          const fg=v.fg||0;
-          v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
-        });
-        gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)')+(gres.cached?' [cache]':'');
-        if(gd.perDate && noData>0) gradeSrc+=' · '+noData+' วันยังไม่มีใน DATA (คงเกรด %A DURAIN)';
-      }
-    }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
-    const okData=gradeSrc.indexOf('DATA')===0;
-    // ถ้าอ่านชีท DATA ไม่สำเร็จ → เตือนชัดเจน (เกรดจะเป็นค่าจาก %A DURAIN, B≈0) แทนที่จะดูเหมือน "ข้อมูลเก่า"
-    const info = GRADE_LAST_INFO ? ' <span style="color:#8A8070;font-size:.55rem">['+GRADE_LAST_INFO+']</span>' : '';
-    const gradeTxt = (okData
-      ? '<span style="color:#2ECC71">เกรด: '+gradeSrc+'</span>'
-      : '<span style="color:#E74C3C">⚠️ เกรด: %A DURAIN (อ่านชีท DATA ไม่สำเร็จ — B ไม่ตรง)</span>')+info;
-    let tnow=""; try{ tnow=new Date().toLocaleTimeString('th-TH'); }catch(e){}
-    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · '+gradeTxt+
-      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>'+
-      '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">ดึงเมื่อ '+tnow+' · '+APP_BUILD+'</span>';
+    b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
+      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
     if(actCount>0){
       // Set default range: last 30 days
       const today=new Date();

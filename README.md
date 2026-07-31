@@ -27,11 +27,9 @@
 - Preset 7 สถานการณ์
 
 ### 📊 ผลผลิตจริง (Live Actual)
-ดึง **yield จริง · ปริมาณดิบจริง** จากชีท `%A DRUAIN` ใน `Procurement_Master_File.xlsx`
-(SharePoint KSTRMUPDATEV2) และ **% grade fg (สัดส่วนเกรด %A/B/C/D/BK)** จากชีท `DATA`
-ใน `DATA PRODUCTION ทุเรียน.xlsx` (SharePoint site Durian) ผ่าน **Microsoft Graph**
+ดึง **เกรดจริง %A/B/C/D/BK · yield จริง · ปริมาณดิบจริง** จากชีท `%A DRUAIN`
+ใน `Procurement_Master_File.xlsx` (SharePoint KSTRMUPDATEV2) ผ่าน **Microsoft Graph**
 โดยล็อกอินด้วยบัญชี Microsoft 365 ขององค์กร (MSAL, delegated — ไม่ต้องมี backend/Azure Function)
-> ถ้าอ่านชีท `DATA` ไม่ได้ จะ fallback ใช้เกรดที่คำนวณจาก `%A DRUAIN` ตามเดิม (ไม่ error)
 
 - กดปุ่ม **เชื่อมต่อ Microsoft 365** ที่ badge ในส่วน Scenario → ล็อกอินครั้งเดียว (จำไว้ใน localStorage)
 - กด **📥 ใช้ค่า actual** เพื่อนำ %A, %B, yield, ปริมาณดิบจริง เข้าโมเดล
