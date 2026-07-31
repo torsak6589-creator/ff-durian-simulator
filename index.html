@@ -1025,7 +1025,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-7 (download+positional)";
+const APP_BUILD="gradefg-8 (no-avg-smear)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -2503,13 +2503,21 @@ async function initDailyPL(interactive){
       const gres=await fetchGradeFG(token);
       const gd=gres.gd;
       if(gd&&gd.agg){
+        let noData=0;
         PL_ACT_MAP.forEach((v,k)=>{
-          const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
-          if(!pct) return;
+          let pct;
+          if(gd.perDate){
+            pct=gd.perDate.get(k);
+            // วันที่ยังไม่มีในชีท DATA → คงเกรดจริงของวันนั้น (%A DURAIN) ไม่เอาค่าเฉลี่ยมาแปะ
+            if(!pct){ noData++; return; }
+          }else{
+            pct=gd.agg;   // มีแต่ค่าเฉลี่ยรวม (โหมด fallback) → ใช้กับทุกวัน
+          }
           const fg=v.fg||0;
           v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
         });
         gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)')+(gres.cached?' [cache]':'');
+        if(gd.perDate && noData>0) gradeSrc+=' · '+noData+' วันยังไม่มีใน DATA (คงเกรด %A DURAIN)';
       }
     }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
