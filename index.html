@@ -1018,6 +1018,9 @@ const GRADE_FG = {
   itemId :"017TMAJHA4FRGR3UCVABGJDIGZ7LOYWBEP",
   sheet  :"DATA",
 };
+/* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
+const APP_BUILD="gradefg-4 (DATA+cache)";
+try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
@@ -1244,6 +1247,36 @@ async function graphDataValues(token){
   const uj=await gfetchJSON(base+wsPath+"/usedRange?$select=values", hdr, 3);
   return uj&&uj.values;
 }
+/* ── cache "% grade fg" ล่าสุดที่อ่านสำเร็จ (in-memory + localStorage) ──
+   กันกรณี Graph ตอบพลาดชั่วคราวแล้วเกรดหลุดกลับไป %A DURAIN (B หาย)
+   อ่านสำเร็จครั้งเดียว → ค่าจะคงอยู่ข้ามการรีเฟรช/เปิดใหม่ */
+let GRADE_CACHE=null;
+const GRADE_CACHE_KEY="ffDurianGradeFG";
+function saveGradeCache(gd){
+  if(!gd||!gd.agg) return;
+  GRADE_CACHE=gd;
+  try{ localStorage.setItem(GRADE_CACHE_KEY, JSON.stringify({
+    agg:gd.agg, perDate:gd.perDate?[...gd.perDate.entries()]:null, ts:Date.now()
+  })); }catch(e){}
+}
+function loadGradeCache(){
+  if(GRADE_CACHE) return GRADE_CACHE;
+  try{
+    const o=JSON.parse(localStorage.getItem(GRADE_CACHE_KEY)||"null");
+    if(o&&o.agg){ GRADE_CACHE={agg:o.agg, perDate:o.perDate?new Map(o.perDate):null, ts:o.ts}; return GRADE_CACHE; }
+  }catch(e){}
+  return null;
+}
+/* อ่าน % grade fg จากชีท DATA → { gd:{perDate,agg}|null, cached:bool }
+   สำเร็จ → เก็บ cache · พลาด → ใช้ cache ล่าสุด (ถ้ามี) แทนการ fallback ไป %A DURAIN */
+async function fetchGradeFG(token){
+  try{
+    const gd=parseDailyGradeFG(await graphDataValues(token));
+    if(gd&&gd.agg){ saveGradeCache(gd); return { gd, cached:false }; }
+  }catch(e){ /* ใช้ cache */ }
+  const c=loadGradeCache();
+  return { gd:c, cached:!!c };
+}
 /* parse ชีท RM-RECIVE (รับซื้อจริง) → { kg, value, avg, rows }
    - ปริมาณรวม = ผลรวมทุกคอลัมน์ที่หัวมี "(kg)" (เช่น ABC(KG), ตกไซส์(KG)…)
    - มูลค่ารวม = คอลัมน์ "มูลค่า" */
@@ -1283,13 +1316,10 @@ async function doFetch(interactive){
     setBadge("🔄 กำลังอ่านชีท "+ACTUAL_SHEET+"…");
     const p=parseActual(await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/));
     if(!p) throw new Error("อ่านคอลัมน์ %A / นน.ก่อนปอก / ฟรีซ ไม่ได้");
-    // "% grade fg": อ่านสัดส่วนเกรดจากชีท DATA ของ DATA PRODUCTION ทุเรียน.xlsx
-    // (แทนที่เกรดที่คำนวณจาก %A DURAIN) — ถ้าพลาด ใช้เกรดจากชีทเดิมเป็น fallback
+    // "% grade fg": อ่านสัดส่วนเกรดจากชีท DATA (มี cache กันหลุดกลับ %A DURAIN ตอน Graph พลาด)
     let gradeFromData=false;
-    try{
-      const g=parseGradeFG(await graphDataValues(token));
-      if(g){ p.A=g.A; p.B=g.B; p.C=g.C; p.D=g.D; p.BK=g.BK; gradeFromData=true; }
-    }catch(e){ /* คงเกรดจาก %A DURAIN ไว้ */ }
+    const gres=await fetchGradeFG(token);
+    if(gres.gd&&gres.gd.agg){ const g=gres.gd.agg; p.A=g.A; p.B=g.B; p.C=g.C; p.D=g.D; p.BK=g.BK; gradeFromData=true; }
     // อ่านราคา/มูลค่าจากชีท RM-RECIVE (ถ้าพลาดใช้ fallback ราคาเฉลี่ย)
     let rm=null;
     try{ rm=parseRM(await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน|durian.*price/)); }catch(e){ /* ใช้ fallback */ }
@@ -2402,18 +2432,17 @@ async function initDailyPL(interactive){
     let gradeSrc='%A DURAIN';
     if(PL_ACT_MAP){
       b.textContent='🔄 ดึง % grade fg (ชีท DATA)…';
-      try{
-        const gd=parseDailyGradeFG(await graphDataValues(token));
-        if(gd){
-          PL_ACT_MAP.forEach((v,k)=>{
-            const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
-            if(!pct) return;
-            const fg=v.fg||0;
-            v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
-          });
-          gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)');
-        }
-      }catch(e){ /* คงเกรดจาก %A DURAIN */ }
+      const gres=await fetchGradeFG(token);
+      const gd=gres.gd;
+      if(gd&&gd.agg){
+        PL_ACT_MAP.forEach((v,k)=>{
+          const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
+          if(!pct) return;
+          const fg=v.fg||0;
+          v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
+        });
+        gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)')+(gres.cached?' [cache]':'');
+      }
     }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
@@ -2423,7 +2452,8 @@ async function initDailyPL(interactive){
       ? '<span style="color:#2ECC71">เกรด: '+gradeSrc+'</span>'
       : '<span style="color:#E74C3C">⚠️ เกรด: %A DURAIN (อ่านชีท DATA ไม่สำเร็จ — B ไม่ตรง กด รีเฟรช)</span>';
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · '+gradeTxt+
-      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
+      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>'+
+      '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">'+APP_BUILD+'</span>';
     if(actCount>0){
       // Set default range: last 30 days
       const today=new Date();
