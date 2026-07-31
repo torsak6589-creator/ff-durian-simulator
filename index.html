@@ -1023,7 +1023,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-5 (DATA+cache+summary)";
+const APP_BUILD="gradefg-6 (diag)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1290,16 +1290,24 @@ async function graphDataSummary(token){
 /* อ่าน % grade fg จากชีท DATA → { gd:{perDate,agg}|null, cached:bool }
    ลำดับ: (1) ทั้งตาราง = ได้รายวัน · (2) แถวสรุป = ได้ค่าเฉลี่ยรวม (เชื่อถือได้)
           (3) cache ล่าสุด — ไม่ fallback ไป %A DURAIN เพื่อไม่ให้เกรดกลับไปค่าเก่า */
+let GRADE_LAST_INFO="";   // สรุปผลการอ่าน DATA ล่าสุด (โชว์บนแถบสถานะเพื่อวินิจฉัย)
 async function fetchGradeFG(token){
+  GRADE_LAST_INFO="";
   try{
-    const gd=parseDailyGradeFG(await graphDataValues(token));
-    if(gd&&gd.agg){ saveGradeCache(gd); return { gd, cached:false }; }
-  }catch(e){ /* ลองแถวสรุปต่อ */ }
+    const vals=await graphDataValues(token);
+    const n=Array.isArray(vals)?vals.length:0;
+    const gd=parseDailyGradeFG(vals);
+    if(gd&&gd.agg){ saveGradeCache(gd); GRADE_LAST_INFO="full ok ("+n+" แถว, B="+gd.agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
+    GRADE_LAST_INFO="full: parse ไม่ได้ ("+n+" แถว)";
+  }catch(e){ GRADE_LAST_INFO="full ผิดพลาด: "+(e&&e.message||e); }
   try{
     const agg=await graphDataSummary(token);
-    if(agg){ const gd={perDate:null, agg}; saveGradeCache(gd); return { gd, cached:false }; }
-  }catch(e){ /* ใช้ cache */ }
+    if(agg){ const gd={perDate:null, agg}; saveGradeCache(gd); GRADE_LAST_INFO+=" | summary ok (B="+agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
+    GRADE_LAST_INFO+=" | summary: ไม่ได้ค่า";
+  }catch(e){ GRADE_LAST_INFO+=" | summary ผิดพลาด: "+(e&&e.message||e); }
   const c=loadGradeCache();
+  GRADE_LAST_INFO+=c?" | ใช้ cache":" | ไม่มี cache → %A DURAIN";
+  try{ console.log("[FF Durian] grade read:", GRADE_LAST_INFO); }catch(e){}
   return { gd:c, cached:!!c };
 }
 /* parse ชีท RM-RECIVE (รับซื้อจริง) → { kg, value, avg, rows }
@@ -2473,9 +2481,10 @@ async function initDailyPL(interactive){
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
     const okData=gradeSrc.indexOf('DATA')===0;
     // ถ้าอ่านชีท DATA ไม่สำเร็จ → เตือนชัดเจน (เกรดจะเป็นค่าจาก %A DURAIN, B≈0) แทนที่จะดูเหมือน "ข้อมูลเก่า"
-    const gradeTxt = okData
+    const info = GRADE_LAST_INFO ? ' <span style="color:#8A8070;font-size:.55rem">['+GRADE_LAST_INFO+']</span>' : '';
+    const gradeTxt = (okData
       ? '<span style="color:#2ECC71">เกรด: '+gradeSrc+'</span>'
-      : '<span style="color:#E74C3C">⚠️ เกรด: %A DURAIN (อ่านชีท DATA ไม่สำเร็จ — B ไม่ตรง กด รีเฟรช)</span>';
+      : '<span style="color:#E74C3C">⚠️ เกรด: %A DURAIN (อ่านชีท DATA ไม่สำเร็จ — B ไม่ตรง)</span>')+info;
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน · '+gradeTxt+
       ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>'+
       '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">'+APP_BUILD+'</span>';
