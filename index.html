@@ -1025,7 +1025,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-7 (download+positional)";
+const APP_BUILD="gradefg-9 (auto-connect)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1376,9 +1376,16 @@ function parseRM(values){
   if(kg<=0||value<=0) return null;
   return { kg, value, avg:value/kg, rows };
 }
-async function doFetch(interactive){
+async function doFetch(interactive, autoConnect){
   try{
-    const token=await getToken(interactive);
+    let token=await getToken(interactive);
+    if(!token && autoConnect && !sessionStorage.getItem("ffAutoConnTried")){
+      // เชื่อมต่ออัตโนมัติ: ถ้ายังไม่มี token และมี session M365 อยู่ → redirect เงียบ ๆ (ไม่ต้องกดปุ่ม)
+      // กันวนลูปด้วย sessionStorage (ลองอัตโนมัติครั้งเดียวต่อแท็บ)
+      sessionStorage.setItem("ffAutoConnTried","1");
+      setBadge("🔄 กำลังเชื่อมต่อ Microsoft 365 อัตโนมัติ…");
+      try{ await msalApp.acquireTokenRedirect({scopes:SP.scopes}); return; }catch(e){ /* redirect ไม่ได้ → โชว์ปุ่ม */ }
+    }
     if(!token){ showConnect(); return; }
     setBadge("🔄 กำลังอ่านชีท "+ACTUAL_SHEET+"…");
     const p=parseActual(await graphValues(token, ACTUAL_SHEET, /d[ru]{1,2}ain|durian/));
@@ -1391,6 +1398,8 @@ async function doFetch(interactive){
     let rm=null;
     try{ rm=parseRM(await graphValues(token, RM_SHEET, /ราคาทุเรียน|ทุเรียน|durian.*price/)); }catch(e){ /* ใช้ fallback */ }
     showOk(p, rm, gradeFromData);
+    // เชื่อมต่ออัตโนมัติ → นำค่า actual เข้าโมเดลให้เอง (ครั้งเดียวต่อการโหลดหน้า ไม่ทับค่าที่ผู้ใช้ปรับเอง)
+    if(autoConnect && !window.__ffAutoApplied){ window.__ffAutoApplied=true; try{ applyActual(); }catch(e){} }
   }catch(e){
     const code=e.errorCode||"";
     if(/interaction_required|login_required|consent_required|no_account/.test(code)) showConnect("🔐 ต้องล็อกอินใหม่:");
@@ -1405,7 +1414,7 @@ function startActual(){
       auth:{clientId:SP.clientId,authority:"https://login.microsoftonline.com/"+SP.tenantId,redirectUri:window.location.href.split("?")[0].split("#")[0],navigateToLoginRequestUrl:false},
       cache:{cacheLocation:"localStorage",storeAuthStateInCookie:true}
     });
-    msalApp.handleRedirectPromise().then(()=>doFetch(false)).catch(()=>doFetch(false));
+    msalApp.handleRedirectPromise().then(()=>doFetch(false, true)).catch(()=>doFetch(false, true));
   }catch(e){ setBadge("⚠️ เริ่ม MSAL ไม่ได้: "+e.message,"err"); }
 }
 startActual();
@@ -2503,13 +2512,21 @@ async function initDailyPL(interactive){
       const gres=await fetchGradeFG(token);
       const gd=gres.gd;
       if(gd&&gd.agg){
+        let noData=0;
         PL_ACT_MAP.forEach((v,k)=>{
-          const pct=(gd.perDate&&gd.perDate.get(k))||gd.agg;
-          if(!pct) return;
+          let pct;
+          if(gd.perDate){
+            pct=gd.perDate.get(k);
+            // วันที่ยังไม่มีในชีท DATA → คงเกรดจริงของวันนั้น (%A DURAIN) ไม่เอาค่าเฉลี่ยมาแปะ
+            if(!pct){ noData++; return; }
+          }else{
+            pct=gd.agg;   // มีแต่ค่าเฉลี่ยรวม (โหมด fallback) → ใช้กับทุกวัน
+          }
           const fg=v.fg||0;
           v.A=pct.A/100*fg; v.B=pct.B/100*fg; v.C=pct.C/100*fg; v.D=pct.D/100*fg; v.BK=pct.BK/100*fg;
         });
         gradeSrc='DATA'+(gd.perDate?' (รายวัน)':' (เฉลี่ยรวม)')+(gres.cached?' [cache]':'');
+        if(gd.perDate && noData>0) gradeSrc+=' · '+noData+' วันยังไม่มีใน DATA (คงเกรด %A DURAIN)';
       }
     }
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
