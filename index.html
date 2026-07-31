@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- กันเบราว์เซอร์ cache โค้ดเก่า → โหลดเวอร์ชันใหม่ทันทีหลัง deploy -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>FF Durian — Break-Even Simulator 2569</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -1007,6 +1011,8 @@ const SP = {
 };
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
+const APP_BUILD = "grade5-B-ok";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
+try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
@@ -2255,7 +2261,8 @@ async function initDailyPL(interactive){
     const rmCount=PL_RM_MAP?PL_RM_MAP.size:0;
     const actCount=PL_ACT_MAP?PL_ACT_MAP.size:0;
     b.innerHTML='<span style="color:#2ECC71">●</span> ราคาทุเรียน '+rmCount+' วัน · %A DURAIN '+actCount+' วัน'+
-      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>';
+      ' <button onclick="PL_LOADED=false;initDailyPL()" style="'+btnStyle+';margin-left:8px">🔄 รีเฟรช</button>'+
+      '<span style="color:#8A8070;font-size:.55rem;margin-left:8px">'+APP_BUILD+'</span>';
     if(actCount>0){
       // Set default range: last 30 days
       const today=new Date();
