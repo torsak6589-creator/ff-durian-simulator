@@ -8,6 +8,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>FF Durian — Break-Even Simulator 2569</title>
+<!-- SheetJS: ดาวน์โหลดไฟล์ DATA มา parse เอง (เลี่ยง workbook API ที่ timeout 504) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--nv:#0D1B2E;--nm:#132840;--nl:#1A3352;--g:#C8982A;--gl:#E5B84B;--gd:rgba(200,152,42,0.15);--w:#F5F0E8;--t:#D4CBB8;--tm:#8A8070;--gr:#2ECC71;--rd:#E74C3C;--or:#F39C12;--bl:#3498DB;--cy:#1ABC9C}
@@ -1023,7 +1025,7 @@ const GRADE_FG = {
   sheet  :"DATA",
 };
 /* build tag — ไว้ตรวจว่าเบราว์เซอร์โหลดโค้ดเวอร์ชันไหน (กันสับสนกับ cache โค้ดเก่า) */
-const APP_BUILD="gradefg-6 (diag)";
+const APP_BUILD="gradefg-7 (download+positional)";
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1101,20 +1103,21 @@ function parseActual(values){
    (A+B+C+D+E+BK = นน.ส่งเข้าฟรีซ; เพียวเร่/เมล็ด/เสีย แยกออกจาก FG)
    app ใช้แค่ A/B/C/D/BK — ไม่รวม E (≈0.3%) กับเพียวเร่ */
 function dataGradeCols(values){
-  let hi=-1;
+  let hi=-1, fg=-1;
+  // หา header row: มีคอลัมน์ "นน.ส่งเข้าฟรีซ" และคอลัมน์ถัดไปคือ "A" (ยืนยันการเรียงเกรด)
   for(let i=0;i<Math.min(values.length,25);i++){
     const row=(values[i]||[]).map(c=>String(c||"").trim().toLowerCase());
-    if(row.some(h=>h==="a") && row.some(h=>h.includes("ส่งเข้าฟร"))){ hi=i; break; }
+    const fi=row.findIndex(h=>h.includes("ส่งเข้าฟร"));
+    if(fi>=0 && row[fi+1]==="a"){ hi=i; fg=fi; break; }
   }
   if(hi<0) return null;
   const hdr=(values[hi]||[]).map(h=>String(h||"").trim().toLowerCase());
-  const exact=k=>hdr.findIndex(h=>h===k);
   const incl=(...kw)=>hdr.findIndex(h=>kw.some(k=>h.includes(k)));
-  const cFG=incl("ส่งเข้าฟร");                       // นน.ส่งเข้าฟรีซ (FG)
-  const cA=exact("a"),cB=exact("b"),cC=exact("c"),cD=exact("d"),cBK=exact("bk");
-  if(cFG<0||cA<0) return null;
+  // อ่านเกรดแบบ "ตำแหน่ง" ต่อจาก FG เสมอ: FG | A | B | C | D | E | BK | เพียวเร่
+  // (ทนต่อหัวคอลัมน์ที่อาจต่างจาก CSV — ไม่พึ่ง match ตัวอักษร "b" ตรง ๆ)
+  const cA=fg+1, cB=fg+2, cC=fg+3, cD=fg+4, cBK=fg+6;   // ข้าม E (fg+5)
   const cDate=incl("วันที่ผลิต","ผลิต");             // วันที่ผลิต (สำหรับเกรดรายวัน)
-  return { hi, cFG, cA, cB, cC, cD, cBK, cDate };
+  return { hi, cFG:fg, cA, cB, cC, cD, cBK, cDate };
 }
 /* parse ชีท DATA → สัดส่วนเกรดรวม { A,B,C,D,BK } (หน่วย %) = Σkg เกรด ÷ Σ นน.ส่งเข้าฟรีซ */
 function parseGradeFG(values){
@@ -1255,21 +1258,45 @@ async function graphDataValues(token){
    กันกรณี Graph ตอบพลาดชั่วคราวแล้วเกรดหลุดกลับไป %A DURAIN (B หาย)
    อ่านสำเร็จครั้งเดียว → ค่าจะคงอยู่ข้ามการรีเฟรช/เปิดใหม่ */
 let GRADE_CACHE=null;
-const GRADE_CACHE_KEY="ffDurianGradeFG";
+const GRADE_CACHE_KEY="ffDurianGradeFG2";   // bump: กัน cache เก่าที่อาจ B=0 (poisoned)
+const gradeValid=gd=>!!(gd&&gd.agg&&gd.agg.B>0);   // เกรด B ต้อง > 0 จึงถือว่าใช้ได้
 function saveGradeCache(gd){
-  if(!gd||!gd.agg) return;
+  if(!gradeValid(gd)) return;
   GRADE_CACHE=gd;
   try{ localStorage.setItem(GRADE_CACHE_KEY, JSON.stringify({
     agg:gd.agg, perDate:gd.perDate?[...gd.perDate.entries()]:null, ts:Date.now()
   })); }catch(e){}
 }
 function loadGradeCache(){
-  if(GRADE_CACHE) return GRADE_CACHE;
+  if(gradeValid(GRADE_CACHE)) return GRADE_CACHE;
   try{
     const o=JSON.parse(localStorage.getItem(GRADE_CACHE_KEY)||"null");
-    if(o&&o.agg){ GRADE_CACHE={agg:o.agg, perDate:o.perDate?new Map(o.perDate):null, ts:o.ts}; return GRADE_CACHE; }
+    if(o&&o.agg&&o.agg.B>0){ GRADE_CACHE={agg:o.agg, perDate:o.perDate?new Map(o.perDate):null, ts:o.ts}; return GRADE_CACHE; }
   }catch(e){}
   return null;
+}
+/* ดาวน์โหลดไฟล์ DATA (bytes) แล้ว parse ด้วย SheetJS — ไม่ใช้ workbook API (ที่ 504)
+   คืน values แบบ array-of-arrays เหมือน usedRange */
+async function downloadDataValues(token){
+  if(typeof XLSX==="undefined") throw new Error("SheetJS ยังไม่โหลด");
+  const url="https://graph.microsoft.com/v1.0/drives/"+GRADE_FG.driveId+"/items/"+GRADE_FG.itemId+"/content";
+  let res=null, lastErr=null;
+  for(let i=0;i<3;i++){
+    try{
+      res=await fetch(url,{headers:{Authorization:"Bearer "+token}});
+      if(res.ok) break;
+      lastErr=new Error("HTTP "+res.status);
+      if(res.status===429||res.status>=500){ await new Promise(r=>setTimeout(r,900*(i+1))); continue; }
+      throw lastErr;
+    }catch(e){ lastErr=e; if(i<2) await new Promise(r=>setTimeout(r,900*(i+1))); }
+  }
+  if(!res||!res.ok) throw lastErr||new Error("download failed");
+  const buf=await res.arrayBuffer();
+  const wb=XLSX.read(new Uint8Array(buf),{type:"array",cellDates:true});
+  const name=wb.SheetNames.find(n=>n.replace(/\s/g,"").toLowerCase()==="data")||GRADE_FG.sheet;
+  const ws=wb.Sheets[name];
+  if(!ws) throw new Error("ไม่พบชีท DATA ในไฟล์");
+  return XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
 }
 /* อ่านเฉพาะ "แถวสรุป" ของชีท DATA (range เล็ก A1:AZ4) → agg { A,B,C,D,BK } (%)
    ใช้เป็น fallback ที่เชื่อถือได้เมื่ออ่านทั้งตาราง (6พันแถว) พลาด — payload จิ๋ว
@@ -1293,18 +1320,25 @@ async function graphDataSummary(token){
 let GRADE_LAST_INFO="";   // สรุปผลการอ่าน DATA ล่าสุด (โชว์บนแถบสถานะเพื่อวินิจฉัย)
 async function fetchGradeFG(token){
   GRADE_LAST_INFO="";
+  // (1) ดาวน์โหลดไฟล์ + parse ด้วย SheetJS — ทางหลัก (เลี่ยง workbook API ที่ 504)
   try{
-    const vals=await graphDataValues(token);
+    const vals=await downloadDataValues(token);
     const n=Array.isArray(vals)?vals.length:0;
     const gd=parseDailyGradeFG(vals);
-    if(gd&&gd.agg){ saveGradeCache(gd); GRADE_LAST_INFO="full ok ("+n+" แถว, B="+gd.agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
-    GRADE_LAST_INFO="full: parse ไม่ได้ ("+n+" แถว)";
-  }catch(e){ GRADE_LAST_INFO="full ผิดพลาด: "+(e&&e.message||e); }
+    if(gradeValid(gd)){ saveGradeCache(gd); GRADE_LAST_INFO="download ok ("+n+" แถว, B="+gd.agg.B.toFixed(1)+"%"+(gd.perDate?", รายวัน":"")+")"; return { gd, cached:false }; }
+    GRADE_LAST_INFO="download: parse ไม่ได้ ("+n+" แถว)";
+  }catch(e){ GRADE_LAST_INFO="download ผิดพลาด: "+(e&&e.message||e); }
+  // (2) workbook API ทั้งตาราง (อาจ 504)
+  try{
+    const gd=parseDailyGradeFG(await graphDataValues(token));
+    if(gradeValid(gd)){ saveGradeCache(gd); GRADE_LAST_INFO+=" | workbook ok (B="+gd.agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
+  }catch(e){ GRADE_LAST_INFO+=" | workbook ผิดพลาด: "+(e&&e.message||e); }
+  // (3) summary แถวสรุป (เล็ก)
   try{
     const agg=await graphDataSummary(token);
-    if(agg){ const gd={perDate:null, agg}; saveGradeCache(gd); GRADE_LAST_INFO+=" | summary ok (B="+agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
-    GRADE_LAST_INFO+=" | summary: ไม่ได้ค่า";
+    if(agg&&agg.B>0){ const gd={perDate:null, agg}; saveGradeCache(gd); GRADE_LAST_INFO+=" | summary ok (B="+agg.B.toFixed(1)+"%)"; return { gd, cached:false }; }
   }catch(e){ GRADE_LAST_INFO+=" | summary ผิดพลาด: "+(e&&e.message||e); }
+  // (4) cache ล่าสุดที่ B>0
   const c=loadGradeCache();
   GRADE_LAST_INFO+=c?" | ใช้ cache":" | ไม่มี cache → %A DURAIN";
   try{ console.log("[FF Durian] grade read:", GRADE_LAST_INFO); }catch(e){}
@@ -1407,6 +1441,7 @@ let PL_ACT_MAP = null;   // Map<"YYYY-MM-DD", {fg,A,B,C,D,BK,lots}>
 
 /* ── Excel serial date → JS Date ── */
 function excelToDate(serial){
+  if(serial instanceof Date) return isNaN(serial.getTime())?null:serial;   // SheetJS cellDates:true
   if(typeof serial === 'number'){
     // Excel epoch: serial 1 = Jan 1, 1900. Excel has fake Feb 29 1900 (serial 60),
     // so for all modern dates (serial>=61) subtract 1 to compensate.
