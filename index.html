@@ -7,8 +7,6 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- SheetJS: ดาวน์โหลดไฟล์มา parse เอง (อ่านชีทใหญ่ได้ครบ เลี่ยง workbook API ที่ตัดข้อมูล/timeout) -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <title>FF Durian — Break-Even Simulator 2569</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -1013,7 +1011,7 @@ const SP = {
 };
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
-const APP_BUILD = "grade7-safe";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
+const APP_BUILD = "grade8-workbook";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
