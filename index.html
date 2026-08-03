@@ -1013,7 +1013,7 @@ const SP = {
 };
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
-const APP_BUILD = "grade6-alldays";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
+const APP_BUILD = "grade7-safe";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
 try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
@@ -1149,35 +1149,58 @@ async function getToken(interactive){
    ดาวน์โหลดครั้งเดียว cache ทุกชีทไว้ในหน่วยความจำ (__PROC_WB) — เรียกชีทไหนก็ใช้ซ้ำ
    ไม่ใช้ cellDates → วันที่เป็น serial (ตรงกับ excelToDate เดิม) */
 let __PROC_WB=null;
-async function graphValues(token, sheet, matchRe){
-  if(!__PROC_WB){
-    if(typeof XLSX==="undefined") throw new Error("SheetJS ยังไม่โหลด (ลองรีเฟรช)");
-    const url="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/content?nc="+Date.now();
-    let res=null,lastErr=null;
-    for(let i=0;i<3;i++){
-      try{
-        res=await fetch(url,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-        if(res.ok) break;
-        lastErr=new Error("HTTP "+res.status);
-        if(res.status===429||res.status>=500){ await new Promise(r=>setTimeout(r,900*(i+1))); continue; }
-        throw lastErr;
-      }catch(e){ lastErr=e; if(i<2) await new Promise(r=>setTimeout(r,900*(i+1))); }
-    }
-    if(!res||!res.ok) throw lastErr||new Error("ดาวน์โหลดไฟล์ไม่สำเร็จ");
+/* ดาวน์โหลดไฟล์ทั้งก้อนแล้ว parse ด้วย SheetJS (อ่านครบทุกแถว) — คืน map ทุกชีท หรือ null ถ้าทำไม่ได้ */
+async function __downloadProcWB(token){
+  if(typeof XLSX==="undefined") return null;   // SheetJS โหลดไม่ได้ (CDN บล็อก) → ให้ fallback
+  const url="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/content?nc="+Date.now();
+  let res=null;
+  for(let i=0;i<3;i++){
+    try{
+      res=await fetch(url,{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+      if(res.ok) break;
+      if(res.status===429||res.status>=500){ await new Promise(r=>setTimeout(r,900*(i+1))); continue; }
+      return null;
+    }catch(e){ if(i<2) await new Promise(r=>setTimeout(r,900*(i+1))); }
+  }
+  if(!res||!res.ok) return null;
+  try{
     const buf=await res.arrayBuffer();
     const wb=XLSX.read(new Uint8Array(buf),{type:"array"});
-    __PROC_WB={};
-    wb.SheetNames.forEach(n=>{ __PROC_WB[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null}); });
+    const out={};
+    wb.SheetNames.forEach(n=>{ out[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null}); });
+    return out;
+  }catch(e){ return null; }
+}
+/* อ่านชีทจาก Procurement_Master_File:
+   (1) ดาวน์โหลด+SheetJS ก่อน (อ่านครบทุกแถว เลี่ยง usedRange ตัดข้อมูลชีทใหญ่)
+   (2) ถ้าไม่ได้ (เช่น SheetJS CDN บล็อก) → fallback workbook usedRange เดิม (แอปไม่พัง) */
+async function graphValues(token, sheet, matchRe){
+  if(__PROC_WB===null){ __PROC_WB=(await __downloadProcWB(token))||{}; }   // null=ยังไม่ลอง · {}=ลองแล้วไม่ได้ → ใช้ workbook
+  if(__PROC_WB && Object.keys(__PROC_WB).length){
+    let vals=__PROC_WB[sheet];
+    if(!vals){
+      const key=sheet.replace(/\s/g,"").toLowerCase();
+      const nm=Object.keys(__PROC_WB).find(n=>n.replace(/\s/g,"").toLowerCase()===key)
+             || (matchRe&&Object.keys(__PROC_WB).find(n=>matchRe.test(n.toLowerCase())));
+      if(nm) vals=__PROC_WB[nm];
+    }
+    if(vals) return vals;
   }
-  let vals=__PROC_WB[sheet];
-  if(!vals){
+  // fallback: workbook usedRange (โค้ดเดิม — ใช้เมื่อดาวน์โหลด/SheetJS ไม่ได้)
+  const base="https://graph.microsoft.com/v1.0/drives/"+SP.driveId+"/items/"+SP.itemId+"/workbook";
+  const hdr={Authorization:"Bearer "+token,Accept:"application/json"};
+  let res=await fetch(base+"/worksheets/"+encodeURIComponent(sheet)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
+  if(!res.ok){
+    const wl=await fetch(base+"/worksheets?$select=id,name",{headers:hdr,cache:"no-store"});
+    if(!wl.ok) throw new Error("worksheets HTTP "+wl.status);
+    const list=(await wl.json()).value||[];
     const key=sheet.replace(/\s/g,"").toLowerCase();
-    const nm=Object.keys(__PROC_WB).find(n=>n.replace(/\s/g,"").toLowerCase()===key)
-           || (matchRe&&Object.keys(__PROC_WB).find(n=>matchRe.test(n.toLowerCase())));
-    if(nm) vals=__PROC_WB[nm];
+    const m=list.find(w=>w.name.replace(/\s/g,"").toLowerCase()===key)||(matchRe&&list.find(w=>matchRe.test(w.name.toLowerCase())));
+    if(!m) throw new Error("ไม่พบชีท "+sheet+" (มี: "+list.map(w=>w.name).join(", ")+")");
+    res=await fetch(base+"/worksheets/"+encodeURIComponent(m.id)+"/usedRange?$select=values",{headers:hdr,cache:"no-store"});
+    if(!res.ok) throw new Error("usedRange HTTP "+res.status);
   }
-  if(!vals) throw new Error("ไม่พบชีท "+sheet+" (มี: "+Object.keys(__PROC_WB).join(", ")+")");
-  return vals;
+  return (await res.json()).values;
 }
 /* parse ชีท RM-RECIVE (รับซื้อจริง) → { kg, value, avg, rows }
    - ปริมาณรวม = ผลรวมทุกคอลัมน์ที่หัวมี "(kg)" (เช่น ABC(KG), ตกไซส์(KG)…)
