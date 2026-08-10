@@ -8,36 +8,36 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>FF Durian — Break-Even Simulator 2569</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--nv:#0D1B2E;--nm:#132840;--nl:#1A3352;--g:#C8982A;--gl:#E5B84B;--gd:rgba(200,152,42,0.15);--w:#F5F0E8;--t:#D4CBB8;--tm:#8A8070;--gr:#2ECC71;--rd:#E74C3C;--or:#F39C12;--bl:#3498DB;--cy:#1ABC9C}
+:root{--nv:#0A0F1E;--nm:#141A33;--nl:#1A1F3E;--g:#00E5FF;--gl:#5CF0FF;--gd:rgba(0,229,255,0.15);--w:#E8ECF1;--t:#C3CBD6;--tm:#6B7A8D;--gr:#00D68F;--rd:#FF4757;--or:#FFB800;--bl:#7B61FF;--cy:#00E5FF}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t);min-height:100vh;padding:16px 12px 60px}
 /* ── Tab nav ── */
-.tab-nav{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(200,152,42,.18);padding-bottom:0}
+.tab-nav{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(0,229,255,.18);padding-bottom:0}
 .tab-btn{padding:7px 18px;font-size:.74rem;font-weight:600;color:var(--tm);border:none;background:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;font-family:'Noto Sans Thai',sans-serif;transition:color .15s}
 .tab-btn.active{color:var(--gl);border-bottom-color:var(--gl)}
 .tab-btn:hover{color:var(--t)}
 /* ── Daily P&L styles ── */
-.pl-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:rgba(200,152,42,.05);border:1px solid rgba(200,152,42,.12);border-radius:8px}
+.pl-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:8px}
 .pl-filter label{font-size:.66rem;color:var(--tm);font-weight:600}
-.pl-date{background:var(--nl);border:1px solid rgba(200,152,42,.35);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:.7rem;padding:4px 8px;outline:none;color-scheme:dark}
+.pl-date{background:var(--nl);border:1px solid rgba(0,229,255,.35);border-radius:6px;color:var(--w);font-family:'DM Mono',monospace;font-size:.7rem;padding:4px 8px;outline:none;color-scheme:dark}
 .pl-date:focus{border-color:var(--gl)}
-.pl-date:hover{border-color:rgba(200,152,42,.6)}
+.pl-date:hover{border-color:rgba(0,229,255,.6)}
 /* ไอคอนปฏิทินให้เป็นสีทอง ตัดกับพื้นหลังเข้ม */
-.pl-date::-webkit-calendar-picker-indicator{filter:invert(72%) sepia(55%) saturate(520%) hue-rotate(1deg) brightness(95%);cursor:pointer;opacity:1;padding:2px;border-radius:3px}
-.pl-date::-webkit-calendar-picker-indicator:hover{background:rgba(200,152,42,.25)}
-.pl-qbtn{background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif;transition:all .12s}
-.pl-qbtn:hover{border-color:rgba(200,152,42,.5)}
-.pl-qbtn.active{background:var(--g);color:#0D1B2E;border-color:var(--gl);font-weight:700;box-shadow:0 0 0 2px rgba(229,184,75,.28)}
+.pl-date::-webkit-calendar-picker-indicator{filter:invert(78%) sepia(58%) saturate(2200%) hue-rotate(140deg) brightness(102%);cursor:pointer;opacity:1;padding:2px;border-radius:3px}
+.pl-date::-webkit-calendar-picker-indicator:hover{background:rgba(0,229,255,.25)}
+.pl-qbtn{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.18);color:var(--gl);border-radius:5px;font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif;transition:all .12s}
+.pl-qbtn:hover{border-color:rgba(0,229,255,.5)}
+.pl-qbtn.active{background:var(--g);color:#0A0F1E;border-color:var(--gl);font-weight:700;box-shadow:0 0 0 2px rgba(92,240,255,.28)}
 /* แถบสีบอกช่วงเวลาที่กำลังดูอยู่ */
-.pl-range-band{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.62rem;font-weight:500;color:#0D1B2E;background:linear-gradient(90deg,var(--gl),var(--g));border:1px solid var(--gl);border-radius:14px;padding:3px 11px;white-space:nowrap;box-shadow:0 1px 4px rgba(200,152,42,.25)}
+.pl-range-band{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.62rem;font-weight:500;color:#0A0F1E;background:linear-gradient(90deg,var(--gl),var(--g));border:1px solid var(--gl);border-radius:14px;padding:3px 11px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,229,255,.25)}
 .pl-range-band.custom{background:rgba(52,152,219,.14);color:#7FC4F0;border-color:rgba(52,152,219,.4);box-shadow:none}
-.pl-range-band.all{background:rgba(200,152,42,.12);color:var(--gl);border-color:rgba(200,152,42,.3);box-shadow:none}
-.pl-apply{background:var(--g);color:#0D1B2E;border:none;border-radius:6px;font-weight:700;font-size:.7rem;padding:4px 13px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
+.pl-range-band.all{background:rgba(0,229,255,.12);color:var(--gl);border-color:rgba(0,229,255,.3);box-shadow:none}
+.pl-apply{background:var(--g);color:#0A0F1E;border:none;border-radius:6px;font-weight:700;font-size:.7rem;padding:4px 13px;cursor:pointer;font-family:'Noto Sans Thai',sans-serif}
 .pl-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 @media(max-width:700px){.pl-kpi-row{grid-template-columns:1fr 1fr}}
-.pl-kpi{background:var(--nl);border:1px solid rgba(200,152,42,.1);border-radius:9px;padding:11px 13px}
+.pl-kpi{background:var(--nl);border:1px solid rgba(0,229,255,.1);border-radius:9px;padding:11px 13px}
 .pl-kpi.pos{border-color:rgba(46,204,113,.22);background:rgba(46,204,113,.04)}
 .pl-kpi.neg{border-color:rgba(231,76,60,.2);background:rgba(231,76,60,.04)}
 .pl-kpi-label{font-size:.57rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
@@ -46,10 +46,10 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .pl-lag-note{background:rgba(26,188,156,.06);border:1px solid rgba(26,188,156,.18);border-radius:7px;padding:8px 12px;font-size:.62rem;color:#80E8D5;line-height:1.7;margin-bottom:12px}
 .pl-legend{display:flex;align-items:center;gap:6px;font-size:.59rem;color:var(--tm);margin-bottom:7px}
 .pl-legend-box{width:10px;height:10px;border-radius:2px;background:rgba(243,156,18,.15);border:1px solid rgba(243,156,18,.32);flex-shrink:0}
-.pl-tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(200,152,42,.12)}
+.pl-tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(0,229,255,.12)}
 .pl-tbl{width:100%;border-collapse:collapse;font-size:.69rem;min-width:1010px}
 .pl-tbl thead{background:var(--nl)}
-.pl-tbl th{padding:8px 9px;text-align:right;font-weight:700;font-size:.58rem;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid rgba(200,152,42,.14)}
+.pl-tbl th{padding:8px 9px;text-align:right;font-weight:700;font-size:.58rem;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid rgba(0,229,255,.14)}
 .pl-tbl th:first-child{text-align:left}
 .pl-tbl th.th-gold{color:var(--gl)}.pl-tbl th.th-gr{color:#2ECC71}.pl-tbl th.th-or{color:var(--or)}.pl-tbl th.th-bl{color:#3498DB}
 .pl-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
@@ -58,7 +58,7 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .pl-tbl td:first-child{text-align:left;font-family:'Noto Sans Thai',sans-serif;font-size:.69rem;color:var(--w)}
 .pl-tbl td.td-gold{color:var(--gl)}.pl-tbl td.td-gr{color:#2ECC71;font-weight:500}.pl-tbl td.td-rd{color:#E74C3C;font-weight:500}.pl-tbl td.td-or{color:var(--or)}.pl-tbl td.td-mt{color:var(--tm)}.pl-tbl td.td-bl{color:#3498DB}
 .pl-tbl td.td-fb{color:var(--or);background:rgba(243,156,18,.07);border-left:2px solid rgba(243,156,18,.28)}
-.pl-tbl tr.pl-total{background:rgba(200,152,42,.07)!important;border-top:1px solid rgba(200,152,42,.18)!important}
+.pl-tbl tr.pl-total{background:rgba(0,229,255,.07)!important;border-top:1px solid rgba(0,229,255,.18)!important}
 .pl-tbl tr.pl-total td{font-weight:700;color:var(--w)}
 .pl-bar-wrap{display:flex;align-items:center;gap:5px;justify-content:flex-end}
 .pl-bar-bg{height:4px;border-radius:3px;background:rgba(255,255,255,.07);width:48px;flex-shrink:0;overflow:hidden}
@@ -72,9 +72,9 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .pl-gc-bk{background:rgba(138,128,112,.15);color:var(--tm);border:1px solid rgba(138,128,112,.2)}
 /* ── Daily Report (รายงานประจำวัน) — rich dashboard, dark theme ── */
 .rpt-seclabel{display:flex;align-items:center;gap:9px;margin:24px 0 12px}
-.rpt-seclabel .num{background:var(--nl);color:var(--gl);font-family:'DM Mono',monospace;font-size:.6rem;font-weight:600;padding:3px 7px;border-radius:4px;letter-spacing:.08em;border:1px solid rgba(200,152,42,.22)}
+.rpt-seclabel .num{background:var(--nl);color:var(--gl);font-family:'DM Mono',monospace;font-size:.6rem;font-weight:600;padding:3px 7px;border-radius:4px;letter-spacing:.08em;border:1px solid rgba(0,229,255,.22)}
 .rpt-seclabel h3{font-size:.82rem;font-weight:700;color:var(--w);letter-spacing:.02em;margin:0}
-.rpt-seclabel .line{flex:1;height:1px;background:rgba(200,152,42,.14)}
+.rpt-seclabel .line{flex:1;height:1px;background:rgba(0,229,255,.14)}
 .rpt-hero{border-radius:14px;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:6px;border:1px solid}
 .rpt-hero.neg{background:linear-gradient(135deg,rgba(231,76,60,.18),rgba(120,20,20,.12));border-color:rgba(231,76,60,.35)}
 .rpt-hero.pos{background:linear-gradient(135deg,rgba(46,204,113,.18),rgba(20,83,45,.12));border-color:rgba(46,204,113,.35)}
@@ -87,7 +87,7 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-hero .h-right b{color:var(--w)}
 .rpt-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media(max-width:700px){.rpt-kpi-grid{grid-template-columns:1fr 1fr}}
-.rpt-kpi{background:var(--nl);border:1px solid rgba(200,152,42,.1);border-radius:10px;padding:14px 15px;position:relative;overflow:hidden}
+.rpt-kpi{background:var(--nl);border:1px solid rgba(0,229,255,.1);border-radius:10px;padding:14px 15px;position:relative;overflow:hidden}
 .rpt-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
 .rpt-kpi.green::before{background:var(--gr)}.rpt-kpi.gold::before{background:var(--g)}.rpt-kpi.red::before{background:var(--rd)}
 .rpt-kpi .k-lbl{font-size:.56rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
@@ -96,7 +96,7 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-kpi .k-val.neg{color:#FF6B5B}
 .rpt-kpi .k-sub{font-size:.57rem;color:var(--tm);margin-top:7px}
 .rpt-kpi .k-sub b{color:var(--t)}
-.rpt-gauge{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:12px;padding:22px 24px 14px;margin-bottom:6px}
+.rpt-gauge{background:var(--nl);border:1px solid rgba(0,229,255,.12);border-radius:12px;padding:22px 24px 14px;margin-bottom:6px}
 .rpt-gauge-title{font-size:.72rem;color:var(--t);text-align:center;margin-bottom:32px}
 .rpt-gauge-title b{font-family:'DM Mono',monospace}
 .rpt-gbar{position:relative;height:32px;border-radius:7px;display:flex;margin:0 26px 26px}
@@ -113,11 +113,11 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:760px){.rpt-grid2{grid-template-columns:1fr}}
 .rpt-bar-mini{display:inline-block;height:7px;border-radius:2px;vertical-align:middle}
-.rpt-flow{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:10px;padding:16px 20px;font-family:'DM Mono',monospace;font-size:.64rem;line-height:2.1;color:var(--t)}
+.rpt-flow{background:var(--nl);border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:16px 20px;font-family:'DM Mono',monospace;font-size:.64rem;line-height:2.1;color:var(--t)}
 .rpt-flow b{color:var(--gl)}.rpt-flow .ar{color:var(--g)}.rpt-flow .r{color:#FF6B5B}
 .rpt-levers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:700px){.rpt-levers{grid-template-columns:1fr}}
-.rpt-lever{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-top:2px solid var(--gr);border-radius:10px;padding:15px 16px}
+.rpt-lever{background:var(--nl);border:1px solid rgba(0,229,255,.12);border-top:2px solid var(--gr);border-radius:10px;padding:15px 16px}
 .rpt-lever h5{font-size:.72rem;color:var(--w);margin:0 0 7px}
 .rpt-lever .v{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;color:#4CD98A}
 .rpt-lever p{font-size:.65rem;color:var(--tm);margin-top:6px;line-height:1.6}
@@ -129,26 +129,26 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .rpt-note b{color:var(--w)}.rpt-note code{background:rgba(0,0,0,.28);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:.63rem}
 .rpt-caption{font-size:.64rem;color:var(--tm);margin-top:6px;padding-left:2px}
 .rpt-caption b{color:var(--t)}
-.rpt-panel{background:var(--nl);border:1px solid rgba(200,152,42,.12);border-radius:10px;padding:14px 16px}
+.rpt-panel{background:var(--nl);border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:14px 16px}
 .rpt-panel-t{font-size:.6rem;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
 .rpt-stack{display:flex;height:22px;border-radius:5px;overflow:hidden;margin-bottom:10px;background:rgba(255,255,255,.04)}
 .rpt-stack span{display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.5rem;color:#fff;font-weight:600;min-width:0;overflow:hidden;white-space:nowrap}
 .rpt-chips{display:flex;flex-wrap:wrap;gap:6px}
 .rpt-chip{font-family:'DM Mono',monospace;font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:11px}
 .rpt-ylds{display:flex;gap:10px}
-.rpt-yld{flex:1;background:var(--nv);border:1px solid rgba(200,152,42,.1);border-radius:8px;padding:10px 12px;text-align:center}
+.rpt-yld{flex:1;background:var(--nv);border:1px solid rgba(0,229,255,.1);border-radius:8px;padding:10px 12px;text-align:center}
 .rpt-yld .yl{font-size:.57rem;color:var(--tm);margin-bottom:5px;font-weight:600}
 .rpt-yld .v{font-family:'DM Mono',monospace;font-size:1.35rem;font-weight:600;color:var(--gl);line-height:1}
 .rpt-yld .ys{font-size:.55rem;color:var(--tm);margin-top:5px}
 .rpt-print-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;border-bottom:2px solid var(--g);padding-bottom:12px;margin-bottom:16px}
 .rpt-print-head .rph-tag{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gl)}
-.rpt-print-head .rph-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:800;color:var(--w);line-height:1.2;margin-top:3px}
+.rpt-print-head .rph-title{font-family:'Space Grotesk','Noto Sans Thai',sans-serif;font-size:1.25rem;font-weight:800;color:var(--w);line-height:1.2;margin-top:3px}
 .rpt-print-head .rph-r{text-align:right;font-family:'DM Mono',monospace}
 .rpt-print-head .rph-range{font-size:.82rem;font-weight:500;color:var(--gl)}
 .rpt-print-head .rph-by{font-size:.58rem;color:var(--tm);margin-top:3px}
 /* ── Print / Save-as-PDF: รายงานประจำวันเท่านั้น ── */
 @media print{
-  body{background:#0D1B2E !important;padding:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#0A0F1E !important;padding:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
   .pg{max-width:100% !important}
   .card.hd,.tab-nav,#panel-sim,#panel-pl,#panel-purchase,#guide,.footer,.rpt-noprint{display:none !important}
@@ -161,10 +161,10 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 }
 .pg{max-width:1060px;margin:0 auto}
 .mn{font-family:'DM Mono',monospace}
-.card{background:var(--nm);border:1px solid rgba(200,152,42,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
-.card.hi{border-color:rgba(200,152,42,0.28)}
+.card{background:var(--nm);border:1px solid rgba(0,229,255,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card.hi{border-color:rgba(0,229,255,0.28)}
 .hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.hd h1{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--g);margin:0}
+.hd h1{font-family:'Space Grotesk','Noto Sans Thai',sans-serif;font-size:1.25rem;color:var(--g);margin:0}
 .hd p{font-size:.68rem;color:var(--tm);margin:2px 0 0}
 .badge{display:inline-block;font-family:'DM Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:12px;margin-left:3px}
 .stitle{font-weight:700;color:var(--w);font-size:.88rem;margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -175,8 +175,8 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .eq-lbl{min-width:100px;font-weight:700;font-size:.76rem}
 .eq-val{font-family:'DM Mono',monospace;font-size:1rem;font-weight:800;min-width:55px;text-align:center}
 .eq-info{font-family:'DM Mono',monospace;font-size:.64rem;color:var(--tm);margin-left:6px;white-space:nowrap}
-.btn{width:30px;height:30px;border-radius:6px;border:1px solid rgba(200,152,42,0.2);background:var(--nl);color:var(--w);font-family:'DM Mono',monospace;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;user-select:none;flex-shrink:0}
-.btn:hover{background:rgba(200,152,42,0.15);border-color:rgba(200,152,42,0.4)}
+.btn{width:30px;height:30px;border-radius:6px;border:1px solid rgba(0,229,255,0.2);background:var(--nl);color:var(--w);font-family:'DM Mono',monospace;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;user-select:none;flex-shrink:0}
+.btn:hover{background:rgba(0,229,255,0.15);border-color:rgba(0,229,255,0.4)}
 .btn:active{transform:scale(0.9)}
 .btn.sm{width:26px;height:26px;font-size:.75rem;border-radius:5px}
 .eq-slider{flex:1;display:flex;flex-direction:column;gap:2px;min-width:60px}
@@ -188,8 +188,8 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;cur
 input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 #slV::-webkit-slider-thumb{background:#E74C3C;box-shadow:0 2px 7px rgba(231,76,60,.6)}
 #slV::-moz-range-thumb{background:#E74C3C}
-#slR::-webkit-slider-thumb{background:#E5B84B;box-shadow:0 2px 7px rgba(229,184,75,.6)}
-#slR::-moz-range-thumb{background:#E5B84B}
+#slR::-webkit-slider-thumb{background:#5CF0FF;box-shadow:0 2px 7px rgba(92,240,255,.6)}
+#slR::-moz-range-thumb{background:#5CF0FF}
 #slA::-webkit-slider-thumb{background:#2ECC71;box-shadow:0 2px 7px rgba(46,204,113,.6)}
 #slA::-moz-range-thumb{background:#2ECC71}
 #slB::-webkit-slider-thumb{background:#F1C40F;box-shadow:0 2px 7px rgba(241,196,15,.6)}
@@ -197,11 +197,11 @@ input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 
 /* Price table */
 .ptbl{width:100%;border-collapse:collapse;font-size:.76rem}
-.ptbl th{background:rgba(200,152,42,0.08);color:var(--g);font-weight:600;padding:6px 8px;font-size:.66rem;border-bottom:1px solid rgba(200,152,42,0.15);text-align:center}
-.ptbl td{padding:4px 6px;border-bottom:1px solid rgba(200,152,42,0.05);text-align:center}
-.ptbl input{width:70px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:5px 4px;outline:none;transition:border .15s}
+.ptbl th{background:rgba(0,229,255,0.08);color:var(--g);font-weight:600;padding:6px 8px;font-size:.66rem;border-bottom:1px solid rgba(0,229,255,0.15);text-align:center}
+.ptbl td{padding:4px 6px;border-bottom:1px solid rgba(0,229,255,0.05);text-align:center}
+.ptbl input{width:70px;background:var(--nl);border:1px solid rgba(0,229,255,0.2);border-radius:5px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:5px 4px;outline:none;transition:border .15s}
 .ptbl input:focus{border-color:var(--gl)}
-.ptbl .tot{background:rgba(200,152,42,0.06);font-weight:700}
+.ptbl .tot{background:rgba(0,229,255,0.06);font-weight:700}
 
 /* Layout */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -230,19 +230,19 @@ input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 .sum-box .ss{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--tm);margin-top:2px}
 
 table.sc{width:100%;border-collapse:collapse;font-size:.72rem}
-table.sc th{background:rgba(200,152,42,0.08);color:var(--g);font-weight:600;padding:5px 7px;text-align:left;font-size:.64rem;border-bottom:1px solid rgba(200,152,42,0.15)}
-table.sc td{padding:4px 7px;border-bottom:1px solid rgba(200,152,42,0.04);font-family:'DM Mono',monospace}
+table.sc th{background:rgba(0,229,255,0.08);color:var(--g);font-weight:600;padding:5px 7px;text-align:left;font-size:.64rem;border-bottom:1px solid rgba(0,229,255,0.15)}
+table.sc td{padding:4px 7px;border-bottom:1px solid rgba(0,229,255,0.04);font-family:'DM Mono',monospace}
 table.sc .r{text-align:right}
 
-.note{border-left:3px solid var(--g);background:rgba(200,152,42,0.05);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.72rem;color:var(--tm);line-height:1.5;margin-top:8px}
+.note{border-left:3px solid var(--g);background:rgba(0,229,255,0.05);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.72rem;color:var(--tm);line-height:1.5;margin-top:8px}
 .note.ok{border-color:var(--gr);background:rgba(46,204,113,0.06)}
 .note.wn{border-color:var(--or);background:rgba(243,156,18,0.06)}
 .note.bad{border-color:var(--rd);background:rgba(231,76,60,0.06)}
 
 .presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-.presets button{background:rgba(200,152,42,0.05);border:1px solid rgba(200,152,42,0.1);border-radius:5px;padding:5px 8px;cursor:pointer;color:var(--t);font-family:inherit;font-size:.68rem;transition:all .12s}
-.presets button:hover{border-color:rgba(200,152,42,0.35)}
-.presets button.act{background:rgba(200,152,42,0.18);border-color:rgba(200,152,42,0.45);color:var(--gl);font-weight:700}
+.presets button{background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.1);border-radius:5px;padding:5px 8px;cursor:pointer;color:var(--t);font-family:inherit;font-size:.68rem;transition:all .12s}
+.presets button:hover{border-color:rgba(0,229,255,0.35)}
+.presets button.act{background:rgba(0,229,255,0.18);border-color:rgba(0,229,255,0.45);color:var(--gl);font-weight:700}
 
 .footer{text-align:center;padding:14px 0;font-size:.58rem;color:var(--tm);opacity:.4}
 @media(max-width:700px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.g5{grid-template-columns:repeat(3,1fr)}.eq-info{display:none}}
@@ -330,7 +330,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </div>
   <div>
     <span class="badge" style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);color:#2ECC71">Web App</span>
-    <span class="badge" style="background:var(--gd);border:1px solid rgba(200,152,42,0.25);color:var(--g)">Interactive</span>
+    <span class="badge" style="background:var(--gd);border:1px solid rgba(0,229,255,0.25);color:var(--g)">Interactive</span>
     <a href="#guide" style="text-decoration:none"><span class="badge" style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.25);color:#3498DB;cursor:pointer">📖 คู่มือ</span></a>
   </div>
 </div>
@@ -368,7 +368,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
       <div class="eq-lbl" style="color:var(--gl)">💰 ราคาซื้อ RM</div>
       <button class="btn" onclick="adj('r',-5)">−5</button>
       <button class="btn sm" onclick="adj('r',-1)">−</button>
-      <div class="eq-slider"><input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#E5B84B"><div class="eq-mm"><span>35</span><span>75</span></div></div>
+      <div class="eq-slider"><input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#5CF0FF"><div class="eq-mm"><span>35</span><span>75</span></div></div>
       <div class="eq-val" style="color:var(--gl)" id="rVal">50</div>
       <button class="btn sm" onclick="adj('r',1)">+</button>
       <button class="btn" onclick="adj('r',5)">+5</button>
@@ -425,7 +425,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   </table>
   <div style="margin-top:8px;display:flex;align-items:center;gap:10px;font-size:.76rem">
     <span style="color:var(--tm)">ต้นทุนผลิต/kg FG:</span>
-    <input id="pProd" type="number" value="52" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
+    <input id="pProd" type="number" value="52" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(0,229,255,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
     <span style="color:var(--tm)">฿/kg FG</span>
   </div>
 </div>
@@ -441,7 +441,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
       </div>
       <div class="gauge-labels"><span>40</span><span class="mn" id="gV" style="font-weight:700">--</span><span>80</span></div>
       <div class="gauge"><div class="gauge-fill" id="gF"></div><div class="gauge-pin" id="gP"></div></div>
-      <div style="position:relative;height:12px"><div id="rmPin" style="position:absolute;font-family:'DM Mono',monospace;font-size:.55rem;font-weight:700;transform:translateX(-50%);transition:left .2s"><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid #E5B84B;margin:0 auto"></div><span style="color:var(--gl)" id="rmPL"></span></div></div>
+      <div style="position:relative;height:12px"><div id="rmPin" style="position:absolute;font-family:'DM Mono',monospace;font-size:.55rem;font-weight:700;transform:translateX(-50%);transition:left .2s"><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid #5CF0FF;margin:0 auto"></div><span style="color:var(--gl)" id="rmPL"></span></div></div>
     </div>
     <div>
       <div id="stBox" style="text-align:center;padding:14px;border-radius:8px;margin-bottom:6px">
@@ -468,7 +468,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
 <!-- ===== SCENARIO ===== -->
 <div class="card">
   <div class="stitle">🔮 Scenario Analysis</div>
-  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15)">⏳ กำลังโหลดผลผลิตจริง (actual) จากชีท %A DURAIN…</div>
+  <div id="actBadge" style="font-size:.6rem;color:var(--tm);margin-bottom:6px;padding:4px 8px;border-radius:5px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15)">⏳ กำลังโหลดผลผลิตจริง (actual) จากชีท %A DURAIN…</div>
   <div style="font-size:.66rem;color:var(--tm);margin-bottom:6px" id="scS"></div>
   <div style="overflow-x:auto"><table class="sc" id="scT"></table></div>
 </div>
@@ -494,14 +494,14 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
       <button class="pl-qbtn qbtn-pl" data-days="0" onclick="setPlRange(0)">ทั้งหมด</button>
     </div>
     <span class="pl-range-band" id="plBand" style="display:none"></span>
-    <div id="plSrcBadge" style="margin-left:auto;font-size:.58rem;color:var(--tm);background:rgba(200,152,42,.06);border:1px solid rgba(200,152,42,.15);border-radius:5px;padding:3px 8px">⏳ รอดึงข้อมูล…</div>
+    <div id="plSrcBadge" style="margin-left:auto;font-size:.58rem;color:var(--tm);background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:5px;padding:3px 8px">⏳ รอดึงข้อมูล…</div>
   </div>
 
   <!-- lag note -->
   <div class="pl-lag-note">
     <strong style="color:#1ABC9C">⏳ Lag 8 วัน:</strong>
     FG ที่ผลิตวันที่ <strong>P</strong> → ใช้ราคาซื้อจากชีท <code style="font-family:'DM Mono',monospace;background:rgba(26,188,156,.1);border-radius:3px;padding:1px 5px;color:#1ABC9C">ราคาทุเรียน</code> วันที่ <strong>P − 8</strong> เป็นต้นทุน RM ·
-    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(200,152,42,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = ดิบ(kg) ÷ 0.85 × ราคาซื้อจริง(P−8)</code> <span style="color:var(--tm)">(ปริมาณวัตถุดิบแท้จริงอิง recovery = ดิบ ÷ (1−loss))</span> ·
+    สูตร: <code style="font-family:'DM Mono',monospace;background:rgba(0,229,255,.1);border-radius:3px;padding:1px 5px;color:var(--gl)">RM = ดิบ(kg) ÷ 0.82 × ราคาซื้อจริง(P−8)</code> <span style="color:var(--tm)">(ปริมาณวัตถุดิบแท้จริงอิง recovery = ดิบ ÷ (1−loss))</span> ·
     <span style="color:var(--or)">★ ช่องสีเหลือง</span> = ไม่พบราคาวัน (P−8) → ใช้ราคาเฉลี่ยทั้งฤดู <strong>58.38 ฿/kg</strong>
   </div>
 
@@ -533,7 +533,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
   <div id="plTableWrap" style="display:none">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:.78rem;font-weight:700;color:var(--w)" id="plRangeLabel"></span>
-      <span style="font-family:'DM Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:10px;background:rgba(200,152,42,.1);border:1px solid rgba(200,152,42,.2);color:var(--gl)" id="plDaysPill"></span>
+      <span style="font-family:'DM Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:10px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--gl)" id="plDaysPill"></span>
       <span id="plFbPill" style="font-family:'DM Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:10px;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.22);color:var(--or);display:none"></span>
     </div>
     <div class="pl-legend"><div class="pl-legend-box"></div>ช่องสีเหลือง (★) = ไม่พบราคาซื้อวันที่ (P−8) → ใช้ fallback 58.38 ฿/kg</div>
@@ -600,7 +600,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     </div>
   </div>
 
-  <div id="rptLatest" class="rpt-noprint" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
+  <div id="rptLatest" class="rpt-noprint" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.18);border-radius:8px;font-size:.75rem;line-height:1.8"></div>
   <div id="rptStatus" style="font-size:.75rem;color:var(--tm);padding:4px 0">กำลังเตรียมข้อมูล… (เชื่อมต่อ Microsoft 365 เพื่อโหลดข้อมูลจริง)</div>
   <div id="rptSummary" style="display:none"></div>
 </div>
@@ -647,7 +647,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
     <div style="margin-top:14px">
 
       <!-- ภาพรวม -->
-      <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
         <div style="font-weight:700;color:var(--w);font-size:.84rem;margin-bottom:6px">🎯 ระบบนี้ใช้ทำอะไร?</div>
         <div style="font-size:.76rem;line-height:1.7;color:var(--t)">
           เครื่องมือจำลองต้นทุน-กำไรทุเรียน สำหรับ<strong style="color:var(--gl)">วางแผนจัดซื้อ</strong>และ<strong style="color:var(--gl)">ประเมินผลประกอบการ</strong>ล่วงหน้า<br>
@@ -732,7 +732,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
             <div style="font-size:.64rem;color:var(--tm);margin-top:2px">ราคาซื้อเกิน BE<br>ต้องลดราคาหรือดัน %A</div>
           </div>
         </div>
-        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(200,152,42,0.06);padding:8px 12px;border-radius:6px">
+        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(0,229,255,0.06);padding:8px 12px;border-radius:6px">
           💡 <strong>แถบ Gauge:</strong> เส้นขาว = จุด Break-Even / สามเหลี่ยมทอง ▲ = ราคาซื้อที่ตั้ง — ถ้าสามเหลี่ยมอยู่ซ้ายเส้นขาว = ยังกำไร, อยู่ขวา = ขาดทุน
         </div>
       </div>
@@ -785,7 +785,7 @@ var st,ct,ut,lt,dt,ht,pt,gt,ft,mt=function(){function t(e,t,r){this.networkInter
             <div style="font-size:.74rem;font-weight:700;color:#E74C3C">ทุก +5 ฿ ราคาซื้อ</div>
             <div style="font-size:.68rem;color:var(--t);margin-top:3px">ต้องการ %A เพิ่ม ~11%<br>จึงจะยังไม่ขาดทุน</div>
           </div>
-          <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.12);border-radius:6px;padding:10px">
+          <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.12);border-radius:6px;padding:10px">
             <div style="font-size:.74rem;font-weight:700;color:var(--gl)">Grade A คือตัวชี้ขาด</div>
             <div style="font-size:.68rem;color:var(--t);margin-top:3px">%A กระทบกำไรมากกว่า<br>ราคาซื้อที่ขยับเท่ากัน</div>
           </div>
@@ -934,11 +934,11 @@ function up(){
   const minA=Math.max(0,((rm1+FG*prod)/FG-nonABV)/(P.A-nonABV)*100);
 
   $("topK").innerHTML=[
-    {l:"BV ฿/kg FG",v:fmt(bv),c:"#E5B84B"},
+    {l:"BV ฿/kg FG",v:fmt(bv),c:"#5CF0FF"},
     {l:"Margin",v:fmt(mg1,1)+"%",c:isPf?(mg1>=10?"#2ECC71":"#F39C12"):"#E74C3C"},
     {l:`%A ขั้นต่ำ(RM${rm})`,v:fmt(minA,1)+"%",c:minA<=aV?"#2ECC71":"#E74C3C"},
-    {l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#E5B84B":"#E74C3C"},
-  ].map(k=>`<div class="kpi" style="background:rgba(200,152,42,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
+    {l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#5CF0FF":"#E74C3C"},
+  ].map(k=>`<div class="kpi" style="background:rgba(0,229,255,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
 
   // ผลประกอบการ
   $("sumVol").textContent=`${fmt(vol/1000,vol%1000===0?0:1)} ตัน (RM ${rm} ฿/kg)`;
@@ -946,7 +946,7 @@ function up(){
   $("sumC").innerHTML=[
     {l:"วงเงินลงทุนรวม",v:fmt(tC/1e6,2)+"M",s:`RM${fmt(tRM/1e6,0)}+ผลิต${fmt(tPd/1e6,0)}`,bg:"rgba(52,152,219,0.07)",bc:"rgba(52,152,219,0.18)",c:"#3498DB"},
     {l:"ประมาณการรายได้",v:fmt(tRv/1e6,2)+"M",s:`${fmt(tFG/1000,1)}t × ${fmt(bv)}฿`,bg:"rgba(46,204,113,0.07)",bc:"rgba(46,204,113,0.18)",c:"#2ECC71"},
-    {l:"กำไร / Margin",v:fmt(tPf/1e6,2)+"M",s:`${fmt(tMg,1)}%`,bg:tPf>=0?"rgba(200,152,42,0.07)":"rgba(231,76,60,0.07)",bc:tPf>=0?"rgba(200,152,42,0.2)":"rgba(231,76,60,0.2)",c:pC},
+    {l:"กำไร / Margin",v:fmt(tPf/1e6,2)+"M",s:`${fmt(tMg,1)}%`,bg:tPf>=0?"rgba(0,229,255,0.07)":"rgba(231,76,60,0.07)",bc:tPf>=0?"rgba(0,229,255,0.2)":"rgba(231,76,60,0.2)",c:pC},
   ].map(k=>`<div class="sum-box" style="background:${k.bg};border:1px solid ${k.bc}"><div class="sl">${k.l}</div><div class="sv" style="color:${k.c}">${k.v}</div><div class="ss">${k.s}</div></div>`).join("");
 
   let r=`<thead><tr><th>รายการ</th><th class="r">ปริมาณ</th><th class="r">ล้าน฿</th></tr></thead><tbody>`;
@@ -956,12 +956,12 @@ function up(){
   r+=`<tr style="background:rgba(46,204,113,0.04)"><td style="font-weight:700;color:#2ECC71">รายได้รวม</td><td class="r" style="font-weight:700">${fmt(tFG,0)}</td><td class="r" style="font-weight:700;color:#2ECC71">${fmt(tRv/1e6)}</td></tr>`;
   r+=`<tr><td>ต้นทุน RM</td><td class="r">${fmt(vol/1e6,2)}M × ${rm}฿</td><td class="r" style="color:#E74C3C">−${fmt(tRM/1e6)}</td></tr>`;
   r+=`<tr><td>ต้นทุนผลิต</td><td class="r">${fmt(tFG/1000,1)}t × ${prod}฿</td><td class="r" style="color:#E74C3C">−${fmt(tPd/1e6)}</td></tr>`;
-  r+=`<tr style="background:rgba(200,152,42,0.06)"><td style="font-weight:800;color:${pC}">กำไรสุทธิ</td><td class="r">—</td><td class="r" style="font-weight:800;color:${pC}">${fmt(tPf/1e6)}</td></tr></tbody>`;
+  r+=`<tr style="background:rgba(0,229,255,0.06)"><td style="font-weight:800;color:${pC}">กำไรสุทธิ</td><td class="r">—</td><td class="r" style="font-weight:800;color:${pC}">${fmt(tPf/1e6)}</td></tr></tbody>`;
   $("sumT").innerHTML=r;
 
   // P&L per 100
-  $("pl1").innerHTML=[{l:"รายได้",v:fmt(rev1),c:"#2ECC71"},{l:"ต้นทุน RM",v:fmt(rm1),c:"#E74C3C"},{l:"ต้นทุนผลิต",v:fmt(pc1),c:"#E74C3C"},{l:"กำไร",v:fmt(pf1),c:isPf?"#E5B84B":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(200,152,42,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
-  $("pl2").innerHTML=[{l:"รายได้/kgFG",v:fmt(bv),c:"#2ECC71"},{l:"RM/kgFG",v:fmt(rm1/FG),c:"#E74C3C"},{l:"ผลิต/kgFG",v:fmt(prod),c:"#E74C3C"},{l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#E5B84B":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(26,188,156,0.04);border:1px solid rgba(26,188,156,0.08)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l" style="color:#1ABC9C">${k.l}</div></div>`).join("");
+  $("pl1").innerHTML=[{l:"รายได้",v:fmt(rev1),c:"#2ECC71"},{l:"ต้นทุน RM",v:fmt(rm1),c:"#E74C3C"},{l:"ต้นทุนผลิต",v:fmt(pc1),c:"#E74C3C"},{l:"กำไร",v:fmt(pf1),c:isPf?"#5CF0FF":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(0,229,255,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
+  $("pl2").innerHTML=[{l:"รายได้/kgFG",v:fmt(bv),c:"#2ECC71"},{l:"RM/kgFG",v:fmt(rm1/FG),c:"#E74C3C"},{l:"ผลิต/kgFG",v:fmt(prod),c:"#E74C3C"},{l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#5CF0FF":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(26,188,156,0.04);border:1px solid rgba(26,188,156,0.08)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l" style="color:#1ABC9C">${k.l}</div></div>`).join("");
 
   const nd=$("sumN");
   if(oBE)nd.innerHTML=`<div class="note bad"><strong>❌ RM ${rm}฿ > BE ${fmt(be)}฿</strong> — ขาดทุน <strong>${fmt(Math.abs(tPf/1e6))}M</strong> | ต้องลด RM หรือ ดัน %A ขึ้น</div>`;
@@ -976,11 +976,11 @@ function up(){
     [45,50,55,60,65,70].forEach(p=>{
       const rc=rem*p,tr=AC+rc,pf=(tRv-tr-tPd)/1e6,mg=tRv>0?pf/(tRv/1e6)*100:0,bl=tr/vol;
       const ng=pf<0,lo=mg<5&&mg>=0,ob=p>mRP,cl=ng?"#E74C3C":lo?"#F39C12":"#2ECC71";
-      t+=`<tr style="background:${ob?"rgba(231,76,60,0.04)":p===55?"rgba(200,152,42,0.05)":"transparent"}">
+      t+=`<tr style="background:${ob?"rgba(231,76,60,0.04)":p===55?"rgba(0,229,255,0.05)":"transparent"}">
         <td style="font-weight:600;color:${ob?"#E74C3C":"#D4CBB8"}">${p}฿${p===55?" ◀เฉลี่ย":ob?" ⚠️":""}</td>
         <td class="r">${fmt(bl)}</td><td class="r" style="font-weight:700;color:${cl}">${ng?"":"+"} ${fmt(pf)}</td>
         <td class="r" style="color:${cl}">${fmt(mg,1)}%</td>
-        <td class="r"><div style="width:50px;height:5px;background:#1A3352;border-radius:3px;overflow:hidden;display:inline-block"><div style="width:${Math.max(0,Math.min(100,mg/25*100))}%;height:100%;background:${cl};border-radius:3px"></div></div></td></tr>`;
+        <td class="r"><div style="width:50px;height:5px;background:#1A1F3E;border-radius:3px;overflow:hidden;display:inline-block"><div style="width:${Math.max(0,Math.min(100,mg/25*100))}%;height:100%;background:${cl};border-radius:3px"></div></div></td></tr>`;
     });
   }else{t+=`<tr><td colspan="5" style="text-align:center;color:var(--tm);padding:12px">ปริมาณน้อยกว่ายอดซื้อจริง — ไม่แสดง scenario</td></tr>`;}
   $("scT").innerHTML=t+"</tbody>";
@@ -1012,14 +1012,14 @@ const SP = {
 const ACTUAL_SHEET = "%A DURAIN";
 const RM_SHEET = "ราคาทุเรียน";   // ชีทราคารับซื้อจริง (ปริมาณต่อเกรด + มูลค่า + ราคาเฉลี่ย) สำหรับคำนวณราคา/kg
 const APP_BUILD = "grade8-workbook";  // ตัวบอกเวอร์ชัน ไว้ยืนยันว่าเบราว์เซอร์โหลดโค้ดใหม่แล้ว
-try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#C8982A;font-weight:700"); }catch(e){}
+try{ console.log("%c[FF Durian] build "+APP_BUILD, "color:#00E5FF;font-weight:700"); }catch(e){}
 
 const badge = $("actBadge");
 let ACTUAL=null;   // ผลผลิตจริงล่าสุดที่ดึงมา (สำหรับปุ่ม "ใช้ค่า actual")
 let ACTUAL_RM=null;// ข้อมูลรับซื้อจริงจาก RM-RECIVE (kg, value, avg)
 function setBadge(html,kind){
   if(!badge) return;
-  const c = kind==="ok"?"46,204,113":kind==="warn"?"243,156,18":kind==="err"?"231,76,60":"200,152,42";
+  const c = kind==="ok"?"46,204,113":kind==="warn"?"243,156,18":kind==="err"?"231,76,60":"0,229,255";
   badge.style.background=`rgba(${c},0.07)`;badge.style.border=`1px solid rgba(${c},0.18)`;
   badge.innerHTML=html;
 }
@@ -1283,7 +1283,7 @@ const PL_CFG = {
   lag: 8,
   sell: {A:320, B:225, C:135, BK:90, D:60},
   mfg: 52,
-  loss: 0.15,
+  loss: 0.18,
   fallback: 58.38
 };
 
@@ -1501,7 +1501,7 @@ function renderDailyPL(fromDate, toDate){
     // ฐานต้นทุน RM = น้ำหนักดิบ (ก่อนปอก); ถ้าไม่มีคอลัมน์ดิบ fallback เป็น FG
     const rmBase = raw>0 ? raw : fg;
     const rev = A*SELL.A + B*SELL.B + C*SELL.C + D*SELL.D + BK*SELL.BK;
-    // ปริมาณวัตถุดิบที่แท้จริง = ดิบ ÷ recovery factor (÷0.85) = ทุเรียนสดที่ซื้อ → คูณราคาซื้อจริง P−8
+    // ปริมาณวัตถุดิบที่แท้จริง = ดิบ ÷ recovery factor (÷0.82 @ loss 18%) = ทุเรียนสดที่ซื้อ → คูณราคาซื้อจริง P−8
     const rmCost = rmBase*price/(1-LOSS);
     const mfg    = fg*MFG;
     const pl     = rev-rmCost-mfg;
@@ -1574,7 +1574,7 @@ function renderDailyPL(fromDate, toDate){
   const fbCount=rows.filter(r=>r.isFb).length;
   document.getElementById('kplRM').textContent=fmtM(T.rmCost);
   document.getElementById('kplRM').style.color=tp?'var(--gl)':'var(--rd)';
-  document.getElementById('kplRMsub').textContent=`ราคาซื้อจริง avg ${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,1)} ฿/kg | ดิบ ÷0.85 (recovery) | ดิบรวม ${fmtN(T.raw,0)} kg`;
+  document.getElementById('kplRMsub').textContent=`ราคาซื้อจริง avg ${fmtN(T.raw>0?T.rmCost*(1-LOSS)/T.raw:0,1)} ฿/kg | ดิบ ÷${fmtN(1-LOSS,2)} (recovery, loss ${fmtN(LOSS*100,0)}%) | ดิบรวม ${fmtN(T.raw,0)} kg`;
   document.getElementById('kplMfg').textContent=fmtM(T.mfg);
   document.getElementById('kplMfgSub').textContent=`FG รวม ${fmtN(T.fg,0)} kg`;
   document.getElementById('kplRev').textContent=fmtM(T.rev);
@@ -1767,7 +1767,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   },0)/rmPurchasedKg:0;
 
   // ── derived executive metrics (มุมมองแบบ ff_durian_pnl_final) ──
-  const effRM   = T.raw>0 ? T.rmCost*(1-LOSS)/T.raw : 0;   // ราคาซื้อจริง เฉลี่ยถ่วงน้ำหนัก ฿/kg (rmCost grossed → ×0.85 = ราคาจริง)
+  const effRM   = T.raw>0 ? T.rmCost*(1-LOSS)/T.raw : 0;   // ราคาซื้อจริง เฉลี่ยถ่วงน้ำหนัก ฿/kg (rmCost grossed → ×(1−loss)=×0.82 = ราคาจริง)
   const breakEv = T.raw>0 ? (T.rev-T.mfg)*(1-LOSS)/T.raw : 0; // จุดคุ้มทุน (ราคาซื้อจริงสูงสุดที่คุ้ม) ฿/kg
   const excess  = effRM - breakEv;                          // +เกิน BE / −ต่ำกว่า BE
   const overBE  = excess>0;
@@ -1778,7 +1778,7 @@ function renderTextReport(rows, T, SELL, MFG, LOSS, minD, maxD){
   const recovery= T.raw>0 ? T.fg/T.raw*100 : 0;            // Recovery (%ออก) = FG ÷ ดิบเข้าผลิต (30-37%)
   const peelYield = recovery;                              // alias
   const yieldP  = recovery;                                // alias
-  const sodKg   = T.raw/(1-LOSS);                           // น้ำหนักซื้อ (ทุเรียนสด) = ดิบเข้าผลิต ÷ 0.85 (ใช้คิดต้นทุน)
+  const sodKg   = T.raw/(1-LOSS);                           // น้ำหนักซื้อ (ทุเรียนสด) = ดิบเข้าผลิต ÷ 0.82 (loss 18%, ใช้คิดต้นทุน)
   const plPer100= T.raw>0 ? T.pl/T.raw*100 : 0;           // P&L ต่อดิบเข้าผลิต 100 kg
   // ราคาซื้อ ณ "วันผลิต" (ไม่หัก lag) — ไว้เทียบกับราคา P−8 ที่ใช้เป็นต้นทุน
   let prodNum=0, prodDen=0;

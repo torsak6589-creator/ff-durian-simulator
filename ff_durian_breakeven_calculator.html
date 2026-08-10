@@ -6,13 +6,13 @@
 <title>FF Durian — Break-Even Simulator 2569</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
-:root{--nv:#0D1B2E;--nm:#132840;--nl:#1A3352;--g:#C8982A;--gl:#E5B84B;--gd:rgba(200,152,42,0.15);--w:#F5F0E8;--t:#D4CBB8;--tm:#8A8070;--gr:#2ECC71;--rd:#E74C3C;--or:#F39C12;--bl:#3498DB;--cy:#1ABC9C}
+:root{--nv:#0A0F1E;--nm:#141A33;--nl:#1A1F3E;--g:#00E5FF;--gl:#5CF0FF;--gd:rgba(0,229,255,0.15);--w:#E8ECF1;--t:#C3CBD6;--tm:#6B7A8D;--gr:#00D68F;--rd:#FF4757;--or:#FFB800;--bl:#7B61FF;--cy:#00E5FF}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t);min-height:100vh;padding:16px 12px 60px}
 .pg{max-width:1060px;margin:0 auto}
 .mn{font-family:'DM Mono',monospace}
-.card{background:var(--nm);border:1px solid rgba(200,152,42,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
-.card.hi{border-color:rgba(200,152,42,0.28)}
+.card{background:var(--nm);border:1px solid rgba(0,229,255,0.12);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card.hi{border-color:rgba(0,229,255,0.28)}
 .hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .hd h1{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--g);margin:0}
 .hd p{font-size:.68rem;color:var(--tm);margin:2px 0 0}
@@ -25,8 +25,8 @@ body{font-family:'Noto Sans Thai',sans-serif;background:var(--nv);color:var(--t)
 .eq-lbl{min-width:100px;font-weight:700;font-size:.76rem}
 .eq-val{font-family:'DM Mono',monospace;font-size:1rem;font-weight:800;min-width:55px;text-align:center}
 .eq-info{font-family:'DM Mono',monospace;font-size:.64rem;color:var(--tm);margin-left:6px;white-space:nowrap}
-.btn{width:30px;height:30px;border-radius:6px;border:1px solid rgba(200,152,42,0.2);background:var(--nl);color:var(--w);font-family:'DM Mono',monospace;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;user-select:none;flex-shrink:0}
-.btn:hover{background:rgba(200,152,42,0.15);border-color:rgba(200,152,42,0.4)}
+.btn{width:30px;height:30px;border-radius:6px;border:1px solid rgba(0,229,255,0.2);background:var(--nl);color:var(--w);font-family:'DM Mono',monospace;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;user-select:none;flex-shrink:0}
+.btn:hover{background:rgba(0,229,255,0.15);border-color:rgba(0,229,255,0.4)}
 .btn:active{transform:scale(0.9)}
 .btn.sm{width:26px;height:26px;font-size:.75rem;border-radius:5px}
 .eq-slider{flex:1;display:flex;flex-direction:column;gap:2px;min-width:60px}
@@ -38,8 +38,8 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;cur
 input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 #slV::-webkit-slider-thumb{background:#E74C3C;box-shadow:0 2px 7px rgba(231,76,60,.6)}
 #slV::-moz-range-thumb{background:#E74C3C}
-#slR::-webkit-slider-thumb{background:#E5B84B;box-shadow:0 2px 7px rgba(229,184,75,.6)}
-#slR::-moz-range-thumb{background:#E5B84B}
+#slR::-webkit-slider-thumb{background:#5CF0FF;box-shadow:0 2px 7px rgba(92,240,255,.6)}
+#slR::-moz-range-thumb{background:#5CF0FF}
 #slA::-webkit-slider-thumb{background:#2ECC71;box-shadow:0 2px 7px rgba(46,204,113,.6)}
 #slA::-moz-range-thumb{background:#2ECC71}
 #slB::-webkit-slider-thumb{background:#F1C40F;box-shadow:0 2px 7px rgba(241,196,15,.6)}
@@ -47,11 +47,11 @@ input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 
 /* Price table */
 .ptbl{width:100%;border-collapse:collapse;font-size:.76rem}
-.ptbl th{background:rgba(200,152,42,0.08);color:var(--g);font-weight:600;padding:6px 8px;font-size:.66rem;border-bottom:1px solid rgba(200,152,42,0.15);text-align:center}
-.ptbl td{padding:4px 6px;border-bottom:1px solid rgba(200,152,42,0.05);text-align:center}
-.ptbl input{width:70px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:5px 4px;outline:none;transition:border .15s}
+.ptbl th{background:rgba(0,229,255,0.08);color:var(--g);font-weight:600;padding:6px 8px;font-size:.66rem;border-bottom:1px solid rgba(0,229,255,0.15);text-align:center}
+.ptbl td{padding:4px 6px;border-bottom:1px solid rgba(0,229,255,0.05);text-align:center}
+.ptbl input{width:70px;background:var(--nl);border:1px solid rgba(0,229,255,0.2);border-radius:5px;color:var(--gl);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:5px 4px;outline:none;transition:border .15s}
 .ptbl input:focus{border-color:var(--gl)}
-.ptbl .tot{background:rgba(200,152,42,0.06);font-weight:700}
+.ptbl .tot{background:rgba(0,229,255,0.06);font-weight:700}
 
 /* Layout */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -80,19 +80,19 @@ input[type=range]::-moz-range-thumb:active{cursor:grabbing}
 .sum-box .ss{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--tm);margin-top:2px}
 
 table.sc{width:100%;border-collapse:collapse;font-size:.72rem}
-table.sc th{background:rgba(200,152,42,0.08);color:var(--g);font-weight:600;padding:5px 7px;text-align:left;font-size:.64rem;border-bottom:1px solid rgba(200,152,42,0.15)}
-table.sc td{padding:4px 7px;border-bottom:1px solid rgba(200,152,42,0.04);font-family:'DM Mono',monospace}
+table.sc th{background:rgba(0,229,255,0.08);color:var(--g);font-weight:600;padding:5px 7px;text-align:left;font-size:.64rem;border-bottom:1px solid rgba(0,229,255,0.15)}
+table.sc td{padding:4px 7px;border-bottom:1px solid rgba(0,229,255,0.04);font-family:'DM Mono',monospace}
 table.sc .r{text-align:right}
 
-.note{border-left:3px solid var(--g);background:rgba(200,152,42,0.05);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.72rem;color:var(--tm);line-height:1.5;margin-top:8px}
+.note{border-left:3px solid var(--g);background:rgba(0,229,255,0.05);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.72rem;color:var(--tm);line-height:1.5;margin-top:8px}
 .note.ok{border-color:var(--gr);background:rgba(46,204,113,0.06)}
 .note.wn{border-color:var(--or);background:rgba(243,156,18,0.06)}
 .note.bad{border-color:var(--rd);background:rgba(231,76,60,0.06)}
 
 .presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-.presets button{background:rgba(200,152,42,0.05);border:1px solid rgba(200,152,42,0.1);border-radius:5px;padding:5px 8px;cursor:pointer;color:var(--t);font-family:inherit;font-size:.68rem;transition:all .12s}
-.presets button:hover{border-color:rgba(200,152,42,0.35)}
-.presets button.act{background:rgba(200,152,42,0.18);border-color:rgba(200,152,42,0.45);color:var(--gl);font-weight:700}
+.presets button{background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.1);border-radius:5px;padding:5px 8px;cursor:pointer;color:var(--t);font-family:inherit;font-size:.68rem;transition:all .12s}
+.presets button:hover{border-color:rgba(0,229,255,0.35)}
+.presets button.act{background:rgba(0,229,255,0.18);border-color:rgba(0,229,255,0.45);color:var(--gl);font-weight:700}
 
 .footer{text-align:center;padding:14px 0;font-size:.58rem;color:var(--tm);opacity:.4}
 @media(max-width:700px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.g5{grid-template-columns:repeat(3,1fr)}.eq-info{display:none}}
@@ -108,7 +108,7 @@ table.sc .r{text-align:right}
   </div>
   <div>
     <span class="badge" style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);color:#2ECC71">Web App</span>
-    <span class="badge" style="background:var(--gd);border:1px solid rgba(200,152,42,0.25);color:var(--g)">Interactive</span>
+    <span class="badge" style="background:var(--gd);border:1px solid rgba(0,229,255,0.25);color:var(--g)">Interactive</span>
     <a href="#guide" style="text-decoration:none"><span class="badge" style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.25);color:#3498DB;cursor:pointer">📖 คู่มือ</span></a>
   </div>
 </div>
@@ -137,7 +137,7 @@ table.sc .r{text-align:right}
       <div class="eq-lbl" style="color:var(--gl)">💰 ราคาซื้อ RM</div>
       <button class="btn" onclick="adj('r',-5)">−5</button>
       <button class="btn sm" onclick="adj('r',-1)">−</button>
-      <div class="eq-slider"><input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#E5B84B"><div class="eq-mm"><span>35</span><span>75</span></div></div>
+      <div class="eq-slider"><input type="range" id="slR" min="35" max="75" value="50" style="accent-color:#5CF0FF"><div class="eq-mm"><span>35</span><span>75</span></div></div>
       <div class="eq-val" style="color:var(--gl)" id="rVal">50</div>
       <button class="btn sm" onclick="adj('r',1)">+</button>
       <button class="btn" onclick="adj('r',5)">+5</button>
@@ -194,7 +194,7 @@ table.sc .r{text-align:right}
   </table>
   <div style="margin-top:8px;display:flex;align-items:center;gap:10px;font-size:.76rem">
     <span style="color:var(--tm)">ต้นทุนผลิต/kg FG:</span>
-    <input id="pProd" type="number" value="47" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(200,152,42,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
+    <input id="pProd" type="number" value="47" onchange="up()" style="width:60px;background:var(--nl);border:1px solid rgba(0,229,255,0.2);border-radius:5px;color:var(--rd);font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;padding:4px;outline:none">
     <span style="color:var(--tm)">฿/kg FG</span>
   </div>
 </div>
@@ -210,7 +210,7 @@ table.sc .r{text-align:right}
       </div>
       <div class="gauge-labels"><span>40</span><span class="mn" id="gV" style="font-weight:700">--</span><span>80</span></div>
       <div class="gauge"><div class="gauge-fill" id="gF"></div><div class="gauge-pin" id="gP"></div></div>
-      <div style="position:relative;height:12px"><div id="rmPin" style="position:absolute;font-family:'DM Mono',monospace;font-size:.55rem;font-weight:700;transform:translateX(-50%);transition:left .2s"><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid #E5B84B;margin:0 auto"></div><span style="color:var(--gl)" id="rmPL"></span></div></div>
+      <div style="position:relative;height:12px"><div id="rmPin" style="position:absolute;font-family:'DM Mono',monospace;font-size:.55rem;font-weight:700;transform:translateX(-50%);transition:left .2s"><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid #5CF0FF;margin:0 auto"></div><span style="color:var(--gl)" id="rmPL"></span></div></div>
     </div>
     <div>
       <div id="stBox" style="text-align:center;padding:14px;border-radius:8px;margin-bottom:6px">
@@ -251,7 +251,7 @@ table.sc .r{text-align:right}
     <div style="margin-top:14px">
 
       <!-- ภาพรวม -->
-      <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
         <div style="font-weight:700;color:var(--w);font-size:.84rem;margin-bottom:6px">🎯 ระบบนี้ใช้ทำอะไร?</div>
         <div style="font-size:.76rem;line-height:1.7;color:var(--t)">
           เครื่องมือจำลองต้นทุน-กำไรทุเรียน สำหรับ<strong style="color:var(--gl)">วางแผนจัดซื้อ</strong>และ<strong style="color:var(--gl)">ประเมินผลประกอบการ</strong>ล่วงหน้า<br>
@@ -336,7 +336,7 @@ table.sc .r{text-align:right}
             <div style="font-size:.64rem;color:var(--tm);margin-top:2px">ราคาซื้อเกิน BE<br>ต้องลดราคาหรือดัน %A</div>
           </div>
         </div>
-        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(200,152,42,0.06);padding:8px 12px;border-radius:6px">
+        <div style="margin-top:8px;font-size:.72rem;color:var(--tm);background:rgba(0,229,255,0.06);padding:8px 12px;border-radius:6px">
           💡 <strong>แถบ Gauge:</strong> เส้นขาว = จุด Break-Even / สามเหลี่ยมทอง ▲ = ราคาซื้อที่ตั้ง — ถ้าสามเหลี่ยมอยู่ซ้ายเส้นขาว = ยังกำไร, อยู่ขวา = ขาดทุน
         </div>
       </div>
@@ -389,7 +389,7 @@ table.sc .r{text-align:right}
             <div style="font-size:.74rem;font-weight:700;color:#E74C3C">ทุก +5 ฿ ราคาซื้อ</div>
             <div style="font-size:.68rem;color:var(--t);margin-top:3px">ต้องการ %A เพิ่ม ~11%<br>จึงจะยังไม่ขาดทุน</div>
           </div>
-          <div style="background:rgba(200,152,42,0.06);border:1px solid rgba(200,152,42,0.12);border-radius:6px;padding:10px">
+          <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.12);border-radius:6px;padding:10px">
             <div style="font-size:.74rem;font-weight:700;color:var(--gl)">Grade A คือตัวชี้ขาด</div>
             <div style="font-size:.68rem;color:var(--t);margin-top:3px">%A กระทบกำไรมากกว่า<br>ราคาซื้อที่ขยับเท่ากัน</div>
           </div>
@@ -534,11 +534,11 @@ function up(){
   const minA=Math.max(0,((rm1+FG*prod)/FG-nonABV)/(P.A-nonABV)*100);
 
   $("topK").innerHTML=[
-    {l:"BV ฿/kg FG",v:fmt(bv),c:"#E5B84B"},
+    {l:"BV ฿/kg FG",v:fmt(bv),c:"#5CF0FF"},
     {l:"Margin",v:fmt(mg1,1)+"%",c:isPf?(mg1>=10?"#2ECC71":"#F39C12"):"#E74C3C"},
     {l:`%A ขั้นต่ำ(RM${rm})`,v:fmt(minA,1)+"%",c:minA<=aV?"#2ECC71":"#E74C3C"},
-    {l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#E5B84B":"#E74C3C"},
-  ].map(k=>`<div class="kpi" style="background:rgba(200,152,42,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
+    {l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#5CF0FF":"#E74C3C"},
+  ].map(k=>`<div class="kpi" style="background:rgba(0,229,255,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
 
   // ผลประกอบการ
   $("sumVol").textContent=`${fmt(vol/1000,vol%1000===0?0:1)} ตัน (RM ${rm} ฿/kg)`;
@@ -546,7 +546,7 @@ function up(){
   $("sumC").innerHTML=[
     {l:"วงเงินลงทุนรวม",v:fmt(tC/1e6,2)+"M",s:`RM${fmt(tRM/1e6,0)}+ผลิต${fmt(tPd/1e6,0)}`,bg:"rgba(52,152,219,0.07)",bc:"rgba(52,152,219,0.18)",c:"#3498DB"},
     {l:"ประมาณการรายได้",v:fmt(tRv/1e6,2)+"M",s:`${fmt(tFG/1000,1)}t × ${fmt(bv)}฿`,bg:"rgba(46,204,113,0.07)",bc:"rgba(46,204,113,0.18)",c:"#2ECC71"},
-    {l:"กำไร / Margin",v:fmt(tPf/1e6,2)+"M",s:`${fmt(tMg,1)}%`,bg:tPf>=0?"rgba(200,152,42,0.07)":"rgba(231,76,60,0.07)",bc:tPf>=0?"rgba(200,152,42,0.2)":"rgba(231,76,60,0.2)",c:pC},
+    {l:"กำไร / Margin",v:fmt(tPf/1e6,2)+"M",s:`${fmt(tMg,1)}%`,bg:tPf>=0?"rgba(0,229,255,0.07)":"rgba(231,76,60,0.07)",bc:tPf>=0?"rgba(0,229,255,0.2)":"rgba(231,76,60,0.2)",c:pC},
   ].map(k=>`<div class="sum-box" style="background:${k.bg};border:1px solid ${k.bc}"><div class="sl">${k.l}</div><div class="sv" style="color:${k.c}">${k.v}</div><div class="ss">${k.s}</div></div>`).join("");
 
   let r=`<thead><tr><th>รายการ</th><th class="r">ปริมาณ</th><th class="r">ล้าน฿</th></tr></thead><tbody>`;
@@ -556,12 +556,12 @@ function up(){
   r+=`<tr style="background:rgba(46,204,113,0.04)"><td style="font-weight:700;color:#2ECC71">รายได้รวม</td><td class="r" style="font-weight:700">${fmt(tFG,0)}</td><td class="r" style="font-weight:700;color:#2ECC71">${fmt(tRv/1e6)}</td></tr>`;
   r+=`<tr><td>ต้นทุน RM</td><td class="r">${fmt(vol/1e6,2)}M × ${rm}฿</td><td class="r" style="color:#E74C3C">−${fmt(tRM/1e6)}</td></tr>`;
   r+=`<tr><td>ต้นทุนผลิต</td><td class="r">${fmt(tFG/1000,1)}t × ${prod}฿</td><td class="r" style="color:#E74C3C">−${fmt(tPd/1e6)}</td></tr>`;
-  r+=`<tr style="background:rgba(200,152,42,0.06)"><td style="font-weight:800;color:${pC}">กำไรสุทธิ</td><td class="r">—</td><td class="r" style="font-weight:800;color:${pC}">${fmt(tPf/1e6)}</td></tr></tbody>`;
+  r+=`<tr style="background:rgba(0,229,255,0.06)"><td style="font-weight:800;color:${pC}">กำไรสุทธิ</td><td class="r">—</td><td class="r" style="font-weight:800;color:${pC}">${fmt(tPf/1e6)}</td></tr></tbody>`;
   $("sumT").innerHTML=r;
 
   // P&L per 100
-  $("pl1").innerHTML=[{l:"รายได้",v:fmt(rev1),c:"#2ECC71"},{l:"ต้นทุน RM",v:fmt(rm1),c:"#E74C3C"},{l:"ต้นทุนผลิต",v:fmt(pc1),c:"#E74C3C"},{l:"กำไร",v:fmt(pf1),c:isPf?"#E5B84B":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(200,152,42,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
-  $("pl2").innerHTML=[{l:"รายได้/kgFG",v:fmt(bv),c:"#2ECC71"},{l:"RM/kgFG",v:fmt(rm1/FG),c:"#E74C3C"},{l:"ผลิต/kgFG",v:fmt(prod),c:"#E74C3C"},{l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#E5B84B":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(26,188,156,0.04);border:1px solid rgba(26,188,156,0.08)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l" style="color:#1ABC9C">${k.l}</div></div>`).join("");
+  $("pl1").innerHTML=[{l:"รายได้",v:fmt(rev1),c:"#2ECC71"},{l:"ต้นทุน RM",v:fmt(rm1),c:"#E74C3C"},{l:"ต้นทุนผลิต",v:fmt(pc1),c:"#E74C3C"},{l:"กำไร",v:fmt(pf1),c:isPf?"#5CF0FF":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(0,229,255,0.04)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
+  $("pl2").innerHTML=[{l:"รายได้/kgFG",v:fmt(bv),c:"#2ECC71"},{l:"RM/kgFG",v:fmt(rm1/FG),c:"#E74C3C"},{l:"ผลิต/kgFG",v:fmt(prod),c:"#E74C3C"},{l:"กำไร/kgFG",v:fmt(pf1/FG),c:isPf?"#5CF0FF":"#E74C3C"}].map(k=>`<div class="kpi" style="background:rgba(26,188,156,0.04);border:1px solid rgba(26,188,156,0.08)"><div class="v" style="color:${k.c}">${k.v}</div><div class="l" style="color:#1ABC9C">${k.l}</div></div>`).join("");
 
   const nd=$("sumN");
   if(oBE)nd.innerHTML=`<div class="note bad"><strong>❌ RM ${rm}฿ > BE ${fmt(be)}฿</strong> — ขาดทุน <strong>${fmt(Math.abs(tPf/1e6))}M</strong> | ต้องลด RM หรือ ดัน %A ขึ้น</div>`;
@@ -576,11 +576,11 @@ function up(){
     [45,50,55,60,65,70].forEach(p=>{
       const rc=rem*p,tr=AC+rc,pf=(tRv-tr-tPd)/1e6,mg=tRv>0?pf/(tRv/1e6)*100:0,bl=tr/vol;
       const ng=pf<0,lo=mg<5&&mg>=0,ob=p>mRP,cl=ng?"#E74C3C":lo?"#F39C12":"#2ECC71";
-      t+=`<tr style="background:${ob?"rgba(231,76,60,0.04)":p===55?"rgba(200,152,42,0.05)":"transparent"}">
+      t+=`<tr style="background:${ob?"rgba(231,76,60,0.04)":p===55?"rgba(0,229,255,0.05)":"transparent"}">
         <td style="font-weight:600;color:${ob?"#E74C3C":"#D4CBB8"}">${p}฿${p===55?" ◀เฉลี่ย":ob?" ⚠️":""}</td>
         <td class="r">${fmt(bl)}</td><td class="r" style="font-weight:700;color:${cl}">${ng?"":"+"} ${fmt(pf)}</td>
         <td class="r" style="color:${cl}">${fmt(mg,1)}%</td>
-        <td class="r"><div style="width:50px;height:5px;background:#1A3352;border-radius:3px;overflow:hidden;display:inline-block"><div style="width:${Math.max(0,Math.min(100,mg/25*100))}%;height:100%;background:${cl};border-radius:3px"></div></div></td></tr>`;
+        <td class="r"><div style="width:50px;height:5px;background:#1A1F3E;border-radius:3px;overflow:hidden;display:inline-block"><div style="width:${Math.max(0,Math.min(100,mg/25*100))}%;height:100%;background:${cl};border-radius:3px"></div></div></td></tr>`;
     });
   }else{t+=`<tr><td colspan="5" style="text-align:center;color:var(--tm);padding:12px">ปริมาณน้อยกว่ายอดซื้อจริง — ไม่แสดง scenario</td></tr>`;}
   $("scT").innerHTML=t+"</tbody>";
